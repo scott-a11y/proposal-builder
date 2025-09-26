@@ -1,7 +1,4 @@
-# Build the final drop-in index.html with your logo embedded (Option A: logo on cover header + footer on all pages).
-# Uses your uploaded PNG at /mnt/data/Foundry-Cabinetco-Logo-1-Black-Text.png.
-# Keeps Supabase save/load, client export, and print-only proposal fixes.
-
+# Retry: avoid deep f-string nesting by inserting a placeholder then replace with base64.
 import base64, pathlib
 
 logo_path = pathlib.Path("/mnt/data/Foundry-Cabinetco-Logo-1-Black-Text.png")
@@ -9,9 +6,9 @@ b64_logo = ""
 if logo_path.exists():
     b64_logo = "data:image/png;base64," + base64.b64encode(logo_path.read_bytes()).decode("utf-8")
 
-out_path = "/mnt/data/index-full-proposal-builder-FINAL.html"
+out_path = "/mnt/data/index-full-proposal-builder-MERGED.html"
 
-html = f"""<!DOCTYPE html>
+html = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -21,25 +18,25 @@ html = f"""<!DOCTYPE html>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    @media print {{
-      * {{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }}
-      body * {{ visibility: hidden !important; }}
-      .proposal-print, .proposal-print * {{ visibility: visible !important; }}
-      .proposal-print {{ position: absolute; left: 0; top: 0; width: 100%; }}
-      .proposal-page {{ width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }}
-      @page {{ size: 8.5in 11in; margin: 0.25in; }}
-      .proposal-container, body {{ background: white !important; }}
-      body {{ font-size: 12px !important; }}
-      .print\\:hidden {{ display: none !important; }}
-    }}
-    .proposal-page {{ display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }}
-    .content-section {{ overflow-wrap: break-word; word-wrap: break-word; }}
-    .hidden {{ display: none; }}
-    #headerLogo {{ filter: none !important; mix-blend-mode: normal !important; }}
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body * { visibility: hidden !important; }
+      .proposal-print, .proposal-print * { visibility: visible !important; }
+      .proposal-print { position: absolute; left: 0; top: 0; width: 100%; }
+      .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
+      @page { size: 8.5in 11in; margin: 0.25in; }
+      .proposal-container, body { background: white !important; }
+      body { font-size: 12px !important; }
+      .print\\:hidden { display: none !important; }
+    }
+    .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
+    .content-section { overflow-wrap: break-word; word-wrap: break-word; }
+    .hidden { display: none; }
+    #headerLogo { filter: none !important; mix-blend-mode: normal !important; }
   </style>
 </head>
 <body class="bg-slate-100">
-  <!-- Fallback -->
+  <!-- Fallback (shows if something fails early) -->
   <div id="fallback" class="max-w-3xl mx-auto mt-6 p-4 bg-white border border-slate-200 rounded-lg shadow print:hidden">
     <div class="text-lg font-medium text-slate-800">Foundry Cabinet · Co — Proposal Builder</div>
     <div class="text-slate-600 text-sm">If this message doesn’t disappear shortly, open Console (F12) for errors.</div>
@@ -131,7 +128,7 @@ html = f"""<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- PROPOSAL PREVIEW (printable) -->
+    <!-- Printable Proposal -->
     <div class="proposal-container max-w-none mx-auto bg-white proposal-print">
       <div id="preview"></div>
     </div>
@@ -149,15 +146,18 @@ html = f"""<!DOCTYPE html>
   </div>
 
   <script>
+    // --- Config ---
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
 
-    const EMBED_LOGO = "{b64_logo}";
+    // ✅ Hard-embedded base64 logo (set-and-forget)
+    const EMBED_LOGO = "__EMBED_LOGO__";
 
+    // --- State ---
     const state = {{
       name: "",
       images: {{
-        logo: EMBED_LOGO,            // baked-in logo for the header cover by default
+        logo: EMBED_LOGO, // baked-in logo for cover header by default
         shakerRender:null, euroRender:null, shakerVanity:null, euroVanity:null, floorPlan:null
       }},
       content: {{
@@ -191,23 +191,36 @@ html = f"""<!DOCTYPE html>
       saved: []
     }};
 
+    // --- Helpers ---
     const qs  = (s, el=document)=> el.querySelector(s);
     const esc = (s)=> String(s||"").replace(/[&<>"']/g, (m)=>({{ "&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;" }}[m]));
     const onFileToDataURL = (file, cb)=>{{ const r=new FileReader(); r.onload=(e)=>cb(e.target.result); r.readAsDataURL(file); }};
     function setStatus(msg){{ const el=qs('#status'); if(el) el.textContent = msg; }}
 
+    // --- Supabase ---
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     async function ensureAuth(){{ const {{ data }} = await db.auth.getUser(); if(!data?.user){{ await db.auth.signInAnonymously(); }} }}
-    async function listProposals(){{ const {{ data, error }} = await db.from("proposals").select("name, created_at, content, images").order("created_at",{{ascending:false}}); if(error) throw error; return (data||[]).map(p=>({{ name:p.name, savedAt:p.created_at, content:p.content, images:p.images }})); }}
-    async function upsertProposal(name, payload){{ let {{ data:existing, error:selErr }} = await db.from("proposals").select("name").eq("name", name).maybeSingle(); if(selErr) throw selErr; if(existing){{ const {{ error }} = await db.from("proposals").update(payload).eq("name", name); if(error) throw error; }} else {{ const {{ error }} = await db.from("proposals").insert({{ name, ...payload }}); if(error) throw error; }} }}
+    async function listProposals(){{ const {{ data, error }} = await db.from("proposals").select("name, created_at, content, images").order("created_at",{{ascending:false}}); if (error) throw error; return (data||[]).map(p=>({{ name:p.name, savedAt:p.created_at, content:p.content, images:p.images }})); }}
+    async function upsertProposal(name, payload){{
+      let {{ data: existing, error: selErr }} = await db.from("proposals").select("name").eq("name", name).maybeSingle();
+      if (selErr) throw selErr;
+      if (existing) {{
+        const {{ error }} = await db.from("proposals").update(payload).eq("name", name);
+        if (error) throw error;
+      }} else {{
+        const {{ error }} = await db.from("proposals").insert({{ name, ...payload }});
+        if (error) throw error;
+      }}
+    }}
     async function deleteProposal(name){{ const {{ error }} = await db.from("proposals").delete().eq("name", name); if (error) throw error; }}
 
+    // --- Render Parts ---
     function footerHTML(content){{
       const logo = EMBED_LOGO ? `<img src="${{EMBED_LOGO}}" alt="Company Logo" class="mx-auto max-h-10 object-contain mb-2" />` : "";
       return `
         <div class="bg-slate-800 text-white p-4 text-center">
-          ${logo}
-          <div class="text-sm tracking-wide">${{esc(content.tagline)}} </div>
+          ${{logo}}
+          <div class="text-sm tracking-wide">${{esc(content.tagline)}}</div>
           <div class="text-xs text-slate-400 mt-1">${{esc(content.address)}}</div>
         </div>`;
     }}
@@ -224,7 +237,7 @@ html = f"""<!DOCTYPE html>
           <div class="flex justify-between items-start">
             <div class="flex items-center gap-6">
               <div class="bg-white rounded-lg p-2 shadow-sm border border-white/70 w-44 h-16 flex items-center justify-center">
-                ${logo}
+                ${{logo}}
               </div>
               <div class="h-12 w-px bg-white/30"></div>
               <div class="text-white">
@@ -282,16 +295,16 @@ html = f"""<!DOCTYPE html>
                 <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">SHAKER STYLE</h3>
                 <div class="mb-6">
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.shakerRender ? `<img src="${images.shakerRender}" alt="Shaker Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>`}
+                    ${images.shakerRender ? '<img src="'+images.shakerRender+'" alt="Shaker Kitchen" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>'}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${{esc(content.shakerDescription)}}</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">${{esc(content.shakerDescription)}} </p>
                   </div>
                 </div>
                 <div>
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.shakerVanity ? `<img src="${images.shakerVanity}" alt="Shaker Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>`}
+                    ${images.shakerVanity ? '<img src="'+images.shakerVanity+'" alt="Shaker Vanity" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>'}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
@@ -305,7 +318,7 @@ html = f"""<!DOCTYPE html>
                 <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">EURO STYLE</h3>
                 <div class="mb-6">
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.euroRender ? `<img src="${images.euroRender}" alt="Euro Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>`}
+                    ${images.euroRender ? '<img src="'+images.euroRender+'" alt="Euro Kitchen" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>'}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
@@ -314,7 +327,7 @@ html = f"""<!DOCTYPE html>
                 </div>
                 <div>
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.euroVanity ? `<img src="${images.euroVanity}" alt="Euro Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>`}
+                    ${images.euroVanity ? '<img src="'+images.euroVanity+'" alt="Euro Vanity" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>'}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
@@ -328,23 +341,13 @@ html = f"""<!DOCTYPE html>
           <div class="space-y-4">
             <h3 class="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3>
             <div class="bg-slate-50 p-8 shadow-lg">
-              ${images.floorPlan ? `<img src="${images.floorPlan}" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />` : `<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>`}
+              ${images.floorPlan ? '<img src="'+images.floorPlan+'" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />' : '<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>'}
             </div>
             <p class="text-slate-600 text-center text-sm leading-relaxed">${{esc(content.floorPlanDescription)}}</p>
 
-            ${content.onlinePlansLink ? `
-              <div class="text-center mt-2">
-                <a href="${{esc(content.onlinePlansLink)}}" target="_blank" rel="noopener noreferrer"
-                   class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a>
-              </div>` : ''}
+            ${ content.onlinePlansLink ? '<div class="text-center mt-2"><a href="'+esc(content.onlinePlansLink)+'" target="_blank" rel="noopener noreferrer" class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a></div>' : ''}
 
-            ${content.sketchupLink ? `
-              <div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded">
-                <h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">🏠 VIEW IN 3D</h4>
-                <p class="text-slate-700 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p>
-                <a href="${{esc(content.sketchupLink)}}" target="_blank" rel="noopener noreferrer"
-                   class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">VIEW 3D MODEL</a>
-              </div>` : ''}
+            ${ content.sketchupLink ? '<div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded"><h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">🏠 VIEW IN 3D</h4><p class="text-slate-700 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p><a href="'+esc(content.sketchupLink)+'" target="_blank" rel="noopener noreferrer" class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">VIEW 3D MODEL</a></div>' : ''}
           </div>
         </div>
         ${footerHTML(content)}
@@ -355,13 +358,9 @@ html = f"""<!DOCTYPE html>
       const timeline = (content.timeline||[]).map((it,i)=>{{
         const colors = ["bg-amber-500","bg-slate-400","bg-slate-500","bg-slate-600","bg-slate-700"];
         const color = colors[i % colors.length];
-        return `<div class="flex items-start space-x-4"><div class="w-4 h-4 ${{color}} flex-shrink-0 mt-1"></div><div class="flex-1"><div class="font-bold text-slate-800 tracking-wide text-sm uppercase">${{esc(it.period)}}</div><div class="text-slate-600 text-base mt-1">${{esc(it.task)}}</div></div></div>`;
+        return '<div class="flex items-start space-x-4"><div class="w-4 h-4 '+color+' flex-shrink-0 mt-1"></div><div class="flex-1"><div class="font-bold text-slate-800 tracking-wide text-sm uppercase">'+esc(it.period)+'</div><div class="text-slate-600 text-base mt-1">'+esc(it.task)+'</div></div></div>';
       }}).join("");
-      const steps = (content.nextSteps||[]).map((s,i)=>`
-        <div class="flex items-start space-x-3">
-          <div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center"><span class="text-slate-800 font-bold text-sm">${{i+1}}</span></div>
-          <span class="text-slate-700 text-base leading-relaxed">${{esc(s)}}</span>
-        </div>`).join("");
+      const steps = (content.nextSteps||[]).map((s,i)=>'<div class="flex items-start space-x-3"><div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center"><span class="text-slate-800 font-bold text-sm">'+(i+1)+'</span></div><span class="text-slate-700 text-base leading-relaxed">'+esc(s)+'</span></div>').join("");
 
       return `
       <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
@@ -405,6 +404,7 @@ html = f"""<!DOCTYPE html>
       qs('#preview').innerHTML = p1 + p2 + p3;
     }}
 
+    // --- Editor wiring ---
     function wireEditor(){{
       const bindVal = (sel, key)=>{{ const el=qs(sel); el.value=state.content[key]||''; el.oninput=(e)=>{{ state.content[key]=e.target.value; renderPreview(); }}; }};
       bindVal('#in_clientName','clientName');
@@ -471,6 +471,7 @@ html = f"""<!DOCTYPE html>
       qs('#btnAddStep').onclick = ()=>{{ state.content.nextSteps.push('New step'); wireEditor(); renderPreview(); }};
     }}
 
+    // --- Export / Client View ---
     function exportClient(){{
       // Export a clean client HTML containing just the proposal (no editor UI)
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${{esc(state.content.title)}} - ${{esc(state.content.clientName)}}</title><script src="https://cdn.tailwindcss.com"><\\/script><style>@media print{{*{{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}.proposal-page{{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}}@page{{size:8.5in 11in;margin:0.25in}}}</style></head><body><div class="proposal-container max-w-none mx-auto bg-white">${{qs('#preview').innerHTML}}</div></body></html>`;
@@ -484,6 +485,7 @@ html = f"""<!DOCTYPE html>
       const win = window.open('', '_blank'); win.document.write(html); win.document.close();
     }}
 
+    // --- Start ---
     (async function start(){{
       const fb = qs('#fallback'); const app = qs('#app');
       try{{
@@ -492,8 +494,55 @@ html = f"""<!DOCTYPE html>
         await ensureAuth();
         setStatus('Connected.');
 
-        qs('#btnSave').onclick = async ()=>{{ const name = prompt('Name this proposal (unique)') || state.content.projectNumber || state.content.clientName || 'Untitled'; try {{ await upsertProposal(name.trim(), {{ content: state.content, images: state.images }}); state.name = name.trim(); setStatus(`Saved "${{state.name}}" to cloud.`); }} catch (e) {{ console.error(e); alert('Save failed: ' + (e.message||e)); }} }};
-        qs('#btnLoad').onclick = async ()=>{{ try {{ const items = await listProposals(); state.saved = items; const modal = qs('#loadModal'); const list = qs('#savedList'); list.innerHTML = items.length ? '' : '<div class="text-slate-500 text-center py-6">No proposals found.</div>'; items.forEach((p)=>{{ const row = document.createElement('div'); row.className = 'flex items-center justify-between p-3 border border-slate-200 rounded'; row.innerHTML = `<div><div class="font-medium text-slate-800">${{esc(p.name)}}</div><div class="text-xs text-slate-500">Saved: ${{new Date(p.savedAt).toLocaleString()}}</div></div><div class="flex gap-2"><button class="bg-blue-600 text-white px-3 py-1 text-xs rounded">Load</button><button class="bg-red-600 text-white px-3 py-1 text-xs rounded">Delete</button></div>`; const [btnLoad, btnDel] = row.querySelectorAll('button'); btnLoad.onclick = ()=>{{ state.name = p.name; state.content = p.content || state.content; state.images  = p.images || state.images; if(!state.images.logo) state.images.logo = EMBED_LOGO; renderPreview(); wireEditor(); modal.classList.add('hidden'); setStatus(`Loaded "${{p.name}}".`); }}; btnDel.onclick = async ()=>{{ if(!confirm(`Delete "${{p.name}}"?`)) return; try {{ await deleteProposal(p.name); row.remove(); setStatus(`Deleted "${{p.name}}".`); }} catch (e) {{ alert('Delete failed: ' + (e.message||e)); }} }}; list.appendChild(row); }}); modal.classList.remove('hidden'); }} catch (e) {{ console.error(e); alert('Load failed: ' + (e.message||e)); }} }};
+        // wire buttons
+        qs('#btnSave').onclick = async ()=>{{
+          const name = prompt('Name this proposal (unique)') || state.content.projectNumber || state.content.clientName || 'Untitled';
+          try {{
+            await upsertProposal(name.trim(), {{ content: state.content, images: state.images }});
+            state.name = name.trim();
+            setStatus(`Saved "${{state.name}}" to cloud.`);
+          }} catch (e) {{ console.error(e); alert('Save failed: ' + (e.message||e)); }}
+        }};
+
+        qs('#btnLoad').onclick = async ()=>{{
+          try {{
+            const items = await listProposals();
+            state.saved = items;
+            const modal = qs('#loadModal'); const list = qs('#savedList');
+            list.innerHTML = items.length ? '' : '<div class="text-slate-500 text-center py-6">No proposals found.</div>';
+            items.forEach((p)=>{{
+              const row = document.createElement('div');
+              row.className = 'flex items-center justify-between p-3 border border-slate-200 rounded';
+              row.innerHTML = `
+                <div>
+                  <div class="font-medium text-slate-800">${{esc(p.name)}}</div>
+                  <div class="text-xs text-slate-500">Saved: ${{new Date(p.savedAt).toLocaleString()}}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="bg-blue-600 text-white px-3 py-1 text-xs rounded">Load</button>
+                  <button class="bg-red-600 text-white px-3 py-1 text-xs rounded">Delete</button>
+                </div>`;
+              const [btnLoad, btnDel] = row.querySelectorAll('button');
+              btnLoad.onclick = ()=>{{
+                state.name = p.name;
+                state.content = p.content || state.content;
+                state.images  = p.images || state.images;
+                if(!state.images.logo) state.images.logo = EMBED_LOGO; // ensure baked logo
+                renderPreview(); wireEditor();
+                modal.classList.add('hidden');
+                setStatus(`Loaded "${{p.name}}".`);
+              }};
+              btnDel.onclick = async ()=>{{
+                if(!confirm(`Delete "${{p.name}}"?`)) return;
+                try {{ await deleteProposal(p.name); row.remove(); setStatus(`Deleted "${{p.name}}".`); }}
+                catch (e) {{ alert('Delete failed: ' + (e.message||e)); }}
+              }};
+              list.appendChild(row);
+            }});
+            modal.classList.remove('hidden');
+          }} catch (e) {{ console.error(e); alert('Load failed: ' + (e.message||e)); }}
+        }};
+
         qs('#btnCloseLoad').onclick = ()=> qs('#loadModal').classList.add('hidden');
         qs('#btnExport').onclick = exportClient;
         qs('#btnClientView').onclick = openClientView;
@@ -512,6 +561,9 @@ html = f"""<!DOCTYPE html>
 </body>
 </html>
 """
+
+# Replace placeholder with real base64 data URL
+html = html.replace("__EMBED_LOGO__", b64_logo)
 
 with open(out_path, "w") as f:
     f.write(html)
