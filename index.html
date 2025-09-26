@@ -1,45 +1,142 @@
-# Create a tiny Supabase smoke-test page you can upload to your repo root
-# and visit at /supabase-quick-test.html to verify your URL/key + table.
-test_html = """<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Supabase Quick Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Foundry Cabinet Co. – Proposal Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>body{font-family:system-ui,Segoe UI,Arial;margin:2rem}pre{background:#111;color:#0f0;padding:1rem;border-radius:.5rem;white-space:pre-wrap}</style>
+  <style>
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .print\:hidden { display: none !important; }
+      .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
+      @page { size: 8.5in 11in; margin: 0.25in; }
+      .proposal-container, body { background: white !important; }
+      body { font-size: 12px !important; }
+    }
+    .proposal-page { display: flex; flex-direction: column; min-height: 800px; box-sizing: border-box; }
+    .content-section { overflow-wrap: break-word; word-wrap: break-word; }
+  </style>
 </head>
-<body>
-  <h1>Supabase Quick Test</h1>
-  <p>This page signs in anonymously, lists <code>proposals</code>, and shows any errors.</p>
-  <div id="status">Starting…</div>
-  <pre id="out"></pre>
+<body class="bg-slate-100">
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-light text-slate-800 mb-6">Proposal Builder</h1>
+    <div class="space-y-4">
+      <input id="clientName" type="text" placeholder="Client Name" class="border p-2 w-full"/>
+      <input id="projectNumber" type="text" placeholder="Project Number" class="border p-2 w-full"/>
+      <textarea id="executiveSummary" placeholder="Executive Summary" class="border p-2 w-full h-32"></textarea>
+      <input id="totalInvestment" type="text" placeholder="Total Investment" class="border p-2 w-full"/>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="saveProposal()" class="bg-green-600 text-white px-4 py-2">💾 Save</button>
+        <button onclick="loadProposals()" class="bg-blue-600 text-white px-4 py-2">📂 Load</button>
+        <button onclick="exportClient()" class="bg-orange-600 text-white px-4 py-2">📤 Export</button>
+        <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2">🖨 PDF</button>
+      </div>
+    </div>
+    <div id="preview" class="proposal-page bg-white shadow mt-8 p-6">
+      <h2 class="text-2xl font-light text-slate-800 mb-4">Preview</h2>
+      <p id="previewContent" class="text-slate-700">Nothing yet. Fill in fields and click Save.</p>
+    </div>
+    <div id="loadDialog" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-6 rounded-lg shadow max-w-lg w-full">
+        <h2 class="text-xl font-light mb-4">Saved Proposals</h2>
+        <div id="proposalList" class="space-y-2"></div>
+        <button onclick="closeDialog()" class="mt-4 bg-slate-600 text-white px-4 py-2">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const out = document.getElementById('out');
-    const status = (m)=> document.getElementById('status').textContent = m;
-    (async function(){
-      try{
-        status("Signing in anonymously…");
-        const { data: u, error: ue } = await db.auth.signInAnonymously();
-        if (ue) throw ue;
-        status("Auth OK. Fetching proposals…");
-        const { data, error } = await db.from("proposals").select("name, created_at").limit(10);
-        if (error) throw error;
-        status("Success ✅");
-        out.textContent = JSON.stringify(data, null, 2);
-      }catch(e){
-        status("Error ❌");
-        out.textContent = (e && e.message) ? e.message : String(e);
+
+    async function saveProposal() {
+      const proposal = {
+        clientName: document.getElementById('clientName').value,
+        projectNumber: document.getElementById('projectNumber').value,
+        executiveSummary: document.getElementById('executiveSummary').value,
+        totalInvestment: document.getElementById('totalInvestment').value,
+      };
+      const name = proposal.projectNumber || proposal.clientName || "Untitled";
+      const { error } = await db.from("proposals")
+        .upsert({ name, content: proposal })
+        .eq("name", name);
+      if (error) {
+        alert("Error saving: " + error.message);
+      } else {
+        renderPreview(proposal);
+        alert("Saved to Supabase ✅");
       }
-    })();
+    }
+
+    async function loadProposals() {
+      const { data, error } = await db.from("proposals").select("name, content, created_at").order("created_at", { ascending: false }).limit(10);
+      if (error) return alert("Error loading: " + error.message);
+      const list = document.getElementById("proposalList");
+      list.innerHTML = "";
+      data.forEach(p => {
+        const btn = document.createElement("button");
+        btn.textContent = `${p.name} (${new Date(p.created_at).toLocaleString()})`;
+        btn.className = "block w-full text-left border p-2 hover:bg-slate-100";
+        btn.onclick = () => {
+          document.getElementById("clientName").value = p.content.clientName || "";
+          document.getElementById("projectNumber").value = p.content.projectNumber || "";
+          document.getElementById("executiveSummary").value = p.content.executiveSummary || "";
+          document.getElementById("totalInvestment").value = p.content.totalInvestment || "";
+          renderPreview(p.content);
+          closeDialog();
+        };
+        list.appendChild(btn);
+      });
+      document.getElementById("loadDialog").classList.remove("hidden");
+    }
+
+    function closeDialog() {
+      document.getElementById("loadDialog").classList.add("hidden");
+    }
+
+    function renderPreview(p) {
+      document.getElementById('previewContent').innerHTML = `
+        <div class="mb-4">
+          <strong>Client:</strong> ${p.clientName || '-'}<br/>
+          <strong>Project:</strong> ${p.projectNumber || '-'}
+        </div>
+        <p class="mb-4">${p.executiveSummary || ''}</p>
+        <div class="text-lg font-medium text-slate-800">Investment: ${p.totalInvestment || '-'}</div>
+      `;
+    }
+
+    function exportClient() {
+      const p = {
+        clientName: document.getElementById('clientName').value,
+        projectNumber: document.getElementById('projectNumber').value,
+        executiveSummary: document.getElementById('executiveSummary').value,
+        totalInvestment: document.getElementById('totalInvestment').value,
+      };
+      const html = `
+        <!DOCTYPE html>
+        <html><head><meta charset="utf-8"/><title>Proposal - ${p.clientName}</title>
+        <script src="https://cdn.tailwindcss.com"><\/script></head>
+        <body class="bg-white">
+          <div class="max-w-4xl mx-auto p-6">
+            <h1 class="text-3xl font-light text-slate-800 mb-6">Proposal for ${p.clientName}</h1>
+            <p class="mb-4 text-slate-700">${p.executiveSummary}</p>
+            <div class="text-lg font-medium text-slate-800">Investment: ${p.totalInvestment}</div>
+            <button onclick="window.print()" class="mt-8 bg-slate-800 text-white px-4 py-2">Download PDF</button>
+          </div>
+        </body></html>`;
+      const blob = new Blob([html], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${p.projectNumber || "Proposal"}_${p.clientName.replace(/\s+/g,'_') || "Client"}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
-"""
-path = "/mnt/data/supabase-quick-test.html"
-with open(path, "w") as f:
-    f.write(test_html)
-path
