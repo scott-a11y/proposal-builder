@@ -1,20 +1,32 @@
-<!DOCTYPE html>
+# Patch a branding-focused build with:
+# - visible logo on dark header (white badge behind logo, no invert)
+# - wording: "FOUNDRY" + "CABINET . CO" + subline "by District Design Build, LLC"
+# - keep prior PDF fixes (admin UI hidden on print, logo only on cover)
+#
+# Save as /mnt/data/index-full-proposal-builder-BRANDINGFIX.html
+
+out_path = "/mnt/data/index-full-proposal-builder-BRANDINGFIX.html"
+
+html = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Foundry — Full Proposal Builder</title>
+  <title>Foundry Cabinet . co — Proposal Builder</title>
   <meta name="color-scheme" content="light"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      .print\:hidden { display: none !important; }
+      body * { visibility: hidden !important; }
+      .proposal-print, .proposal-print * { visibility: visible !important; }
+      .proposal-print { position: absolute; left: 0; top: 0; width: 100%; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
       @page { size: 8.5in 11in; margin: 0.25in; }
       .proposal-container, body { background: white !important; }
       body { font-size: 12px !important; }
+      .print\:hidden { display: none !important; }
     }
     .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
     .content-section { overflow-wrap: break-word; word-wrap: break-word; }
@@ -22,14 +34,12 @@
   </style>
 </head>
 <body class="bg-slate-100">
-  <!-- Fallback so you never see a blank screen -->
-  <div id="fallback" class="max-w-3xl mx-auto mt-6 p-4 bg-white border border-slate-200 rounded-lg shadow">
-    <div class="text-lg font-medium text-slate-800">Foundry — Proposal Builder (Full)</div>
+  <div id="fallback" class="max-w-3xl mx-auto mt-6 p-4 bg-white border border-slate-200 rounded-lg shadow print:hidden">
+    <div class="text-lg font-medium text-slate-800">Foundry Cabinet . co — Proposal Builder</div>
     <div class="text-slate-600 text-sm">If this message doesn’t disappear shortly, open Console (F12) for errors.</div>
   </div>
 
   <div id="app" class="hidden">
-    <!-- Top bar -->
     <div class="bg-white shadow border-b border-slate-200 print:hidden">
       <div class="max-w-7xl mx-auto p-6">
         <div class="flex items-center justify-between flex-wrap gap-3">
@@ -48,17 +58,12 @@
       </div>
     </div>
 
-    <!-- Body: left images / right content -->
-    <div class="max-w-7xl mx-auto p-6 grid md:grid-cols-3 gap-6">
-      <!-- Images -->
+    <!-- Editor (print hidden) -->
+    <div class="max-w-7xl mx-auto p-6 grid md:grid-cols-3 gap-6 print:hidden">
       <div class="space-y-3">
         <div class="text-lg font-medium text-slate-800">Visual Assets</div>
-        <div id="assetsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- generated file inputs -->
-        </div>
+        <div id="assetsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
       </div>
-
-      <!-- Content -->
       <div class="md:col-span-2 space-y-3">
         <div class="text-lg font-medium text-slate-800">Content</div>
         <div class="grid sm:grid-cols-2 gap-3">
@@ -90,8 +95,6 @@
             <label class="block text-xs uppercase text-slate-600 mb-1">Warranty Text</label>
             <textarea id="in_wtext" rows="2" class="w-full p-2 border border-slate-300"></textarea>
           </div>
-
-          <!-- Links -->
           <div class="sm:col-span-2">
             <label class="block text-xs uppercase text-slate-600 mb-1">Online Plans Link (optional)</label>
             <input id="in_plans" placeholder="https://…" class="w-full p-2 border border-slate-300"/>
@@ -121,12 +124,12 @@
     </div>
 
     <!-- Preview -->
-    <div class="proposal-container max-w-none mx-auto bg-white">
+    <div class="proposal-container max-w-none mx-auto bg-white proposal-print">
       <div id="preview"></div>
     </div>
   </div>
 
-  <!-- Load modal -->
+  <!-- Load modal (print hidden) -->
   <div id="loadModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 print:hidden">
     <div class="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -138,11 +141,9 @@
   </div>
 
   <script>
-    // ====== CONFIG (your project + anon key) ======
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
 
-    // ====== STATE ======
     const state = {
       name: "",
       images: { logo:null, shakerRender:null, euroRender:null, shakerVanity:null, euroVanity:null, floorPlan:null },
@@ -176,13 +177,11 @@
       saved: []
     };
 
-    // ====== HELPERS ======
     const qs  = (s, el=document)=> el.querySelector(s);
     const esc = (s)=> String(s||"").replace(/[&<>"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m]));
     const onFileToDataURL = (file, cb)=>{ const r=new FileReader(); r.onload=(e)=>cb(e.target.result); r.readAsDataURL(file); };
     function setStatus(msg){ const el=qs('#status'); if(el) el.textContent = msg; }
 
-    // ====== SUPABASE ======
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     async function ensureAuth(){
       const { data } = await db.auth.getUser();
@@ -209,7 +208,6 @@
       if (error) throw error;
     }
 
-    // ====== CLIENT HTML BUILDER (3 pages) ======
     function buildClientInner(content, images){
       const titleA = esc(content.title).split("–")[0]||"";
       const titleB = esc(content.title).split("–")[1]||"";
@@ -234,8 +232,8 @@
         </div>`).join("");
 
       const imgOrPh = (src, label)=> src
-        ? `<img src="${src}" alt="${label}" class="w-full h-full object-cover" />`
-        : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">${label.toUpperCase()}</span></div>`;
+        ? `<img src="${src}" alt="${label}" class="w-full h-full object-contain" />`
+        : `<div class="w-full h-full bg-white/60 backdrop-blur border border-white/40 flex items-center justify-center rounded text-slate-600 text-xs">LOGO</div>`;
 
       return `
       <!-- Page 1 -->
@@ -243,12 +241,15 @@
         <div class="bg-gradient-to-r from-slate-800 to-slate-700 p-8 relative">
           <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
           <div class="flex justify-between items-start">
-            <div class="flex items-center space-x-6">
-              <div class="w-40 h-16">${imgOrPh(images.logo, 'Logo')}</div>
+            <div class="flex items-center gap-6">
+              <div class="bg-white/95 rounded-lg p-2 shadow-sm border border-white/60 w-40 h-16 flex items-center justify-center">
+                ${images.logo ? `<img src="${images.logo}" alt="Company Logo" class="max-w-full max-h-12 object-contain" />` : imgOrPh(null,'Logo')}
+              </div>
               <div class="h-12 w-px bg-white/30"></div>
               <div class="text-white">
                 <div class="text-2xl font-light tracking-wide">FOUNDRY</div>
-                <div class="text-lg font-light tracking-widest text-slate-300">CABINETCO.</div>
+                <div class="text-lg font-light tracking-widest text-slate-300">CABINET&nbsp;. CO</div>
+                <div class="text-xs font-light tracking-wide text-slate-400 mt-1">by District Design Build, LLC</div>
               </div>
             </div>
             <div class="text-right text-white text-sm">
@@ -289,12 +290,21 @@
         </div>
       </div>
 
-      <!-- Page 2 -->
+      <!-- Page 2 / 3 are same as PDFFIX (omitted here for brevity in code gen) -->
+      <!-- We'll reuse the same body from PDFFIX for design options, 3D block, and timeline. -->
+      `;
+    }
+
+    function renderPreview(){
+      const inner = buildClientInner(state.content, state.images);
+
+      // Append the same Page 2 & 3 from the PDFFIX version
+      const pageTwoThree = `
       <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
         <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-light text-slate-800 tracking-tight">Design Options & Layout</h2>
-            <div class="text-sm text-slate-500">PROJECT ${esc(content.projectNumber)} | PAGE 02</div>
+            <div class="text-sm text-slate-500">PROJECT ${esc(state.content.projectNumber)} | PAGE 02</div>
           </div>
         </div>
         <div class="px-8 flex-1">
@@ -304,20 +314,20 @@
                 <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">SHAKER STYLE</h3>
                 <div class="mb-6">
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${imgOrPh(images.shakerRender, 'Shaker Kitchen')}
+                    ${state.images.shakerRender ? `<img src="${state.images.shakerRender}" alt="Shaker Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>`}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${esc(content.shakerDescription)}</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">${esc(state.content.shakerDescription)}</p>
                   </div>
                 </div>
                 <div>
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${imgOrPh(images.shakerVanity, 'Shaker Vanity')}
+                    ${state.images.shakerVanity ? `<img src="${state.images.shakerVanity}" alt="Shaker Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>`}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${esc(content.shakerVanityDescription)}</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">${esc(state.content.shakerVanityDescription)}</p>
                   </div>
                 </div>
               </div>
@@ -327,44 +337,42 @@
                 <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">EURO STYLE</h3>
                 <div class="mb-6">
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${imgOrPh(images.euroRender, 'Euro Kitchen')}
+                    ${state.images.euroRender ? `<img src="${state.images.euroRender}" alt="Euro Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>`}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${esc(content.euroDescription)}</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">${esc(state.content.euroDescription)}</p>
                   </div>
                 </div>
                 <div>
                   <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${imgOrPh(images.euroVanity, 'Euro Vanity')}
+                    ${state.images.euroVanity ? `<img src="${state.images.euroVanity}" alt="Euro Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>`}
                   </div>
                   <div class="mt-3 min-h-[80px] flex flex-col justify-start">
                     <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${esc(content.euroVanityDescription)}</p>
+                    <p class="text-slate-600 text-sm leading-relaxed">${esc(state.content.euroVanityDescription)}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Architectural Layout -->
           <div class="space-y-4">
             <h3 class="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3>
             <div class="bg-slate-50 p-8 shadow-lg">
-              ${ images.floorPlan
-                ? `<img src="${images.floorPlan}" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />`
+              ${ state.images.floorPlan
+                ? `<img src="${state.images.floorPlan}" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />`
                 : `<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>`}
             </div>
-            <p class="text-slate-600 text-center text-sm leading-relaxed">${esc(content.floorPlanDescription)}</p>
+            <p class="text-slate-600 text-center text-sm leading-relaxed">${esc(state.content.floorPlanDescription)}</p>
 
-            ${ content.onlinePlansLink ? `
+            ${ state.content.onlinePlansLink ? `
               <div class="text-center mt-2">
-                <a href="${esc(content.onlinePlansLink)}" target="_blank" rel="noopener noreferrer"
+                <a href="${esc(state.content.onlinePlansLink)}" target="_blank" rel="noopener noreferrer"
                    class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a>
               </div>` : ''}
 
-            <!-- ✨ Styled 3D block like your screenshot -->
-            ${ content.sketchupLink ? `
+            ${ state.content.sketchupLink ? `
               <div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded">
                 <h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">
                   🏠 VIEW IN 3D
@@ -372,7 +380,7 @@
                 <p class="text-slate-700 text-sm mb-4">
                   Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.
                 </p>
-                <a href="${esc(content.sketchupLink)}" target="_blank" rel="noopener noreferrer"
+                <a href="${esc(state.content.sketchupLink)}" target="_blank" rel="noopener noreferrer"
                    class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">
                   VIEW 3D MODEL
                 </a>
@@ -381,41 +389,45 @@
         </div>
       </div>
 
-      <!-- Page 3 -->
       <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
         <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
-            <div class="text-sm text-slate-500">PROJECT ${esc(content.projectNumber)} | PAGE 03</div>
+            <div class="text-sm text-slate-500">PROJECT ${esc(state.content.projectNumber)} | PAGE 03</div>
           </div>
         </div>
         <div class="px-8 flex-1 flex flex-col">
           <div class="grid grid-cols-2 gap-12 mb-12">
             <div class="space-y-6">
               <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">PROJECT TIMELINE</h3>
-              <div class="space-y-6">${timeline}</div>
+              <div class="space-y-6">${(state.content.timeline||[]).map((it,i)=>{
+                const colors = ["bg-amber-500","bg-slate-400","bg-slate-500","bg-slate-600","bg-slate-700"];
+                const color = colors[i % colors.length];
+                return `<div class="flex items-start space-x-4"><div class="w-4 h-4 ${color} flex-shrink-0 mt-1"></div><div class="flex-1"><div class="font-bold text-slate-800 tracking-wide text-sm uppercase">${esc(it.period)}</div><div class="text-slate-600 text-base mt-1">${esc(it.task)}</div></div></div>`;
+              }).join("")}</div>
             </div>
             <div class="space-y-6">
               <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">NEXT STEPS</h3>
-              <div class="space-y-4">${steps}</div>
+              <div class="space-y-4">${(state.content.nextSteps||[]).map((s,i)=>`
+                <div class="flex items-start space-x-3">
+                  <div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center">
+                    <span class="text-slate-800 font-bold text-sm">${i+1}</span>
+                  </div>
+                  <span class="text-slate-700 text-base leading-relaxed">${esc(s)}</span>
+                </div>`).join("")}</div>
             </div>
           </div>
           <div class="bg-slate-800 text-white p-8 text-center shadow-lg mb-6">
-            <p class="text-base leading-relaxed">${esc(content.closingNote)}</p>
+            <p class="text-base leading-relaxed">${esc(state.content.closingNote)}</p>
           </div>
           <div class="text-center mt-auto mb-6">
-            <div class="mb-3">
-              ${ images.logo
-                ? `<img src="${images.logo}" alt="Company Logo" class="max-w-24 max-h-10 mx-auto object-contain" />`
-                : `<div class="w-24 h-10 bg-slate-100 border border-slate-300 flex items-center justify-center mx-auto text-slate-400 text-xs">LOGO</div>`}
-            </div>
-            <div class="text-slate-500 text-xs tracking-widest uppercase">${esc(content.tagline)}</div>
+            <div class="text-slate-500 text-xs tracking-widest uppercase">${esc(state.content.tagline)}</div>
           </div>
         </div>
       </div>`;
-    }
 
-    function renderPreview(){ qs('#preview').innerHTML = buildClientInner(state.content, state.images); }
+      qs('#preview').innerHTML = inner + pageTwoThree;
+    }
 
     function wireEditor(){
       const bindVal = (sel, key)=>{ const el=qs(sel); el.value=state.content[key]||''; el.oninput=(e)=>{ state.content[key]=e.target.value; renderPreview(); }; };
@@ -429,7 +441,6 @@
       bindVal('#in_plans','onlinePlansLink');
       bindVal('#in_sketchup','sketchupLink');
 
-      // build visual assets grid
       const assetDefs = [
         ['logo','Company Logo'],
         ['shakerRender','Shaker Kitchen'],
@@ -438,8 +449,7 @@
         ['euroVanity','Euro Vanity'],
         ['floorPlan','Floor Plan'],
       ];
-      const grid = qs('#assetsGrid');
-      grid.innerHTML = '';
+      const grid = qs('#assetsGrid'); grid.innerHTML = '';
       assetDefs.forEach(([key,label])=>{
         const wrap = document.createElement('div');
         wrap.innerHTML = `
@@ -498,44 +508,35 @@
       qs('#btnAddStep').onclick = ()=>{ state.content.nextSteps.push('New step'); wireEditor(); renderPreview(); };
     }
 
-    // ====== EXPORT (client HTML with 3 pages) ======
     function exportClient(){
-      const inner = buildClientInner(state.content, state.images);
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${esc(state.content.title)} - ${esc(state.content.clientName)}</title><script src="https://cdn.tailwindcss.com"><\/script><style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.print\\:hidden{display:none!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}.proposal-container,body{background:#fff!important}body{font-size:12px!important}}.proposal-page{display:flex;flex-direction:column;min-height:800px;box-sizing:border-box}.content-section{overflow-wrap:break-word;word-wrap:break-word}</style></head><body><div class="bg-white shadow-sm border-b border-slate-200 print:hidden"><div class="max-w-4xl mx-auto p-4 text-center"><h1 class="text-2xl font-light text-slate-800 mb-4">${esc(state.content.title)}</h1><button onclick="window.print()" class="bg-slate-800 text-white px-8 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Download PDF</button></div></div><div class="proposal-container max-w-none mx-auto bg-white">${inner}</div></body></html>`;
+      const innerStart = buildClientInner(state.content, state.images);
+      const tmp = document.createElement('div'); tmp.innerHTML = ''; // not used here, but keeping structure symmetric
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${esc(state.content.title)} - ${esc(state.content.clientName)}</title><script src="https://cdn.tailwindcss.com"><\/script><style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}}</style></head><body><div class="proposal-container max-w-none mx-auto bg-white">${document.getElementById('preview').innerHTML}</div></body></html>`;
       const blob = new Blob([html], {type:"text/html"});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download=`${state.content.projectNumber}_${state.content.clientName.replace(/\s+/g,'_')}_Proposal.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
 
-    // ====== CLIENT VIEW (open same page in clean window) ======
     function openClientView(){
-      const inner = buildClientInner(state.content, state.images);
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${esc(state.content.title)} - ${esc(state.content.clientName)}</title><script src="https://cdn.tailwindcss.com"><\/script><style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.print\\:hidden{display:none!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}.proposal-container,body{background:#fff!important}body{font-size:12px!important}}.proposal-page{display:flex;flex-direction:column;min-height:800px;box-sizing:border-box}.content-section{overflow-wrap:break-word;word-wrap:break-word}</style></head><body><div class="bg-white shadow-sm border-b border-slate-200 print:hidden"><div class="max-w-4xl mx-auto p-4 text-center"><button onclick="window.print()" class="bg-slate-800 text-white px-8 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Download PDF</button></div></div><div class="proposal-container max-w-none mx-auto bg-white">${inner}</div></body></html>`;
-      const win = window.open('', '_blank');
-      win.document.write(html);
-      win.document.close();
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${esc(state.content.title)} - ${esc(state.content.clientName)}</title><script src="https://cdn.tailwindcss.com"><\/script><style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}}</style></head><body><div class="proposal-container max-w-none mx-auto bg-white">${document.getElementById('preview').innerHTML}</div></body></html>`;
+      const win = window.open('', '_blank'); win.document.write(html); win.document.close();
     }
 
-    // ====== APP START ======
     (async function start(){
       const fb = qs('#fallback'); const app = qs('#app');
       try{
         app.classList.remove('hidden'); if (fb) fb.classList.add('hidden');
-
         setStatus('Connecting to Supabase…');
         await ensureAuth();
         setStatus('Connected.');
 
-        // Buttons
         qs('#btnSave').onclick = async ()=>{
           const name = prompt('Name this proposal (unique)') || state.content.projectNumber || state.content.clientName || 'Untitled';
           try {
             await upsertProposal(name.trim(), { content: state.content, images: state.images });
             state.name = name.trim();
             setStatus(`Saved "${state.name}" to cloud.`);
-          } catch (e) {
-            console.error(e); alert('Save failed: ' + (e.message||e));
-          }
+          } catch (e) { console.error(e); alert('Save failed: ' + (e.message||e)); }
         };
 
         qs('#btnLoad').onclick = async ()=>{
@@ -543,43 +544,37 @@
             const items = await listProposals();
             state.saved = items;
             const modal = qs('#loadModal'); const list = qs('#savedList');
-            list.innerHTML = '';
-            if (items.length === 0) {
-              list.innerHTML = '<div class="text-slate-500 text-center py-6">No proposals found.</div>';
-            } else {
-              items.forEach((p)=>{
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between p-3 border border-slate-200 rounded';
-                row.innerHTML = `
-                  <div>
-                    <div class="font-medium text-slate-800">${esc(p.name)}</div>
-                    <div class="text-xs text-slate-500">Saved: ${new Date(p.savedAt).toLocaleString()}</div>
-                  </div>
-                  <div class="flex gap-2">
-                    <button class="bg-blue-600 text-white px-3 py-1 text-xs rounded">Load</button>
-                    <button class="bg-red-600 text-white px-3 py-1 text-xs rounded">Delete</button>
-                  </div>`;
-                const [btnLoad, btnDel] = row.querySelectorAll('button');
-                btnLoad.onclick = ()=>{
-                  state.name = p.name;
-                  state.content = p.content || state.content;
-                  state.images  = p.images || state.images;
-                  renderPreview(); wireEditor();
-                  modal.classList.add('hidden');
-                  setStatus(`Loaded "${p.name}".`);
-                };
-                btnDel.onclick = async ()=>{
-                  if(!confirm(`Delete "${p.name}"?`)) return;
-                  try { await deleteProposal(p.name); row.remove(); setStatus(`Deleted "${p.name}".`); }
-                  catch (e) { alert('Delete failed: ' + (e.message||e)); }
-                };
-                list.appendChild(row);
-              });
-            }
+            list.innerHTML = items.length ? '' : '<div class="text-slate-500 text-center py-6">No proposals found.</div>';
+            items.forEach((p)=>{
+              const row = document.createElement('div');
+              row.className = 'flex items-center justify-between p-3 border border-slate-200 rounded';
+              row.innerHTML = `
+                <div>
+                  <div class="font-medium text-slate-800">${esc(p.name)}</div>
+                  <div class="text-xs text-slate-500">Saved: ${new Date(p.savedAt).toLocaleString()}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="bg-blue-600 text-white px-3 py-1 text-xs rounded">Load</button>
+                  <button class="bg-red-600 text-white px-3 py-1 text-xs rounded">Delete</button>
+                </div>`;
+              const [btnLoad, btnDel] = row.querySelectorAll('button');
+              btnLoad.onclick = ()=>{
+                state.name = p.name;
+                state.content = p.content || state.content;
+                state.images  = p.images || state.images;
+                renderPreview(); wireEditor();
+                modal.classList.add('hidden');
+                setStatus(`Loaded "${p.name}".`);
+              };
+              btnDel.onclick = async ()=>{
+                if(!confirm(`Delete "${p.name}"?`)) return;
+                try { await deleteProposal(p.name); row.remove(); setStatus(`Deleted "${p.name}".`); }
+                catch (e) { alert('Delete failed: ' + (e.message||e)); }
+              };
+              list.appendChild(row);
+            });
             modal.classList.remove('hidden');
-          } catch (e) {
-            console.error(e); alert('Load failed: ' + (e.message||e));
-          }
+          } catch (e) { console.error(e); alert('Load failed: ' + (e.message||e)); }
         };
 
         qs('#btnCloseLoad').onclick = ()=> qs('#loadModal').classList.add('hidden');
@@ -587,7 +582,6 @@
         qs('#btnClientView').onclick = openClientView;
         qs('#btnPDF').onclick = ()=> window.print();
 
-        // Wire inputs + first render
         wireEditor();
         renderPreview();
         setStatus('Ready.');
@@ -600,3 +594,8 @@
   </script>
 </body>
 </html>
+"""
+with open(out_path, "w") as f:
+    f.write(html)
+
+out_path
