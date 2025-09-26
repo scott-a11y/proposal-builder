@@ -1,4 +1,4 @@
-# Retry: avoid deep f-string nesting by inserting a placeholder then replace with base64.
+# Generate a fresh FINAL build with your requested logo behavior and a new download link
 import base64, pathlib
 
 logo_path = pathlib.Path("/mnt/data/Foundry-Cabinetco-Logo-1-Black-Text.png")
@@ -6,164 +6,64 @@ b64_logo = ""
 if logo_path.exists():
     b64_logo = "data:image/png;base64," + base64.b64encode(logo_path.read_bytes()).decode("utf-8")
 
-out_path = "/mnt/data/index-full-proposal-builder-MERGED.html"
-
-html = """<!DOCTYPE html>
+html = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Foundry Cabinet · Co — Proposal Builder</title>
-  <meta name="color-scheme" content="light"/>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      body * { visibility: hidden !important; }
-      .proposal-print, .proposal-print * { visibility: visible !important; }
-      .proposal-print { position: absolute; left: 0; top: 0; width: 100%; }
+      .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
       @page { size: 8.5in 11in; margin: 0.25in; }
       .proposal-container, body { background: white !important; }
       body { font-size: 12px !important; }
-      .print\\:hidden { display: none !important; }
     }
-    .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
+    .proposal-page { display: flex; flex-direction: column; min-height: 800px; box-sizing: border-box; }
     .content-section { overflow-wrap: break-word; word-wrap: break-word; }
-    .hidden { display: none; }
-    #headerLogo { filter: none !important; mix-blend-mode: normal !important; }
+    /* Keep logo colors; no filters to avoid smearing */
+    .logo-clean { filter: none; mix-blend-mode: normal; }
+    .footer-text { line-height: 1.25; }
+    .footer-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); margin: 12px auto; width: 260px; }
   </style>
 </head>
 <body class="bg-slate-100">
-  <!-- Fallback (shows if something fails early) -->
-  <div id="fallback" class="max-w-3xl mx-auto mt-6 p-4 bg-white border border-slate-200 rounded-lg shadow print:hidden">
-    <div class="text-lg font-medium text-slate-800">Foundry Cabinet · Co — Proposal Builder</div>
-    <div class="text-slate-600 text-sm">If this message doesn’t disappear shortly, open Console (F12) for errors.</div>
-  </div>
+  <div id="root"></div>
 
-  <!-- App -->
-  <div id="app" class="hidden">
-    <!-- Top bar (editor) -->
-    <div class="bg-white shadow border-b border-slate-200 print:hidden">
-      <div class="max-w-7xl mx-auto p-6">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 class="text-2xl font-light text-slate-800">Full Proposal Builder — Supabase</h1>
-            <div id="status" class="text-xs text-slate-500 mt-1">Initializing…</div>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <button id="btnSave"   class="bg-green-600 text-white px-4 py-2 text-sm rounded shadow">Save</button>
-            <button id="btnLoad"   class="bg-blue-600 text-white px-4 py-2 text-sm rounded shadow">Load</button>
-            <button id="btnExport" class="bg-orange-600 text-white px-4 py-2 text-sm rounded shadow">Export for Client</button>
-            <button id="btnClientView" class="bg-slate-700 text-white px-4 py-2 text-sm rounded shadow">Open Client View</button>
-            <button id="btnPDF"    class="bg-purple-600 text-white px-4 py-2 text-sm rounded shadow">Generate PDF</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  <script type="text/babel">
+    const { createClient } = supabase;
+    const SUPABASE_URL = 'https://nqzyoegnquyqfngmaktn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac';
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <!-- Editor (print hidden) -->
-    <div class="max-w-7xl mx-auto p-6 grid md:grid-cols-3 gap-6 print:hidden">
-      <div class="space-y-3">
-        <div class="text-lg font-medium text-slate-800">Visual Assets</div>
-        <div id="assetsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-      </div>
-      <div class="md:col-span-2 space-y-3">
-        <div class="text-lg font-medium text-slate-800">Content</div>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs uppercase text-slate-600 mb-1">Client Name</label>
-            <input id="in_clientName" class="w-full p-2 border border-slate-300"/>
-          </div>
-          <div>
-            <label class="block text-xs uppercase text-slate-600 mb-1">Project Number</label>
-            <input id="in_projectNumber" class="w-full p-2 border border-slate-300"/>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-xs uppercase text-slate-600 mb-1">Title</label>
-            <input id="in_title" class="w-full p-2 border border-slate-300"/>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-xs uppercase text-slate-600 mb-1">Executive Summary</label>
-            <textarea id="in_exec" rows="3" class="w-full p-2 border border-slate-300"></textarea>
-          </div>
-          <div>
-            <label class="block text-xs uppercase text-slate-600 mb-1">Total Investment</label>
-            <input id="in_invest" class="w-full p-2 border border-slate-300"/>
-          </div>
-          <div>
-            <label class="block text-xs uppercase text-slate-600 mb-1">Warranty (years)</label>
-            <input id="in_wyears" class="w-full p-2 border border-slate-300"/>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-xs uppercase text-slate-600 mb-1">Warranty Text</label>
-            <textarea id="in_wtext" rows="2" class="w-full p-2 border border-slate-300"></textarea>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-xs uppercase text-slate-600 mb-1">Online Plans Link (optional)</label>
-            <input id="in_plans" placeholder="https://…" class="w-full p-2 border border-slate-300"/>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-xs uppercase text-slate-600 mb-1">SketchUp 3D Link (optional)</label>
-            <input id="in_sketchup" placeholder="https://…" class="w-full p-2 border border-slate-300"/>
-          </div>
-        </div>
+    const { useState, useEffect } = React;
 
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs uppercase text-slate-600">Project Timeline</label>
-            <button id="btnAddPhase" class="px-2 py-1 bg-slate-700 text-white text-xs rounded">Add Phase</button>
-          </div>
-          <div id="timelineList" class="space-y-2"></div>
-        </div>
-
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs uppercase text-slate-600">Next Steps</label>
-            <button id="btnAddStep" class="px-2 py-1 bg-slate-700 text-white text-xs rounded">Add Step</button>
-          </div>
-          <div id="stepsList" class="space-y-2"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Printable Proposal -->
-    <div class="proposal-container max-w-none mx-auto bg-white proposal-print">
-      <div id="preview"></div>
-    </div>
-  </div>
-
-  <!-- Load modal (print hidden) -->
-  <div id="loadModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 print:hidden">
-    <div class="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-light text-slate-800">Saved Proposals</h2>
-        <button id="btnCloseLoad" class="text-slate-400 hover:text-slate-600 text-2xl">×</button>
-      </div>
-      <div id="savedList" class="space-y-2"></div>
-    </div>
-  </div>
-
-  <script>
-    // --- Config ---
-    const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
-
-    // ✅ Hard-embedded base64 logo (set-and-forget)
     const EMBED_LOGO = "__EMBED_LOGO__";
 
-    // --- State ---
-    const state = {{
-      name: "",
-      images: {{
-        logo: EMBED_LOGO, // baked-in logo for cover header by default
-        shakerRender:null, euroRender:null, shakerVanity:null, euroVanity:null, floorPlan:null
-      }},
-      content: {{
+    function ProposalBuilder() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isClientMode = urlParams.get('client') === 'true';
+
+      const [savedProposals, setSavedProposals] = useState([]);
+      const [currentProposalName, setCurrentProposalName] = useState('');
+      const [showLoadDialog, setShowLoadDialog] = useState(false);
+
+      const [images, setImages] = useState({
+        logo: EMBED_LOGO,
+        shakerRender: null, euroRender: null, shakerVanity: null, euroVanity: null, floorPlan: null
+      });
+
+      const [content, setContent] = useState({
         title: "Custom Cabinet Proposal – Forest Grove, Oregon",
         projectNumber: "FCB-2025-001",
-        date: new Date().toLocaleDateString("en-US",{{year:"numeric",month:"long",day:"numeric"}}),
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         clientName: "Valued Client",
         executiveSummary: "We are pleased to present this proposal for custom cabinetry for your Forest Grove home. Our proposal includes two distinct style options: classic Shaker and modern Euro/Flat Panel designs, allowing you to choose the perfect aesthetic for your space.",
         totalInvestment: "$7,595",
@@ -180,392 +80,326 @@ html = """<!DOCTYPE html>
         tagline: "Driven by Precision. Evolved by Design.",
         address: "866 N Columbia Blvd, Suite B-110, Portland, OR 97217",
         timeline: [
-          {{ period:"WEEKS 1–2", task:"Design Development & Final Approval" }},
-          {{ period:"WEEKS 3–6", task:"Material Procurement & Shop Preparation" }},
-          {{ period:"WEEKS 7–12", task:"Custom Fabrication & Finishing" }},
-          {{ period:"WEEKS 13–14", task:"Professional Installation" }},
-          {{ period:"WEEK 15", task:"Final Walkthrough & Warranty Activation" }}
+          { period: "WEEKS 1–2", task: "Design Development & Final Approval" },
+          { period: "WEEKS 3–6", task: "Material Procurement & Shop Preparation" },
+          { period: "WEEKS 7–12", task: "Custom Fabrication & Finishing" },
+          { period: "WEEKS 13–14", task: "Professional Installation" },
+          { period: "WEEK 15", task: "Final Walkthrough & Warranty Activation" }
         ],
-        nextSteps: ["Select Shaker or Euro style","Approve proposal & sign agreement","Submit deposit to secure schedule"]
-      }},
-      saved: []
-    }};
+        nextSteps: ["Select Shaker or Euro style", "Approve proposal & sign agreement", "Submit deposit to secure schedule"]
+      });
 
-    // --- Helpers ---
-    const qs  = (s, el=document)=> el.querySelector(s);
-    const esc = (s)=> String(s||"").replace(/[&<>"']/g, (m)=>({{ "&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;" }}[m]));
-    const onFileToDataURL = (file, cb)=>{{ const r=new FileReader(); r.onload=(e)=>cb(e.target.result); r.readAsDataURL(file); }};
-    function setStatus(msg){{ const el=qs('#status'); if(el) el.textContent = msg; }}
-
-    // --- Supabase ---
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    async function ensureAuth(){{ const {{ data }} = await db.auth.getUser(); if(!data?.user){{ await db.auth.signInAnonymously(); }} }}
-    async function listProposals(){{ const {{ data, error }} = await db.from("proposals").select("name, created_at, content, images").order("created_at",{{ascending:false}}); if (error) throw error; return (data||[]).map(p=>({{ name:p.name, savedAt:p.created_at, content:p.content, images:p.images }})); }}
-    async function upsertProposal(name, payload){{
-      let {{ data: existing, error: selErr }} = await db.from("proposals").select("name").eq("name", name).maybeSingle();
-      if (selErr) throw selErr;
-      if (existing) {{
-        const {{ error }} = await db.from("proposals").update(payload).eq("name", name);
+      // Supabase utils
+      async function listProposals() {
+        const { data, error } = await supabaseClient
+          .from('proposals')
+          .select('name, created_at, content, images')
+          .order('created_at', { ascending: false });
         if (error) throw error;
-      }} else {{
-        const {{ error }} = await db.from("proposals").insert({{ name, ...payload }});
+        return (data || []).map(p => ({
+          name: p.name, savedAt: p.created_at, content: p.content, images: p.images
+        }));
+      }
+
+      async function upsertProposal(name, payload) {
+        const { data: existing, error: selErr } = await supabaseClient
+          .from('proposals')
+          .select('name').eq('name', name).maybeSingle();
+        if (selErr) throw selErr;
+        if (existing) {
+          const { error } = await supabaseClient.from('proposals').update(payload).eq('name', name);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.from('proposals').insert({ name, ...payload });
+          if (error) throw error;
+        }
+      }
+
+      async function deleteProposal(name) {
+        const { error } = await supabaseClient.from('proposals').delete().eq('name', name);
         if (error) throw error;
-      }}
-    }}
-    async function deleteProposal(name){{ const {{ error }} = await db.from("proposals").delete().eq("name", name); if (error) throw error; }}
+      }
 
-    // --- Render Parts ---
-    function footerHTML(content){{
-      const logo = EMBED_LOGO ? `<img src="${{EMBED_LOGO}}" alt="Company Logo" class="mx-auto max-h-10 object-contain mb-2" />` : "";
-      return `
-        <div class="bg-slate-800 text-white p-4 text-center">
-          ${{logo}}
-          <div class="text-sm tracking-wide">${{esc(content.tagline)}}</div>
-          <div class="text-xs text-slate-400 mt-1">${{esc(content.address)}}</div>
-        </div>`;
-    }}
+      const handleSaveClick = async () => {
+        const name = prompt('Enter a name for this proposal:');
+        if (!name || !name.trim()) return;
+        try {
+          await upsertProposal(name.trim(), { content, images });
+          setCurrentProposalName(name.trim());
+          const items = await listProposals();
+          setSavedProposals(items);
+          alert('Saved "' + name + '" to cloud.');
+        } catch (e) { alert('Save failed: ' + e.message); }
+      };
 
-    function coverHeaderHTML(content, images){{
-      const logo = images.logo
-        ? `<img id="headerLogo" src="${{images.logo}}" alt="Company Logo" class="max-w-full max-h-12 object-contain" />`
-        : `<div class="w-36 h-12 flex items-center justify-center bg-white/80 border border-white/60 rounded text-slate-500 text-xs">LOGO</div>`;
-      const titleA = esc(content.title).split("–")[0]||"";
-      const titleB = esc(content.title).split("–")[1]||"";
-      return `
-        <div class="bg-gradient-to-r from-slate-800 to-slate-700 p-8 relative">
-          <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
-          <div class="flex justify-between items-start">
-            <div class="flex items-center gap-6">
-              <div class="bg-white rounded-lg p-2 shadow-sm border border-white/70 w-44 h-16 flex items-center justify-center">
-                ${{logo}}
-              </div>
-              <div class="h-12 w-px bg-white/30"></div>
-              <div class="text-white">
-                <div class="text-2xl font-light tracking-wide">FOUNDRY</div>
-                <div class="text-lg font-light tracking-widest text-slate-300">CABINET&nbsp;·&nbsp;CO</div>
-                <div class="text-xs font-light tracking-wide text-slate-400 mt-1">by District Design Build, LLC</div>
-              </div>
-            </div>
-            <div class="text-right text-white text-sm">
-              <div class="font-medium tracking-wide">PROJECT ${{esc(content.projectNumber)}}</div>
-              <div class="text-slate-300">${{esc(content.date)}}</div>
-            </div>
-          </div>
-        </div>
-        <div class="flex-1 flex flex-col justify-center items-center text-center px-16 py-12">
-          <div class="max-w-4xl">
-            <div class="mb-8">
-              <div class="text-sm font-medium text-slate-600 uppercase tracking-widest mb-4">CUSTOM CABINETRY PROPOSAL</div>
-              <h1 class="text-4xl font-light text-slate-800 mb-6 leading-tight tracking-tight">
-                ${{titleA}}<br/><span class="text-2xl text-slate-600">${{titleB||""}}</span>
-              </h1>
-              <div class="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto"></div>
-            </div>
-            <div class="bg-slate-50 p-8 border-l-4 border-slate-800 text-left shadow-lg">
-              <div class="grid md:grid-cols-2 gap-8 mb-6">
-                <div class="text-center">
-                  <div class="text-3xl font-light text-slate-800 mb-2">${{esc(content.totalInvestment)}}</div>
-                  <div class="text-sm text-slate-600 uppercase tracking-wide">Investment</div>
-                </div>
-                <div class="text-center">
-                  <div class="text-3xl font-light text-slate-800 mb-2">${{esc(content.warrantyYears)}}</div>
-                  <div class="text-sm text-slate-600 uppercase tracking-wide">Year Warranty</div>
-                </div>
-              </div>
-              <p class="text-base leading-relaxed text-slate-700 mb-4">${{esc(content.executiveSummary)}}</p>
-              <p class="text-sm text-slate-600">${{esc(content.warrantyText)}}</p>
-            </div>
-          </div>
-        </div>`;
-    }}
+      const handleLoadClick = async () => {
+        try {
+          const items = await listProposals();
+          setSavedProposals(items);
+          setShowLoadDialog(true);
+        } catch (e) { alert('Load failed: ' + e.message); }
+      };
 
-    function pageTwoHTML(content, images){{
-      return `
-      <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
-        <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
-          <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-light text-slate-800 tracking-tight">Design Options & Layout</h2>
-            <div class="text-sm text-slate-500">PROJECT ${{esc(content.projectNumber)}} | PAGE 02</div>
-          </div>
-        </div>
-        <div class="px-8 flex-1">
-          <div class="grid grid-cols-2 gap-12 mb-12">
-            <div class="space-y-6">
-              <div class="text-center">
-                <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">SHAKER STYLE</h3>
-                <div class="mb-6">
-                  <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.shakerRender ? '<img src="'+images.shakerRender+'" alt="Shaker Kitchen" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>'}
-                  </div>
-                  <div class="mt-3 min-h-[80px] flex flex-col justify-start">
-                    <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${{esc(content.shakerDescription)}} </p>
-                  </div>
-                </div>
-                <div>
-                  <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.shakerVanity ? '<img src="'+images.shakerVanity+'" alt="Shaker Vanity" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>'}
-                  </div>
-                  <div class="mt-3 min-h-[80px] flex flex-col justify-start">
-                    <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${{esc(content.shakerVanityDescription)}}</p>
-                  </div>
+      // helpers
+      const esc = s => String(s || '').replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+
+      // Footer (cover + last page only)
+      const footerHTML = (c) => {
+        const logo = EMBED_LOGO ? `<img src="${EMBED_LOGO}" class="logo-clean mx-auto max-h-16 object-contain" style="margin-bottom:14px;" alt="Company Logo">` : "";
+        return `<div class="bg-slate-900 text-white p-6 text-center">${logo}<div class="footer-divider"></div><div class="text-sm tracking-wide footer-text" style="margin-top:8px;">${esc(c.tagline)}</div><div class="text-xs text-slate-400 mt-1 footer-text">${esc(c.address)}</div></div>`;
+      };
+
+      // Header (cover only)
+      const coverHeaderHTML = (c, imgs) => {
+        const logo = imgs.logo ? `<img id="headerLogo" src="${imgs.logo}" class="logo-clean max-h-16 md:max-h-20 object-contain" alt="Company Logo">` : "";
+        const [titleA, titleB=""] = String(c.title).split("–");
+        return `
+          <div class="bg-gradient-to-r from-slate-800 to-slate-700 p-8 relative">
+            <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+            <div class="flex justify-between items-start">
+              <div class="flex items-center gap-6">
+                ${logo}
+                <div class="h-12 w-px bg-white/30"></div>
+                <div class="text-white">
+                  <div class="text-2xl font-light tracking-wide">FOUNDRY</div>
+                  <div class="text-lg font-light tracking-widest text-slate-300">CABINET&nbsp;·&nbsp;CO</div>
+                  <div class="text-xs font-light tracking-wide text-slate-400 mt-1">by District Design Build, LLC</div>
                 </div>
               </div>
-            </div>
-            <div class="space-y-6">
-              <div class="text-center">
-                <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">EURO STYLE</h3>
-                <div class="mb-6">
-                  <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.euroRender ? '<img src="'+images.euroRender+'" alt="Euro Kitchen" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>'}
-                  </div>
-                  <div class="mt-3 min-h-[80px] flex flex-col justify-start">
-                    <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${{esc(content.euroDescription)}}</p>
-                  </div>
-                </div>
-                <div>
-                  <div class="bg-slate-50 p-4 shadow-lg h-48">
-                    ${images.euroVanity ? '<img src="'+images.euroVanity+'" alt="Euro Vanity" class="w-full h-full object-cover" />' : '<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>'}
-                  </div>
-                  <div class="mt-3 min-h-[80px] flex flex-col justify-start">
-                    <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
-                    <p class="text-slate-600 text-sm leading-relaxed">${{esc(content.euroVanityDescription)}}</p>
-                  </div>
-                </div>
+              <div class="text-right text-white text-sm">
+                <div class="font-medium tracking-wide">PROJECT ${esc(c.projectNumber)}</div>
+                <div class="text-slate-300">${esc(c.date)}</div>
               </div>
             </div>
           </div>
-
-          <div class="space-y-4">
-            <h3 class="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3>
-            <div class="bg-slate-50 p-8 shadow-lg">
-              ${images.floorPlan ? '<img src="'+images.floorPlan+'" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />' : '<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>'}
+          <div class="flex-1 flex flex-col justify-center items-center text-center px-16 py-12">
+            <div class="max-w-4xl">
+              <div class="mb-8">
+                <div class="text-sm font-medium text-slate-600 uppercase tracking-widest mb-4">CUSTOM CABINETRY PROPOSAL</div>
+                <h1 class="text-4xl font-light text-slate-800 mb-6 leading-tight tracking-tight">${esc(titleA)}<br/><span class="text-2xl text-slate-600">${esc(titleB)}</span></h1>
+                <div class="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto"></div>
+              </div>
+              <div class="bg-slate-50 p-8 border-l-4 border-slate-800 text-left shadow-lg">
+                <div class="grid md:grid-cols-2 gap-8 mb-6">
+                  <div class="text-center">
+                    <div class="text-3xl font-light text-slate-800 mb-2">${esc(c.totalInvestment)}</div>
+                    <div class="text-sm text-slate-600 uppercase tracking-wide">Investment</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-3xl font-light text-slate-800 mb-2">${esc(c.warrantyYears)}</div>
+                    <div class="text-sm text-slate-600 uppercase tracking-wide">Year Warranty</div>
+                  </div>
+                </div>
+                <p class="text-base leading-relaxed text-slate-700 mb-4">${esc(c.executiveSummary)}</p>
+                <p class="text-sm text-slate-600">${esc(c.warrantyText)}</p>
+              </div>
             </div>
-            <p class="text-slate-600 text-center text-sm leading-relaxed">${{esc(content.floorPlanDescription)}}</p>
-
-            ${ content.onlinePlansLink ? '<div class="text-center mt-2"><a href="'+esc(content.onlinePlansLink)+'" target="_blank" rel="noopener noreferrer" class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a></div>' : ''}
-
-            ${ content.sketchupLink ? '<div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded"><h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">🏠 VIEW IN 3D</h4><p class="text-slate-700 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p><a href="'+esc(content.sketchupLink)+'" target="_blank" rel="noopener noreferrer" class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">VIEW 3D MODEL</a></div>' : ''}
-          </div>
-        </div>
-        ${footerHTML(content)}
-      </div>`;
-    }}
-
-    function pageThreeHTML(content){{
-      const timeline = (content.timeline||[]).map((it,i)=>{{
-        const colors = ["bg-amber-500","bg-slate-400","bg-slate-500","bg-slate-600","bg-slate-700"];
-        const color = colors[i % colors.length];
-        return '<div class="flex items-start space-x-4"><div class="w-4 h-4 '+color+' flex-shrink-0 mt-1"></div><div class="flex-1"><div class="font-bold text-slate-800 tracking-wide text-sm uppercase">'+esc(it.period)+'</div><div class="text-slate-600 text-base mt-1">'+esc(it.task)+'</div></div></div>';
-      }}).join("");
-      const steps = (content.nextSteps||[]).map((s,i)=>'<div class="flex items-start space-x-3"><div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center"><span class="text-slate-800 font-bold text-sm">'+(i+1)+'</span></div><span class="text-slate-700 text-base leading-relaxed">'+esc(s)+'</span></div>').join("");
-
-      return `
-      <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
-        <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
-          <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
-            <div class="text-sm text-slate-500">PROJECT ${{esc(content.projectNumber)}} | PAGE 03</div>
-          </div>
-        </div>
-        <div class="px-8 flex-1 flex flex-col">
-          <div class="grid grid-cols-2 gap-12 mb-12">
-            <div class="space-y-6">
-              <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">PROJECT TIMELINE</h3>
-              <div class="space-y-6">${{timeline}}</div>
-            </div>
-            <div class="space-y-6">
-              <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">NEXT STEPS</h3>
-              <div class="space-y-4">${{steps}}</div>
-            </div>
-          </div>
-          <div class="bg-slate-800 text-white p-8 text-center shadow-lg mb-6">
-            <p class="text-base leading-relaxed">${{esc(content.closingNote)}}</p>
-          </div>
-          ${footerHTML(content)}
-        </div>
-      </div>`;
-    }}
-
-    function coverPageHTML(content, images){{
-      return `
-      <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
-        ${coverHeaderHTML(content, images)}
-        ${footerHTML(content)}
-      </div>`;
-    }}
-
-    function renderPreview(){{
-      const p1 = coverPageHTML(state.content, state.images);
-      const p2 = pageTwoHTML(state.content, state.images);
-      const p3 = pageThreeHTML(state.content);
-      qs('#preview').innerHTML = p1 + p2 + p3;
-    }}
-
-    // --- Editor wiring ---
-    function wireEditor(){{
-      const bindVal = (sel, key)=>{{ const el=qs(sel); el.value=state.content[key]||''; el.oninput=(e)=>{{ state.content[key]=e.target.value; renderPreview(); }}; }};
-      bindVal('#in_clientName','clientName');
-      bindVal('#in_projectNumber','projectNumber');
-      bindVal('#in_title','title');
-      bindVal('#in_exec','executiveSummary');
-      bindVal('#in_invest','totalInvestment');
-      bindVal('#in_wyears','warrantyYears');
-      bindVal('#in_wtext','warrantyText');
-      bindVal('#in_plans','onlinePlansLink');
-      bindVal('#in_sketchup','sketchupLink');
-
-      const assetDefs = [
-        ['logo','Company Logo'], ['shakerRender','Shaker Kitchen'], ['euroRender','Euro Kitchen'],
-        ['shakerVanity','Shaker Vanity'], ['euroVanity','Euro Vanity'], ['floorPlan','Floor Plan'],
-      ];
-      const grid = qs('#assetsGrid'); grid.innerHTML = '';
-      assetDefs.forEach(([key,label])=>{{
-        const wrap = document.createElement('div');
-        wrap.innerHTML = `
-          <label class="block text-xs uppercase text-slate-600 mb-1">${{label}}</label>
-          <input id="file_${{key}}" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
-          <div class="mt-2 border border-slate-200 bg-white h-32 flex items-center justify-center overflow-hidden">
-            <span class="text-slate-400 text-xs">No image</span>
           </div>`;
-        const input = wrap.querySelector('input');
-        const preview = wrap.querySelector('div');
-        const updatePreview = ()=>{{ if (state.images[key]) {{ preview.innerHTML = `<img src="${{state.images[key]}}" alt="${{label}}" class="object-contain w-full h-32"/>`; }} else {{ preview.innerHTML = `<span class="text-slate-400 text-xs">No image</span>`; }} }};
-        updatePreview();
-        input.onchange = (e)=>{{ const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev)=>{{ state.images[key]=ev.target.result; updatePreview(); renderPreview(); }}; r.readAsDataURL(f); }};
-        grid.appendChild(wrap);
-      }});
+      };
 
-      // timeline
-      const tRoot = qs('#timelineList'); tRoot.innerHTML='';
-      state.content.timeline.forEach((t, idx)=>{{
-        const row = document.createElement('div');
-        row.className = 'grid grid-cols-3 gap-2 items-center';
-        row.innerHTML = `
-          <input class="p-2 border border-slate-300 text-sm" value="${{esc(t.period)}}"/>
-          <input class="p-2 border border-slate-300 text-sm" value="${{esc(t.task)}}"/>
-          <button class="px-2 py-1 bg-red-600 text-white text-xs rounded">Remove</button>`;
-        const [pIn, tIn, rm] = row.querySelectorAll('input,button');
-        pIn.oninput = (e)=>{{ t.period = e.target.value; renderPreview(); }};
-        tIn.oninput = (e)=>{{ t.task   = e.target.value; renderPreview(); }};
-        rm.onclick  = ()=>{{ state.content.timeline.splice(idx,1); wireEditor(); renderPreview(); }};
-        tRoot.appendChild(row);
-      }});
-      qs('#btnAddPhase').onclick = ()=>{{ state.content.timeline.push({{period:'NEW PERIOD', task:'New Task'}}); wireEditor(); renderPreview(); }};
-
-      // steps
-      const sRoot = qs('#stepsList'); sRoot.innerHTML='';
-      state.content.nextSteps.forEach((s, idx)=>{{
-        const row = document.createElement('div');
-        row.className = 'grid grid-cols-4 gap-2 items-center';
-        row.innerHTML = `
-          <input class="col-span-3 p-2 border border-slate-300 text-sm" value="${{esc(s)}}"/>
-          <button class="px-2 py-1 bg-red-600 text-white text-xs rounded">Remove</button>`;
-        const [sIn, rm] = row.querySelectorAll('input,button');
-        sIn.oninput = (e)=>{{ state.content.nextSteps[idx]=e.target.value; renderPreview(); }};
-        rm.onclick  = ()=>{{ state.content.nextSteps.splice(idx,1); wireEditor(); renderPreview(); }};
-        sRoot.appendChild(row);
-      }});
-      qs('#btnAddStep').onclick = ()=>{{ state.content.nextSteps.push('New step'); wireEditor(); renderPreview(); }};
-    }}
-
-    // --- Export / Client View ---
-    function exportClient(){{
-      // Export a clean client HTML containing just the proposal (no editor UI)
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${{esc(state.content.title)}} - ${{esc(state.content.clientName)}}</title><script src="https://cdn.tailwindcss.com"><\\/script><style>@media print{{*{{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}.proposal-page{{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}}@page{{size:8.5in 11in;margin:0.25in}}}</style></head><body><div class="proposal-container max-w-none mx-auto bg-white">${{qs('#preview').innerHTML}}</div></body></html>`;
-      const blob = new Blob([html], {{type:"text/html"}});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href=url; a.download=`${{state.content.projectNumber}}_${{state.content.clientName.replace(/\\s+/g,'_')}}_Proposal.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    }}
-
-    function openClientView(){{
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>${{esc(state.content.title)}} - ${{esc(state.content.clientName)}}</title><script src="https://cdn.tailwindcss.com"><\\/script><style>@media print{{*{{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}.proposal-page{{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}}@page{{size:8.5in 11in;margin:0.25in}}}</style></head><body><div class="proposal-container max-w-none mx-auto bg-white">${{qs('#preview').innerHTML}}</div></body></html>`;
-      const win = window.open('', '_blank'); win.document.write(html); win.document.close();
-    }}
-
-    // --- Start ---
-    (async function start(){{
-      const fb = qs('#fallback'); const app = qs('#app');
-      try{{
-        app.classList.remove('hidden'); if (fb) fb.classList.add('hidden');
-        setStatus('Connecting to Supabase…');
-        await ensureAuth();
-        setStatus('Connected.');
-
-        // wire buttons
-        qs('#btnSave').onclick = async ()=>{{
-          const name = prompt('Name this proposal (unique)') || state.content.projectNumber || state.content.clientName || 'Untitled';
-          try {{
-            await upsertProposal(name.trim(), {{ content: state.content, images: state.images }});
-            state.name = name.trim();
-            setStatus(`Saved "${{state.name}}" to cloud.`);
-          }} catch (e) {{ console.error(e); alert('Save failed: ' + (e.message||e)); }}
-        }};
-
-        qs('#btnLoad').onclick = async ()=>{{
-          try {{
-            const items = await listProposals();
-            state.saved = items;
-            const modal = qs('#loadModal'); const list = qs('#savedList');
-            list.innerHTML = items.length ? '' : '<div class="text-slate-500 text-center py-6">No proposals found.</div>';
-            items.forEach((p)=>{{
-              const row = document.createElement('div');
-              row.className = 'flex items-center justify-between p-3 border border-slate-200 rounded';
-              row.innerHTML = `
-                <div>
-                  <div class="font-medium text-slate-800">${{esc(p.name)}}</div>
-                  <div class="text-xs text-slate-500">Saved: ${{new Date(p.savedAt).toLocaleString()}}</div>
+      // Middle page (no header/footer logos)
+      const pageTwoHTML = (c, imgs) => {
+        return `
+        <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+          <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
+            <div class="flex justify-between items-center">
+              <h2 class="text-2xl font-light text-slate-800 tracking-tight">Design Options & Layout</h2>
+              <div class="text-sm text-slate-500">PROJECT ${esc(c.projectNumber)} | PAGE 02</div>
+            </div>
+          </div>
+          <div class="px-8 flex-1">
+            <div class="grid grid-cols-2 gap-12 mb-12">
+              <div class="space-y-6">
+                <div class="text-center">
+                  <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">SHAKER STYLE</h3>
+                  <div class="mb-6">
+                    <div class="bg-slate-50 p-4 shadow-lg h-48">
+                      ${imgs.shakerRender ? `<img src="${imgs.shakerRender}" alt="Shaker Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>`}
+                    </div>
+                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                      <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
+                      <p class="text-slate-600 text-sm leading-relaxed">${esc(c.shakerDescription)}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="bg-slate-50 p-4 shadow-lg h-48">
+                      ${imgs.shakerVanity ? `<img src="${imgs.shakerVanity}" alt="Shaker Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>`}
+                    </div>
+                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                      <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
+                      <p class="text-slate-600 text-sm leading-relaxed">${esc(c.shakerVanityDescription)}</p>
+                    </div>
+                  </div>
                 </div>
-                <div class="flex gap-2">
-                  <button class="bg-blue-600 text-white px-3 py-1 text-xs rounded">Load</button>
-                  <button class="bg-red-600 text-white px-3 py-1 text-xs rounded">Delete</button>
-                </div>`;
-              const [btnLoad, btnDel] = row.querySelectorAll('button');
-              btnLoad.onclick = ()=>{{
-                state.name = p.name;
-                state.content = p.content || state.content;
-                state.images  = p.images || state.images;
-                if(!state.images.logo) state.images.logo = EMBED_LOGO; // ensure baked logo
-                renderPreview(); wireEditor();
-                modal.classList.add('hidden');
-                setStatus(`Loaded "${{p.name}}".`);
-              }};
-              btnDel.onclick = async ()=>{{
-                if(!confirm(`Delete "${{p.name}}"?`)) return;
-                try {{ await deleteProposal(p.name); row.remove(); setStatus(`Deleted "${{p.name}}".`); }}
-                catch (e) {{ alert('Delete failed: ' + (e.message||e)); }}
-              }};
-              list.appendChild(row);
-            }});
-            modal.classList.remove('hidden');
-          }} catch (e) {{ console.error(e); alert('Load failed: ' + (e.message||e)); }}
-        }};
+              </div>
+              <div class="space-y-6">
+                <div class="text-center">
+                  <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">EURO STYLE</h3>
+                  <div class="mb-6">
+                    <div class="bg-slate-50 p-4 shadow-lg h-48">
+                      ${imgs.euroRender ? `<img src="${imgs.euroRender}" alt="Euro Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>`}
+                    </div>
+                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                      <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
+                      <p class="text-slate-600 text-sm leading-relaxed">${esc(c.euroDescription)}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="bg-slate-50 p-4 shadow-lg h-48">
+                      ${imgs.euroVanity ? `<img src="${imgs.euroVanity}" alt="Euro Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>`}
+                    </div>
+                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                      <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
+                      <p class="text-slate-600 text-sm leading-relaxed">${esc(c.euroVanityDescription)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        qs('#btnCloseLoad').onclick = ()=> qs('#loadModal').classList.add('hidden');
-        qs('#btnExport').onclick = exportClient;
-        qs('#btnClientView').onclick = openClientView;
-        qs('#btnPDF').onclick = ()=> window.print();
+            <div class="space-y-4">
+              <h3 class="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3>
+              <div class="bg-slate-50 p-8 shadow-lg">
+                ${imgs.floorPlan ? `<img src="${imgs.floorPlan}" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />` : `<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>`}
+              </div>
+              <p class="text-slate-600 text-center text-sm leading-relaxed">${esc(c.floorPlanDescription)}</p>
 
-        wireEditor();
-        renderPreview();
-        setStatus('Ready.');
-      }}catch(err){{
-        console.error(err);
-        setStatus('Startup error: ' + (err?.message || err));
-        if (fb) {{ fb.classList.remove('hidden'); fb.querySelector('.text-slate-600').textContent = 'Error: ' + (err?.message || err); }}
-      }}
-    }})();
+              ${ c.onlinePlansLink ? `<div class="text-center mt-2"><a href="${esc(c.onlinePlansLink)}" target="_blank" rel="noopener noreferrer" class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a></div>` : ''}
+
+              ${ c.sketchupLink ? `<div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded"><h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">🏠 VIEW IN 3D</h4><p class="text-slate-700 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p><a href="${esc(c.sketchupLink)}" target="_blank" rel="noopener noreferrer" class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">VIEW 3D MODEL</a></div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      };
+
+      const pageThreeHTML = (c) => {
+        const timeline = (c.timeline||[]).map((it,i)=>{
+          const colors = ["bg-amber-500","bg-slate-400","bg-slate-500","bg-slate-600","bg-slate-700"];
+          const color = colors[i % colors.length];
+          return `<div class="flex items-start space-x-4"><div class="w-4 h-4 ${color} flex-shrink-0 mt-1"></div><div class="flex-1"><div class="font-bold text-slate-800 tracking-wide text-sm uppercase">${esc(it.period)}</div><div class="text-slate-600 text-base mt-1">${esc(it.task)}</div></div></div>`;
+        }).join("");
+        const steps = (c.nextSteps||[]).map((s,i)=>`<div class="flex items-start space-x-3"><div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center"><span class="text-slate-800 font-bold text-sm">${i+1}</span></div><span class="text-slate-700 text-base leading-relaxed">${esc(s)}</span></div>`).join("");
+
+        return `
+        <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+          <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
+            <div class="flex justify-between items-center">
+              <h2 class="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
+              <div class="text-sm text-slate-500">PROJECT ${esc(c.projectNumber)} | PAGE 03</div>
+            </div>
+          </div>
+          <div class="px-8 flex-1 flex flex-col">
+            <div class="grid grid-cols-2 gap-12 mb-12">
+              <div class="space-y-6">
+                <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">PROJECT TIMELINE</h3>
+                <div class="space-y-6">${timeline}</div>
+              </div>
+              <div class="space-y-6">
+                <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">NEXT STEPS</h3>
+                <div class="space-y-4">${steps}</div>
+              </div>
+            </div>
+            <div class="bg-slate-800 text-white p-8 text-center shadow-lg mb-6">
+              <p class="text-base leading-relaxed">${esc(c.closingNote)}</p>
+            </div>
+            ${footerHTML(c)}
+          </div>
+        </div>`;
+      };
+
+      const coverPageHTML = (c, imgs) => {
+        return `<div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">${coverHeaderHTML(c, imgs)}${footerHTML(c)}</div>`;
+      };
+
+      const renderPreview = () => {
+        const p1 = coverPageHTML(content, images);
+        const p2 = pageTwoHTML(content, images);
+        const p3 = pageThreeHTML(content);
+        document.getElementById('preview').innerHTML = p1 + p2 + p3;
+      };
+
+      useEffect(() => { renderPreview(); }, []);
+
+      return (
+        <div className="w-full bg-slate-100 min-h-screen">
+          {!isClientMode && (
+            <div className="bg-white shadow-lg border-b border-slate-200 print:hidden">
+              <div className="max-w-7xl mx-auto p-6 flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-light text-slate-800">Full Proposal Builder — Supabase</h1>
+                  {currentProposalName && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      Current: <span className="font-medium">{currentProposalName}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={handleSaveClick} className="bg-green-600 text-white px-4 py-2 rounded shadow">Save</button>
+                  <button onClick={handleLoadClick} className="bg-blue-600 text-white px-4 py-2 rounded shadow">Load</button>
+                  <button onClick={() => window.open(window.location.href + '?client=true', '_blank')} className="bg-slate-700 text-white px-4 py-2 rounded shadow">Open Client View</button>
+                  <button onClick={() => window.print()} className="bg-purple-600 text-white px-4 py-2 rounded shadow">Generate PDF</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Load Modal */}
+          {showLoadDialog && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
+              <div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-light text-slate-800">Saved Proposals</h2>
+                  <button onClick={() => setShowLoadDialog(false)} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>
+                </div>
+                {savedProposals.length === 0 ? (
+                  <div className="text-slate-500 text-center py-6">No proposals found.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {savedProposals.map((p) => (
+                      <div key={p.name} className="flex items-center justify-between p-3 border border-slate-200 rounded">
+                        <div>
+                          <div className="font-medium text-slate-800">{p.name}</div>
+                          <div className="text-xs text-slate-500">Saved: {new Date(p.savedAt).toLocaleString()}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="bg-blue-600 text-white px-3 py-1 text-xs rounded" onClick={() => {
+                            setContent(p.content || content);
+                            setImages(p.images || images);
+                            if (!p.images?.logo) setImages(prev => ({...prev, logo: EMBED_LOGO}));
+                            setCurrentProposalName(p.name);
+                            setShowLoadDialog(false);
+                            renderPreview();
+                          }}>Load</button>
+                          <button className="bg-red-600 text-white px-3 py-1 text-xs rounded" onClick={async () => {
+                            if (!confirm('Delete "' + p.name + '"?')) return;
+                            try { await deleteProposal(p.name); setSavedProposals(prev => prev.filter(x => x.name !== p.name)); } catch(e) { alert('Delete failed: ' + e.message); }
+                          }}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Proposal Pages Preview */}
+          <div className="proposal-container max-w-none mx-auto bg-white">
+            <div id="preview"></div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ProposalBuilder />);
   </script>
 </body>
 </html>
 """
 
-# Replace placeholder with real base64 data URL
+# inject logo
 html = html.replace("__EMBED_LOGO__", b64_logo)
-
-with open(out_path, "w") as f:
-    f.write(html)
-
+out_path = "/mnt/data/index-proposal-builder-FINAL-v6.html"
+pathlib.Path(out_path).write_text(html)
 out_path
