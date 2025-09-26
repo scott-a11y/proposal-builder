@@ -327,7 +327,9 @@
             );
         }
 
-        ReactDOM.render(<ProposalBuilder />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<ProposalBuilder />);
     </script>
 </body>
 </html>
+
