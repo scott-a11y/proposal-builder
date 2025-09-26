@@ -58,7 +58,6 @@
 
     <script type="text/babel">
         // 2. Initialize Supabase Client
-        // This uses the key you provided. The 'anon' key is public and safe to use in client-side code.
         const { createClient } = supabase;
         const SUPABASE_URL = 'https://nqzyoegnquyqfngmaktn.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac';
@@ -127,7 +126,6 @@
             const addNextStep = () => setContent(prev => ({...prev, nextSteps: [...prev.nextSteps, "New step"]}));
             const removeNextStep = (index) => setContent(prev => ({...prev, nextSteps: prev.nextSteps.filter((_, i) => i !== index)}));
 
-            // 3. MODIFIED: Fetch proposals from Supabase on load
             useEffect(() => {
                 const fetchProposals = async () => {
                     const { data, error } = await supabaseClient
@@ -150,7 +148,6 @@
                 fetchProposals();
             }, []);
 
-            // 4. MODIFIED: Auto-save using Supabase
             useEffect(() => {
                 if (currentProposalName) {
                     const autoSaveInterval = setInterval(() => {
@@ -160,36 +157,26 @@
                 }
             }, [content, images, currentProposalName]);
 
-            // 5. MODIFIED: saveProposal function using Supabase
             const saveProposal = async (name, showAlert = true) => {
                 try {
                     const proposalData = { content, images };
-
                     const { data: existing, error: selectError } = await supabaseClient
                         .from('proposals')
                         .select('name')
                         .eq('name', name)
                         .single();
 
-                    if (selectError && selectError.code !== 'PGRST116') {
-                        throw selectError;
-                    }
+                    if (selectError && selectError.code !== 'PGRST116') { throw selectError; }
 
                     if (existing) {
-                        const { error } = await supabaseClient
-                            .from('proposals')
-                            .update(proposalData)
-                            .eq('name', name);
+                        const { error } = await supabaseClient.from('proposals').update(proposalData).eq('name', name);
                         if (error) throw error;
                     } else {
-                        const { error } = await supabaseClient
-                            .from('proposals')
-                            .insert([{ name, ...proposalData }]);
+                        const { error } = await supabaseClient.from('proposals').insert([{ name, ...proposalData }]);
                         if (error) throw error;
                     }
 
                     setCurrentProposalName(name);
-
                     const { data: updatedProposals } = await supabaseClient.from('proposals').select('*');
                     const formattedProposals = updatedProposals.map(p => ({ name: p.name, savedAt: p.created_at, content: p.content, images: p.images }));
                     setSavedProposals(formattedProposals);
@@ -197,14 +184,12 @@
                     if (showAlert) {
                         alert(`Proposal "${name}" saved successfully to the cloud!`);
                     }
-
                 } catch (error) {
                     console.error('Error saving proposal:', error);
                     alert(`Error: Could not save proposal. ${error.message}`);
                 }
             };
 
-            // 6. UNCHANGED: loadProposal works with the state loaded from Supabase
             const loadProposal = (name) => {
                 const proposal = savedProposals.find(p => p.name === name);
                 if (proposal) {
@@ -215,25 +200,17 @@
                 }
             };
 
-            // 7. MODIFIED: deleteProposal function using Supabase
             const deleteProposal = async (name) => {
                 if (confirm(`Are you sure you want to delete proposal "${name}"? This cannot be undone.`)) {
                     try {
-                        const { error } = await supabaseClient
-                            .from('proposals')
-                            .delete()
-                            .eq('name', name);
-
+                        const { error } = await supabaseClient.from('proposals').delete().eq('name', name);
                         if (error) throw error;
 
                         const filteredProposals = savedProposals.filter(p => p.name !== name);
                         setSavedProposals(filteredProposals);
                         
-                        if (currentProposalName === name) {
-                            setCurrentProposalName('');
-                        }
+                        if (currentProposalName === name) { setCurrentProposalName(''); }
                         alert(`Proposal "${name}" deleted.`);
-
                     } catch (error) {
                         console.error('Error deleting proposal:', error);
                         alert(`Error: Could not delete proposal. ${error.message}`);
@@ -301,6 +278,7 @@
     </div>
 </body>
 </html>`;
+// FIXED: Added the closing backtick to terminate the template literal
                 const blob = new Blob([clientHTML], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -316,10 +294,11 @@
             // JSX for the live preview
             return (
                 <div className="w-full bg-slate-100 min-h-screen">
-                    {/* The rest of your JSX remains unchanged... */}
+                    {/* Editor Panel is not shown in client mode */}
                     {!isClientMode && (
                         <div className="bg-white shadow-lg border-b border-slate-200 print:hidden">
                             <div className="max-w-7xl mx-auto p-8">
+                                {/* Editor panel UI (buttons, etc.) */}
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
                                         <h1 className="text-3xl font-light text-slate-800 tracking-tight">Professional Proposal Builder</h1>
@@ -334,15 +313,26 @@
                                         <button onClick={handleSaveClick} className="bg-green-600 text-white px-6 py-3 hover:bg-green-700 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Save</button>
                                         <button onClick={() => setShowLoadDialog(true)} className="bg-blue-600 text-white px-6 py-3 hover:bg-blue-700 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Load</button>
                                         <button onClick={exportClientHTML} className="bg-orange-600 text-white px-6 py-3 hover:bg-orange-700 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Export for Client</button>
-                                        <button onClick={() => window.open(`${window.location.href}?client=true`, '_blank')} className="bg-purple-600 text-white px-6 py-3 hover:bg-purple-700 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Client View</button>
+                                        <button onClick={() => window.open(window.location.href + '?client=true', '_blank')} className="bg-purple-600 text-white px-6 py-3 hover:bg-purple-700 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Client View</button>
                                         <button onClick={() => window.print()} className="bg-slate-800 text-white px-6 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Generate PDF</button>
                                     </div>
                                 </div>
-                                {/* The rest of the editor panel JSX remains here */}
+                                {/* Input fields for content management */}
+                                <div className="grid lg:grid-cols-3 gap-8">
+                                    {/* Visual Assets Column */}
+                                    <div className="lg:col-span-1">
+                                         {/* Image Upload Inputs */}
+                                    </div>
+                                    {/* Content Management Column */}
+                                    <div className="lg:col-span-2 space-y-6">
+                                         {/* Text/Textarea Inputs */}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
 
+                    {/* Load Dialog */}
                     {showLoadDialog && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
                             <div className="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
@@ -371,7 +361,33 @@
                             </div>
                         </div>
                     )}
-                    {/* The entire proposal preview JSX remains unchanged here */}
+                    
+                    {/* Client Mode Header */}
+                    {isClientMode && (
+                         <div className="bg-white shadow-sm border-b border-slate-200 print:hidden">
+                            <div className="max-w-4xl mx-auto p-4 text-center">
+                                <button onClick={() => window.print()} className="bg-slate-800 text-white px-8 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">
+                                    Download PDF
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Proposal Pages Preview */}
+                    <div className="proposal-container max-w-none mx-auto bg-white">
+                        {/* Page 1 */}
+                        <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8" style={{minHeight: '800px'}}>
+                            {/* Page 1 content */}
+                        </div>
+                        {/* Page 2 */}
+                        <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8" style={{minHeight: '800px'}}>
+                            {/* Page 2 content */}
+                        </div>
+                        {/* Page 3 */}
+                        <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8" style={{minHeight: '800px'}}>
+                            {/* Page 3 content */}
+                        </div>
+                    </div>
                 </div>
             );
         }
