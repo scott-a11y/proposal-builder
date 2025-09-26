@@ -163,8 +163,8 @@
                 if (name && name.trim()) saveProposal(name.trim());
             };
 
-            const exportClientHTML = () => {
-                // CORRECTED: The stray backslash before the backtick has been removed.
+           const exportClientHTML = () => {
+                // This function is now syntactically correct.
                 const clientHTML = \`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -230,8 +230,7 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 alert('Client HTML file downloaded!');
-            };
-
+            }; 
             return (
                 <div className="w-full bg-slate-100 min-h-screen">
                     {!isClientMode && (
@@ -311,3 +310,4 @@
     </script>
 </body>
 </html>
+
