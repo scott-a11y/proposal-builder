@@ -1,12 +1,4 @@
-# Generate a fresh FINAL build with your requested logo behavior and a new download link
-import base64, pathlib
-
-logo_path = pathlib.Path("/mnt/data/Foundry-Cabinetco-Logo-1-Black-Text.png")
-b64_logo = ""
-if logo_path.exists():
-    b64_logo = "data:image/png;base64," + base64.b64encode(logo_path.read_bytes()).decode("utf-8")
-
-html = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -18,34 +10,53 @@ html = r"""<!DOCTYPE html>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root {
+      --page-max: 64rem; /* 1024px */
+    }
+    html, body { height: 100%; }
+    body { background: #f1f5f9; }
+    .proposal-page { display: flex; flex-direction: column; min-height: 800px; box-sizing: border-box; }
+    .content-section { overflow-wrap: break-word; word-wrap: break-word; }
+
+    /* Print-ready pages */
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
-      .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
+      .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important;
+        page-break-after: always !important; overflow: hidden !important; }
       @page { size: 8.5in 11in; margin: 0.25in; }
       .proposal-container, body { background: white !important; }
       body { font-size: 12px !important; }
     }
-    .proposal-page { display: flex; flex-direction: column; min-height: 800px; box-sizing: border-box; }
-    .content-section { overflow-wrap: break-word; word-wrap: break-word; }
-    /* Keep logo colors; no filters to avoid smearing */
+
+    /* Logos: keep original colors, no glow/shadow to avoid smearing on footer text. */
     .logo-clean { filter: none; mix-blend-mode: normal; }
+
+    /* Footer text clarity */
     .footer-text { line-height: 1.25; }
-    .footer-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); margin: 12px auto; width: 260px; }
+    .footer-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      margin: 12px auto;
+      width: 260px;
+    }
   </style>
 </head>
 <body class="bg-slate-100">
   <div id="root"></div>
 
   <script type="text/babel">
+    const { useState, useEffect } = React;
     const { createClient } = supabase;
+
+    // --- Supabase (yours) ---
     const SUPABASE_URL = 'https://nqzyoegnquyqfngmaktn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac';
+    const SUPABASE_ANON_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac';
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const { useState, useEffect } = React;
-
-    const EMBED_LOGO = "__EMBED_LOGO__";
+    // --- Logo source (set-and-forget): place your logo at brand/logo.png once ---
+    const LOGO_SRC = "./brand/logo.png"; // change if you use a different path
 
     function ProposalBuilder() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -56,8 +67,12 @@ html = r"""<!DOCTYPE html>
       const [showLoadDialog, setShowLoadDialog] = useState(false);
 
       const [images, setImages] = useState({
-        logo: EMBED_LOGO,
-        shakerRender: null, euroRender: null, shakerVanity: null, euroVanity: null, floorPlan: null
+        logo: LOGO_SRC,            // persistent file in repo; no per-proposal upload needed
+        shakerRender: null,
+        euroRender: null,
+        shakerVanity: null,
+        euroVanity: null,
+        floorPlan: null
       });
 
       const [content, setContent] = useState({
@@ -65,18 +80,22 @@ html = r"""<!DOCTYPE html>
         projectNumber: "FCB-2025-001",
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         clientName: "Valued Client",
-        executiveSummary: "We are pleased to present this proposal for custom cabinetry for your Forest Grove home. Our proposal includes two distinct style options: classic Shaker and modern Euro/Flat Panel designs, allowing you to choose the perfect aesthetic for your space.",
+        executiveSummary:
+          "We are pleased to present this proposal for custom cabinetry for your Forest Grove home. Our proposal includes two distinct style options: classic Shaker and modern Euro/Flat Panel designs, allowing you to choose the perfect aesthetic for your space.",
         totalInvestment: "$7,595",
         warrantyYears: "3",
-        warrantyText: "This comprehensive package includes professional build, delivery, and installation services, all backed by our 3-year workmanship warranty for your complete peace of mind.",
+        warrantyText:
+          "This comprehensive package includes professional build, delivery, and installation services, all backed by our 3-year workmanship warranty for your complete peace of mind.",
         shakerDescription: "Classic framed doors with recessed panels. Painted finish.",
         euroDescription: "Modern frameless full-overlay doors. Unpainted for customization.",
         shakerVanityDescription: "Classic framed vanity doors with recessed panels. Painted finish.",
         euroVanityDescription: "Modern frameless full-overlay vanity doors. Unpainted for customization.",
-        floorPlanDescription: "Plan view showing placement of sink, dishwasher, refrigerator, range, and island cabinetry.",
+        floorPlanDescription:
+          "Plan view showing placement of sink, dishwasher, refrigerator, range, and island cabinetry.",
         onlinePlansLink: "",
-        sketchupLink: "",
-        closingNote: "Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that's the perfect fit for your home.",
+        sketchupLink: "",  // put your SketchUp/Trimble 3D model link here
+        closingNote:
+          "Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that's the perfect fit for your home.",
         tagline: "Driven by Precision. Evolved by Design.",
         address: "866 N Columbia Blvd, Suite B-110, Portland, OR 97217",
         timeline: [
@@ -86,10 +105,14 @@ html = r"""<!DOCTYPE html>
           { period: "WEEKS 13–14", task: "Professional Installation" },
           { period: "WEEK 15", task: "Final Walkthrough & Warranty Activation" }
         ],
-        nextSteps: ["Select Shaker or Euro style", "Approve proposal & sign agreement", "Submit deposit to secure schedule"]
+        nextSteps: [
+          "Select Shaker or Euro style",
+          "Approve proposal & sign agreement",
+          "Submit deposit to secure schedule"
+        ]
       });
 
-      // Supabase utils
+      // ---------- Supabase helpers ----------
       async function listProposals() {
         const { data, error } = await supabaseClient
           .from('proposals')
@@ -97,29 +120,44 @@ html = r"""<!DOCTYPE html>
           .order('created_at', { ascending: false });
         if (error) throw error;
         return (data || []).map(p => ({
-          name: p.name, savedAt: p.created_at, content: p.content, images: p.images
+          name: p.name,
+          savedAt: p.created_at,
+          content: p.content,
+          images: p.images
         }));
       }
 
       async function upsertProposal(name, payload) {
         const { data: existing, error: selErr } = await supabaseClient
           .from('proposals')
-          .select('name').eq('name', name).maybeSingle();
+          .select('name')
+          .eq('name', name)
+          .maybeSingle();
         if (selErr) throw selErr;
+
         if (existing) {
-          const { error } = await supabaseClient.from('proposals').update(payload).eq('name', name);
+          const { error } = await supabaseClient
+            .from('proposals')
+            .update(payload)
+            .eq('name', name);
           if (error) throw error;
         } else {
-          const { error } = await supabaseClient.from('proposals').insert({ name, ...payload });
+          const { error } = await supabaseClient
+            .from('proposals')
+            .insert({ name, ...payload });
           if (error) throw error;
         }
       }
 
-      async function deleteProposal(name) {
-        const { error } = await supabaseClient.from('proposals').delete().eq('name', name);
+      async function hardDeleteProposal(name) {
+        const { error } = await supabaseClient
+          .from('proposals')
+          .delete()
+          .eq('name', name);
         if (error) throw error;
       }
 
+      // ---------- UI Actions ----------
       const handleSaveClick = async () => {
         const name = prompt('Enter a name for this proposal:');
         if (!name || !name.trim()) return;
@@ -129,7 +167,9 @@ html = r"""<!DOCTYPE html>
           const items = await listProposals();
           setSavedProposals(items);
           alert('Saved "' + name + '" to cloud.');
-        } catch (e) { alert('Save failed: ' + e.message); }
+        } catch (e) {
+          alert('Save failed: ' + e.message);
+        }
       };
 
       const handleLoadClick = async () => {
@@ -137,28 +177,42 @@ html = r"""<!DOCTYPE html>
           const items = await listProposals();
           setSavedProposals(items);
           setShowLoadDialog(true);
-        } catch (e) { alert('Load failed: ' + e.message); }
+        } catch (e) {
+          alert('Load failed: ' + e.message);
+        }
       };
 
-      // helpers
-      const esc = s => String(s || '').replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+      // ---------- Render helpers ----------
+      const esc = s =>
+        String(s || '').replace(/[&<>"']/g, m =>
+          ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m]));
 
-      // Footer (cover + last page only)
-      const footerHTML = (c) => {
-        const logo = EMBED_LOGO ? `<img src="${EMBED_LOGO}" class="logo-clean mx-auto max-h-16 object-contain" style="margin-bottom:14px;" alt="Company Logo">` : "";
-        return `<div class="bg-slate-900 text-white p-6 text-center">${logo}<div class="footer-divider"></div><div class="text-sm tracking-wide footer-text" style="margin-top:8px;">${esc(c.tagline)}</div><div class="text-xs text-slate-400 mt-1 footer-text">${esc(c.address)}</div></div>`;
+      const Footer = (c, withLogo = true) => {
+        const logoHTML = withLogo && images.logo
+          ? `<img src="${images.logo}" class="logo-clean mx-auto max-h-16 object-contain" style="margin-bottom:14px;" alt="Company Logo" onerror="this.style.display='none'">`
+          : "";
+        return `
+          <div class="bg-slate-900 text-white p-6 text-center">
+            ${logoHTML}
+            <div class="footer-divider"></div>
+            <div class="text-sm tracking-wide footer-text" style="margin-top:8px;">${esc(c.tagline)}</div>
+            <div class="text-xs text-slate-400 mt-1 footer-text">${esc(c.address)}</div>
+          </div>
+        `;
       };
 
-      // Header (cover only)
-      const coverHeaderHTML = (c, imgs) => {
-        const logo = imgs.logo ? `<img id="headerLogo" src="${imgs.logo}" class="logo-clean max-h-16 md:max-h-20 object-contain" alt="Company Logo">` : "";
+      // Cover header (logo only on cover header)
+      const CoverHeader = (c) => {
+        const logoHTML = images.logo
+          ? `<img id="headerLogo" src="${images.logo}" class="logo-clean max-h-16 md:max-h-20 object-contain" alt="Company Logo" onerror="this.style.display='none'">`
+          : "";
         const [titleA, titleB=""] = String(c.title).split("–");
         return `
           <div class="bg-gradient-to-r from-slate-800 to-slate-700 p-8 relative">
             <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
             <div class="flex justify-between items-start">
               <div class="flex items-center gap-6">
-                ${logo}
+                ${logoHTML}
                 <div class="h-12 w-px bg-white/30"></div>
                 <div class="text-white">
                   <div class="text-2xl font-light tracking-wide">FOUNDRY</div>
@@ -172,11 +226,15 @@ html = r"""<!DOCTYPE html>
               </div>
             </div>
           </div>
+
           <div class="flex-1 flex flex-col justify-center items-center text-center px-16 py-12">
             <div class="max-w-4xl">
               <div class="mb-8">
                 <div class="text-sm font-medium text-slate-600 uppercase tracking-widest mb-4">CUSTOM CABINETRY PROPOSAL</div>
-                <h1 class="text-4xl font-light text-slate-800 mb-6 leading-tight tracking-tight">${esc(titleA)}<br/><span class="text-2xl text-slate-600">${esc(titleB)}</span></h1>
+                <h1 class="text-4xl font-light text-slate-800 mb-6 leading-tight tracking-tight">
+                  ${esc(titleA)}<br/>
+                  <span class="text-2xl text-slate-600">${esc(titleB)}</span>
+                </h1>
                 <div class="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto"></div>
               </div>
               <div class="bg-slate-50 p-8 border-l-4 border-slate-800 text-left shadow-lg">
@@ -194,12 +252,12 @@ html = r"""<!DOCTYPE html>
                 <p class="text-sm text-slate-600">${esc(c.warrantyText)}</p>
               </div>
             </div>
-          </div>`;
+          </div>
+        `;
       };
 
-      // Middle page (no header/footer logos)
-      const pageTwoHTML = (c, imgs) => {
-        return `
+      // Page 2 (no logo header/footer on this page)
+      const PageTwo = (c) => `
         <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
           <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
             <div class="flex justify-between items-center">
@@ -214,41 +272,54 @@ html = r"""<!DOCTYPE html>
                   <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">SHAKER STYLE</h3>
                   <div class="mb-6">
                     <div class="bg-slate-50 p-4 shadow-lg h-48">
-                      ${imgs.shakerRender ? `<img src="${imgs.shakerRender}" alt="Shaker Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>`}
+                      ${images.shakerRender
+                        ? `<img src="${images.shakerRender}" alt="Shaker Kitchen" class="w-full h-full object-cover" />`
+                        : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>`
+                      }
                     </div>
-                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                    <div class="mt-3 min-h-[80px]">
                       <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
                       <p class="text-slate-600 text-sm leading-relaxed">${esc(c.shakerDescription)}</p>
                     </div>
                   </div>
                   <div>
                     <div class="bg-slate-50 p-4 shadow-lg h-48">
-                      ${imgs.shakerVanity ? `<img src="${imgs.shakerVanity}" alt="Shaker Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>`}
+                      ${images.shakerVanity
+                        ? `<img src="${images.shakerVanity}" alt="Shaker Vanity" class="w-full h-full object-cover" />`
+                        : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>`
+                      }
                     </div>
-                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                    <div class="mt-3 min-h-[80px]">
                       <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
                       <p class="text-slate-600 text-sm leading-relaxed">${esc(c.shakerVanityDescription)}</p>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div class="space-y-6">
                 <div class="text-center">
                   <h3 class="text-xl font-medium text-slate-800 mb-6 tracking-tight">EURO STYLE</h3>
                   <div class="mb-6">
                     <div class="bg-slate-50 p-4 shadow-lg h-48">
-                      ${imgs.euroRender ? `<img src="${imgs.euroRender}" alt="Euro Kitchen" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>`}
+                      ${images.euroRender
+                        ? `<img src="${images.euroRender}" alt="Euro Kitchen" class="w-full h-full object-cover" />`
+                        : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>`
+                      }
                     </div>
-                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                    <div class="mt-3 min-h-[80px]">
                       <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4>
                       <p class="text-slate-600 text-sm leading-relaxed">${esc(c.euroDescription)}</p>
                     </div>
                   </div>
                   <div>
                     <div class="bg-slate-50 p-4 shadow-lg h-48">
-                      ${imgs.euroVanity ? `<img src="${imgs.euroVanity}" alt="Euro Vanity" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>`}
+                      ${images.euroVanity
+                        ? `<img src="${images.euroVanity}" alt="Euro Vanity" class="w-full h-full object-cover" />`
+                        : `<div class="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>`
+                      }
                     </div>
-                    <div class="mt-3 min-h-[80px] flex flex-col justify-start">
+                    <div class="mt-3 min-h-[80px]">
                       <h4 class="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4>
                       <p class="text-slate-600 text-sm leading-relaxed">${esc(c.euroVanityDescription)}</p>
                     </div>
@@ -260,68 +331,106 @@ html = r"""<!DOCTYPE html>
             <div class="space-y-4">
               <h3 class="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3>
               <div class="bg-slate-50 p-8 shadow-lg">
-                ${imgs.floorPlan ? `<img src="${imgs.floorPlan}" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />` : `<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>`}
+                ${images.floorPlan
+                  ? `<img src="${images.floorPlan}" alt="Kitchen Floor Plan" class="w-full h-64 object-contain" />`
+                  : `<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>`
+                }
               </div>
               <p class="text-slate-600 text-center text-sm leading-relaxed">${esc(c.floorPlanDescription)}</p>
 
-              ${ c.onlinePlansLink ? `<div class="text-center mt-2"><a href="${esc(c.onlinePlansLink)}" target="_blank" rel="noopener noreferrer" class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a></div>` : ''}
+              ${ c.onlinePlansLink
+                ? `<div class="text-center mt-2">
+                    <a href="${esc(c.onlinePlansLink)}" target="_blank" rel="noopener noreferrer" class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a>
+                  </div>`
+                : '' }
 
-              ${ c.sketchupLink ? `<div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded"><h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">🏠 VIEW IN 3D</h4><p class="text-slate-700 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p><a href="${esc(c.sketchupLink)}" target="_blank" rel="noopener noreferrer" class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">VIEW 3D MODEL</a></div>` : ''}
+              ${ c.sketchupLink
+                ? `<div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">🏠 VIEW IN 3D</h4>
+                    <p class="text-slate-700 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p>
+                    <a href="${esc(c.sketchupLink)}" target="_blank" rel="noopener noreferrer" class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">VIEW 3D MODEL</a>
+                  </div>`
+                : '' }
             </div>
           </div>
-        </div>`;
-      };
+        </div>
+      `;
 
-      const pageThreeHTML = (c) => {
+      const PageThree = (c) => {
         const timeline = (c.timeline||[]).map((it,i)=>{
           const colors = ["bg-amber-500","bg-slate-400","bg-slate-500","bg-slate-600","bg-slate-700"];
           const color = colors[i % colors.length];
-          return `<div class="flex items-start space-x-4"><div class="w-4 h-4 ${color} flex-shrink-0 mt-1"></div><div class="flex-1"><div class="font-bold text-slate-800 tracking-wide text-sm uppercase">${esc(it.period)}</div><div class="text-slate-600 text-base mt-1">${esc(it.task)}</div></div></div>`;
+          return `
+            <div class="flex items-start space-x-4">
+              <div class="w-4 h-4 ${color} flex-shrink-0 mt-1"></div>
+              <div class="flex-1">
+                <div class="font-bold text-slate-800 tracking-wide text-sm uppercase">${esc(it.period)}</div>
+                <div class="text-slate-600 text-base mt-1">${esc(it.task)}</div>
+              </div>
+            </div>
+          `;
         }).join("");
-        const steps = (c.nextSteps||[]).map((s,i)=>`<div class="flex items-start space-x-3"><div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center"><span class="text-slate-800 font-bold text-sm">${i+1}</span></div><span class="text-slate-700 text-base leading-relaxed">${esc(s)}</span></div>`).join("");
+
+        const steps = (c.nextSteps||[]).map((s,i)=>`
+          <div class="flex items-start space-x-3">
+            <div class="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center">
+              <span class="text-slate-800 font-bold text-sm">${i+1}</span>
+            </div>
+            <span class="text-slate-700 text-base leading-relaxed">${esc(s)}</span>
+          </div>
+        `).join("");
 
         return `
-        <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
-          <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
-            <div class="flex justify-between items-center">
-              <h2 class="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
-              <div class="text-sm text-slate-500">PROJECT ${esc(c.projectNumber)} | PAGE 03</div>
-            </div>
-          </div>
-          <div class="px-8 flex-1 flex flex-col">
-            <div class="grid grid-cols-2 gap-12 mb-12">
-              <div class="space-y-6">
-                <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">PROJECT TIMELINE</h3>
-                <div class="space-y-6">${timeline}</div>
-              </div>
-              <div class="space-y-6">
-                <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">NEXT STEPS</h3>
-                <div class="space-y-4">${steps}</div>
+          <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+            <div class="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
+              <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
+                <div class="text-sm text-slate-500">PROJECT ${esc(c.projectNumber)} | PAGE 03</div>
               </div>
             </div>
-            <div class="bg-slate-800 text-white p-8 text-center shadow-lg mb-6">
-              <p class="text-base leading-relaxed">${esc(c.closingNote)}</p>
+
+            <div class="px-8 flex-1 flex flex-col">
+              <div class="grid grid-cols-2 gap-12 mb-12">
+                <div class="space-y-6">
+                  <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">PROJECT TIMELINE</h3>
+                  <div class="space-y-6">${timeline}</div>
+                </div>
+                <div class="space-y-6">
+                  <h3 class="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">NEXT STEPS</h3>
+                  <div class="space-y-4">${steps}</div>
+                </div>
+              </div>
+
+              <div class="bg-slate-800 text-white p-8 text-center shadow-lg mb-6">
+                <p class="text-base leading-relaxed">${esc(c.closingNote)}</p>
+              </div>
+
+              <!-- Footer WITH logo on last page -->
+              ${Footer(c, true)}
             </div>
-            ${footerHTML(c)}
           </div>
-        </div>`;
+        `;
       };
 
-      const coverPageHTML = (c, imgs) => {
-        return `<div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">${coverHeaderHTML(c, imgs)}${footerHTML(c)}</div>`;
-      };
+      const CoverPage = (c) => `
+        <div class="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+          ${CoverHeader(c)}
+          <!-- Footer WITH logo on cover -->
+          ${Footer(c, true)}
+        </div>
+      `;
 
       const renderPreview = () => {
-        const p1 = coverPageHTML(content, images);
-        const p2 = pageTwoHTML(content, images);
-        const p3 = pageThreeHTML(content);
+        const p1 = CoverPage(content);
+        const p2 = PageTwo(content);
+        const p3 = PageThree(content);
         document.getElementById('preview').innerHTML = p1 + p2 + p3;
       };
 
       useEffect(() => { renderPreview(); }, []);
 
       return (
-        <div className="w-full bg-slate-100 min-h-screen">
+        <div className="w-full min-h-screen">
           {!isClientMode && (
             <div className="bg-white shadow-lg border-b border-slate-200 print:hidden">
               <div className="max-w-7xl mx-auto p-6 flex items-center justify-between">
@@ -365,14 +474,17 @@ html = r"""<!DOCTYPE html>
                           <button className="bg-blue-600 text-white px-3 py-1 text-xs rounded" onClick={() => {
                             setContent(p.content || content);
                             setImages(p.images || images);
-                            if (!p.images?.logo) setImages(prev => ({...prev, logo: EMBED_LOGO}));
+                            if (!p.images?.logo) setImages(prev => ({...prev, logo: LOGO_SRC}));
                             setCurrentProposalName(p.name);
                             setShowLoadDialog(false);
                             renderPreview();
                           }}>Load</button>
                           <button className="bg-red-600 text-white px-3 py-1 text-xs rounded" onClick={async () => {
                             if (!confirm('Delete "' + p.name + '"?')) return;
-                            try { await deleteProposal(p.name); setSavedProposals(prev => prev.filter(x => x.name !== p.name)); } catch(e) { alert('Delete failed: ' + e.message); }
+                            try {
+                              await hardDeleteProposal(p.name);
+                              setSavedProposals(prev => prev.filter(x => x.name !== p.name));
+                            } catch(e) { alert('Delete failed: ' + e.message); }
                           }}>Delete</button>
                         </div>
                       </div>
@@ -396,10 +508,3 @@ html = r"""<!DOCTYPE html>
   </script>
 </body>
 </html>
-"""
-
-# inject logo
-html = html.replace("__EMBED_LOGO__", b64_logo)
-out_path = "/mnt/data/index-proposal-builder-FINAL-v6.html"
-pathlib.Path(out_path).write_text(html)
-out_path
