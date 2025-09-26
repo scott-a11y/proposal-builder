@@ -25,7 +25,7 @@
   <!-- Fallback so you never see a blank screen -->
   <div id="fallback" class="max-w-3xl mx-auto mt-6 p-4 bg-white border border-slate-200 rounded-lg shadow">
     <div class="text-lg font-medium text-slate-800">Foundry — Proposal Builder (Full)</div>
-    <div class="text-slate-600 text-sm">If this message doesn’t disappear shortly, check Console (F12).</div>
+    <div class="text-slate-600 text-sm">If this message doesn’t disappear shortly, open Console (F12) for errors.</div>
   </div>
 
   <div id="app" class="hidden">
@@ -53,30 +53,8 @@
       <!-- Images -->
       <div class="space-y-3">
         <div class="text-lg font-medium text-slate-800">Visual Assets</div>
-        ${[("logo","Company Logo"),("shakerRender","Shaker Kitchen"),("euroRender","Euro Kitchen"),("shakerVanity","Shaker Vanity"),("euroVanity","Euro Vanity"),("floorPlan","Floor Plan")]}
-        <div>
-          <label class="block text-xs uppercase text-slate-600 mb-1">Company Logo</label>
-          <input id="file_logo" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-600 mb-1">Shaker Kitchen</label>
-          <input id="file_shakerRender" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-600 mb-1">Euro Kitchen</label>
-          <input id="file_euroRender" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-600 mb-1">Shaker Vanity</label>
-          <input id="file_shakerVanity" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-600 mb-1">Euro Vanity</label>
-          <input id="file_euroVanity" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-600 mb-1">Floor Plan</label>
-          <input id="file_floorPlan" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
+        <div id="assetsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- generated file inputs -->
         </div>
       </div>
 
@@ -111,6 +89,16 @@
           <div class="sm:col-span-2">
             <label class="block text-xs uppercase text-slate-600 mb-1">Warranty Text</label>
             <textarea id="in_wtext" rows="2" class="w-full p-2 border border-slate-300"></textarea>
+          </div>
+
+          <!-- Links -->
+          <div class="sm:col-span-2">
+            <label class="block text-xs uppercase text-slate-600 mb-1">Online Plans Link (optional)</label>
+            <input id="in_plans" placeholder="https://…" class="w-full p-2 border border-slate-300"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs uppercase text-slate-600 mb-1">SketchUp 3D Link (optional)</label>
+            <input id="in_sketchup" placeholder="https://…" class="w-full p-2 border border-slate-300"/>
           </div>
         </div>
 
@@ -359,6 +347,7 @@
             </div>
           </div>
 
+          <!-- Architectural Layout -->
           <div class="space-y-4">
             <h3 class="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3>
             <div class="bg-slate-50 p-8 shadow-lg">
@@ -367,8 +356,27 @@
                 : `<div class="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span class="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>`}
             </div>
             <p class="text-slate-600 text-center text-sm leading-relaxed">${esc(content.floorPlanDescription)}</p>
-            ${ content.onlinePlansLink ? `<div class="text-center mt-2"><a href="${esc(content.onlinePlansLink)}" target="_blank" class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a></div>` : ''}
-            ${ content.sketchupLink ? `<div class="text-center mt-2"><a href="${esc(content.sketchupLink)}" target="_blank" class="inline-block bg-slate-800 text-white px-6 py-2 rounded">View 3D Model</a></div>` : ''}
+
+            ${ content.onlinePlansLink ? `
+              <div class="text-center mt-2">
+                <a href="${esc(content.onlinePlansLink)}" target="_blank" rel="noopener noreferrer"
+                   class="text-slate-800 font-medium hover:text-amber-600">View detailed plans</a>
+              </div>` : ''}
+
+            <!-- ✨ Styled 3D block like your screenshot -->
+            ${ content.sketchupLink ? `
+              <div class="bg-amber-50 border border-amber-200 p-6 mt-6 text-center rounded">
+                <h4 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-center gap-2">
+                  🏠 VIEW IN 3D
+                </h4>
+                <p class="text-slate-700 text-sm mb-4">
+                  Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.
+                </p>
+                <a href="${esc(content.sketchupLink)}" target="_blank" rel="noopener noreferrer"
+                   class="inline-block bg-slate-800 text-white px-8 py-3 rounded shadow hover:bg-slate-900 transition">
+                  VIEW 3D MODEL
+                </a>
+              </div>` : ''}
           </div>
         </div>
       </div>
@@ -418,6 +426,44 @@
       bindVal('#in_invest','totalInvestment');
       bindVal('#in_wyears','warrantyYears');
       bindVal('#in_wtext','warrantyText');
+      bindVal('#in_plans','onlinePlansLink');
+      bindVal('#in_sketchup','sketchupLink');
+
+      // build visual assets grid
+      const assetDefs = [
+        ['logo','Company Logo'],
+        ['shakerRender','Shaker Kitchen'],
+        ['euroRender','Euro Kitchen'],
+        ['shakerVanity','Shaker Vanity'],
+        ['euroVanity','Euro Vanity'],
+        ['floorPlan','Floor Plan'],
+      ];
+      const grid = qs('#assetsGrid');
+      grid.innerHTML = '';
+      assetDefs.forEach(([key,label])=>{
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+          <label class="block text-xs uppercase text-slate-600 mb-1">${label}</label>
+          <input id="file_${key}" type="file" accept="image/*" class="w-full p-2 border border-slate-300 bg-white text-sm"/>
+          <div class="mt-2 border border-slate-200 bg-white h-32 flex items-center justify-center overflow-hidden">
+            <span class="text-slate-400 text-xs">No image</span>
+          </div>`;
+        const input = wrap.querySelector('input');
+        const preview = wrap.querySelector('div');
+        const updatePreview = ()=>{
+          if (state.images[key]) {
+            preview.innerHTML = `<img src="${state.images[key]}" alt="${label}" class="object-contain w-full h-32"/>`;
+          } else {
+            preview.innerHTML = `<span class="text-slate-400 text-xs">No image</span>`;
+          }
+        };
+        updatePreview();
+        input.onchange = (e)=>{
+          const f = e.target.files[0]; if(!f) return;
+          onFileToDataURL(f, (url)=>{ state.images[key]=url; updatePreview(); renderPreview(); });
+        };
+        grid.appendChild(wrap);
+      });
 
       // timeline
       const tRoot = qs('#timelineList'); tRoot.innerHTML='';
@@ -479,23 +525,6 @@
         setStatus('Connecting to Supabase…');
         await ensureAuth();
         setStatus('Connected.');
-
-        // File inputs
-        const fileIds = [
-          ['#file_logo','logo'],
-          ['#file_shakerRender','shakerRender'],
-          ['#file_euroRender','euroRender'],
-          ['#file_shakerVanity','shakerVanity'],
-          ['#file_euroVanity','euroVanity'],
-          ['#file_floorPlan','floorPlan']
-        ];
-        fileIds.forEach(([id, key])=>{
-          const inp = qs(id);
-          inp.onchange = (e)=>{
-            const f = e.target.files[0]; if(!f) return;
-            onFileToDataURL(f, (url)=>{ state.images[key]=url; renderPreview(); });
-          };
-        });
 
         // Buttons
         qs('#btnSave').onclick = async ()=>{
