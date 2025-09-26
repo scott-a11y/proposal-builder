@@ -165,12 +165,12 @@
 
             const exportClientHTML = () => {
                 // CORRECTED: The stray backslash before the backtick has been removed.
-                const clientHTML = \`<!DOCTYPE html>
+                const clientHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${content.title} - \${content.clientName}</title>
+    <title>${content.title} - ${content.clientName}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print { * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .print\\\\:hidden { display: none !important; } .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; } @page { size: 8.5in 11in; margin: 0.25in; } .proposal-container, body { background: white !important; } body { font-size: 12px !important; } }
@@ -183,7 +183,7 @@
     <div class="w-full bg-slate-100 min-h-screen">
         <div class="bg-white shadow-sm border-b border-slate-200 print:hidden">
             <div class="max-w-4xl mx-auto p-4 text-center">
-                <h1 class="text-2xl font-light text-slate-800 mb-4">\${content.title}</h1>
+                <h1 class="text-2xl font-light text-slate-800 mb-4">${content.title}</h1>
                 <button onclick="window.print()" class="bg-slate-800 text-white px-8 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Download PDF</button>
             </div>
         </div>
@@ -219,7 +219,7 @@
         </div>
     </div>
 </body>
-</html>\`;
+</html>`;
                 const blob = new Blob([clientHTML], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -255,7 +255,62 @@
                                         <button onClick={() => window.print()} className="bg-slate-800 text-white px-6 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">Generate PDF</button>
                                     </div>
                                 </div>
-                                {/* ... Editor UI ... */}
+                                {/* Editor UI */}
+                                <div className="border-t border-slate-200 pt-8">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        {/* Content Editor */}
+                                        <div className="space-y-6">
+                                            <h3 className="text-lg font-medium text-slate-800 border-b border-slate-200 pb-2">Content Editor</h3>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
+                                                <input type="text" value={content.title} onChange={(e) => handleContentChange('title', e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-2">Project Number</label>
+                                                    <input type="text" value={content.projectNumber} onChange={(e) => handleContentChange('projectNumber', e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-2">Client Name</label>
+                                                    <input type="text" value={content.clientName} onChange={(e) => handleContentChange('clientName', e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-2">Executive Summary</label>
+                                                <textarea value={content.executiveSummary} onChange={(e) => handleContentChange('executiveSummary', e.target.value)} rows={4} className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-2">Investment Amount</label>
+                                                    <input type="text" value={content.totalInvestment} onChange={(e) => handleContentChange('totalInvestment', e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-2">Warranty (Years)</label>
+                                                    <input type="text" value={content.warrantyYears} onChange={(e) => handleContentChange('warrantyYears', e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Image Upload */}
+                                        <div className="space-y-6">
+                                            <h3 className="text-lg font-medium text-slate-800 border-b border-slate-200 pb-2">Images</h3>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {Object.entries({logo: "Logo", shakerRender: "Shaker Kitchen", euroRender: "Euro Kitchen", shakerVanity: "Shaker Vanity", euroVanity: "Euro Vanity", floorPlan: "Floor Plan"}).map(([key, label]) => (
+                                                    <div key={key} className="space-y-2">
+                                                        <label className="block text-sm font-medium text-slate-700">{label}</label>
+                                                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(key, e)} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100" />
+                                                        {images[key] && <img src={images[key]} alt={label} className="w-full h-20 object-cover rounded border" />}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -301,7 +356,34 @@
 
                     {/* Proposal Pages Preview */}
                     <div className="proposal-container max-w-none mx-auto bg-white">
-                       {/* All the proposal page JSX goes here... */}
+                        <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+                            <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-8 relative">
+                                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center space-x-6">
+                                        {images.logo ? <img src={images.logo} alt="Company Logo" className="max-w-40 max-h-16 object-contain filter brightness-0 invert" /> : <div className="w-40 h-16 bg-white bg-opacity-20 border border-white border-opacity-30 flex items-center justify-center rounded text-white text-xs">LOGO</div>}
+                                        <div className="h-12 w-px bg-white bg-opacity-30"></div>
+                                        <div className="text-white"><div className="text-2xl font-light tracking-wide">FOUNDRY</div><div className="text-lg font-light tracking-widest text-slate-300">CABINETCO.</div></div>
+                                    </div>
+                                    <div className="text-right text-white text-sm"><div className="font-medium tracking-wide">PROJECT {content.projectNumber}</div><div className="text-slate-300">{content.date}</div></div>
+                                </div>
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center items-center text-center px-16 py-12">
+                                <div className="max-w-4xl">
+                                    <div className="mb-8"><div className="text-sm font-medium text-slate-600 uppercase tracking-widest mb-4">CUSTOM CABINETRY PROPOSAL</div><h1 className="text-4xl font-light text-slate-800 mb-6 leading-tight tracking-tight">{content.title.split('–')[0]}<br/><span className="text-2xl text-slate-600">{content.title.split('–')[1] || ''}</span></h1><div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto"></div></div>
+                                    <div className="bg-slate-50 p-8 border-l-4 border-slate-800 text-left shadow-lg"><div className="grid md:grid-cols-2 gap-8 mb-6"><div className="text-center"><div className="text-3xl font-light text-slate-800 mb-2">{content.totalInvestment}</div><div className="text-sm text-slate-600 uppercase tracking-wide">Investment</div></div><div className="text-center"><div className="text-3xl font-light text-slate-800 mb-2">{content.warrantyYears}</div><div className="text-sm text-slate-600 uppercase tracking-wide">Year Warranty</div></div></div><p className="text-base leading-relaxed text-slate-700 mb-4">{content.executiveSummary}</p><p className="text-sm text-slate-600">{content.warrantyText}</p></div>
+                                </div>
+                            </div>
+                            <div className="bg-slate-800 p-4 mt-auto"><div className="flex items-center justify-center"><div className="text-slate-300 text-sm tracking-widest">{content.tagline}</div></div></div>
+                        </div>
+                        <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+                            <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8"><div className="flex justify-between items-center"><h2 className="text-2xl font-light text-slate-800 tracking-tight">Design Options & Layout</h2><div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 02</div></div></div>
+                            <div className="px-8 flex-1"><div className="grid grid-cols-2 gap-12 mb-12"><div className="space-y-6"><div className="text-center"><h3 className="text-xl font-medium text-slate-800 mb-6 tracking-tight">SHAKER STYLE</h3><div className="mb-6"><div className="bg-slate-50 p-4 shadow-lg h-48">{images.shakerRender ? <img src={images.shakerRender} alt="Shaker Kitchen" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span className="text-slate-400 text-sm tracking-wide">SHAKER KITCHEN</span></div>}</div><div className="mt-3 text-center min-h-[80px] flex flex-col justify-start"><h4 className="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4><p className="text-slate-600 text-sm leading-relaxed flex-1">{content.shakerDescription}</p></div></div><div><div className="bg-slate-50 p-4 shadow-lg h-48">{images.shakerVanity ? <img src={images.shakerVanity} alt="Shaker Vanity" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span className="text-slate-400 text-sm tracking-wide">SHAKER VANITY</span></div>}</div><div className="mt-3 text-center min-h-[80px] flex flex-col justify-start"><h4 className="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4><p className="text-slate-600 text-sm leading-relaxed flex-1">{content.shakerVanityDescription}</p></div></div></div><div className="space-y-6"><div className="text-center"><h3 className="text-xl font-medium text-slate-800 mb-6 tracking-tight">EURO STYLE</h3><div className="mb-6"><div className="bg-slate-50 p-4 shadow-lg h-48">{images.euroRender ? <img src={images.euroRender} alt="Euro Kitchen" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span className="text-slate-400 text-sm tracking-wide">EURO KITCHEN</span></div>}</div><div className="mt-3 text-center min-h-[80px] flex flex-col justify-start"><h4 className="text-base font-medium text-slate-800 mb-1 tracking-tight">Kitchen Cabinetry</h4><p className="text-slate-600 text-sm leading-relaxed flex-1">{content.euroDescription}</p></div></div><div><div className="bg-slate-50 p-4 shadow-lg h-48">{images.euroVanity ? <img src={images.euroVanity} alt="Euro Vanity" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span className="text-slate-400 text-sm tracking-wide">EURO VANITY</span></div>}</div><div className="mt-3 text-center min-h-[80px] flex flex-col justify-start"><h4 className="text-base font-medium text-slate-800 mb-1 tracking-tight">Vanity Cabinetry</h4><p className="text-slate-600 text-sm leading-relaxed flex-1">{content.euroVanityDescription}</p></div></div></div></div><div className="space-y-4"><h3 className="text-lg font-medium text-slate-800 tracking-tight text-center">ARCHITECTURAL LAYOUT</h3><div className="bg-slate-50 p-8 shadow-lg">{images.floorPlan ? <img src={images.floorPlan} alt="Kitchen Floor Plan" className="w-full h-64 object-contain" /> : <div className="w-full h-64 bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center"><span className="text-slate-400 text-sm tracking-wide">FLOOR PLAN</span></div>}</div><p className="text-slate-600 text-center text-sm leading-relaxed">{content.floorPlanDescription}</p>{content.onlinePlansLink ? <div className="text-center mt-4"><p className="text-slate-600 text-sm mb-2">View detailed plans online:</p><a href={content.onlinePlansLink} target="_blank" rel="noopener noreferrer" className="text-slate-800 font-medium hover:text-amber-600 transition-colors text-sm">{content.onlinePlansLink}</a></div> : ''}{content.sketchupLink ? <div className="bg-amber-50 border border-amber-200 p-6 mt-6 text-center"><h4 className="text-lg font-medium text-slate-800 mb-3 tracking-tight">🏠 VIEW IN 3D</h4><p className="text-slate-600 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail of your custom cabinetry.</p><a href={content.sketchupLink} target="_blank" rel="noopener noreferrer" className="inline-block bg-slate-800 text-white px-8 py-3 hover:bg-slate-900 transition-colors font-medium tracking-wide uppercase text-sm shadow-lg">View 3D Model</a></div> : ''}</div></div>
+                        </div>
+                        <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
+                            <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8"><div className="flex justify-between items-center"><h2 className="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2><div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 03</div></div></div>
+                            <div className="px-8 flex-1 flex flex-col"><div className="grid grid-cols-2 gap-12 mb-12"><div className="space-y-6"><h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">PROJECT TIMELINE</h3><div className="space-y-6">{content.timeline.map((item, index) => { const colors = ["bg-amber-500", "bg-slate-400", "bg-slate-500", "bg-slate-600", "bg-slate-700"]; const color = colors[index % colors.length]; return <div key={index} className="flex items-start space-x-4"><div className={`${color} w-4 h-4 flex-shrink-0 mt-1`}></div><div className="flex-1"><div className="font-bold text-slate-800 tracking-wide text-sm uppercase">{item.period}</div><div className="text-slate-600 text-base mt-1">{item.task}</div></div></div>; })}</div></div><div className="space-y-6"><h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">NEXT STEPS</h3><div className="space-y-4">{content.nextSteps.map((step, index) => <div key={index} className="flex items-start space-x-3"><div className="w-6 h-6 border-2 border-slate-800 flex-shrink-0 mt-0.5 flex items-center justify-center"><span className="text-slate-800 font-bold text-sm">{index + 1}</span></div><span className="text-slate-700 text-base leading-relaxed content-section">{step}</span></div>)}</div></div></div><div className="bg-slate-800 text-white p-8 text-center shadow-lg mb-6"><p className="text-base leading-relaxed">{content.closingNote}</p></div><div className="text-center mt-auto mb-6"><div className="mb-3">{images.logo ? <img src={images.logo} alt="Company Logo" className="max-w-24 max-h-10 mx-auto object-contain" /> : <div className="w-24 h-10 bg-slate-100 border border-slate-300 flex items-center justify-center mx-auto text-slate-400 text-xs">LOGO</div>}</div><div className="text-slate-500 text-xs tracking-widest uppercase">{content.tagline}</div></div></div>
+                        </div>
                     </div>
                 </div>
             );
