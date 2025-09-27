@@ -9,12 +9,12 @@
   <link rel="icon"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
-  <!-- React + Babel -->
+  <!-- React + Babel (UMD) -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Tailwind + Supabase (for the builder UI only) -->
+  <!-- Tailwind + Supabase -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -29,8 +29,13 @@
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
-      @page { size: 8.5in 11in; margin: 0.25in; }
-      body { background:white !important; }
+      @page { size: 8.5in 11in; margin: 0.5in; } /* breathing room */
+      /* keep grids intact in print */
+      .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+      .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
+      /* prevent image blocks from breaking/stacking odd */
+      .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
+      img { break-inside: avoid !important; page-break-inside: avoid !important; }
     }
   </style>
 </head>
@@ -42,8 +47,20 @@
     const { createClient } = supabase;
 
     // ---------- CONFIG ----------
-    const DEFAULT_LOGO_PATH = "Foundry-Cabinetco-Logo-2-White-Text.png"; // place this file next to index.html
-    const DEFAULT_LOGO_ALT_PATH = "./Foundry-Cabinetco-Logo-2-White-Text.png";
+    // Safe inline fallback logo (white text, transparent) so header/footer never break:
+    const INLINE_FALLBACK_LOGO =
+      'data:image/svg+xml;utf8,' +
+      encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
+        <rect fill="none" width="800" height="200"/>
+        <g fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial">
+          <text x="50%" y="46%" text-anchor="middle" font-size="56" font-weight="700">FOUNDRY</text>
+          <text x="50%" y="70%" text-anchor="middle" font-size="28" letter-spacing="4">CABINET · CO</text>
+        </g>
+      </svg>`);
+
+    // You can swap to a PNG filename if you want (e.g. "Foundry-Cabinetco-Logo-2-White-Text.png")
+    // Keeping inline fallback ensures no missing logo even before you upload.
+    const DEFAULT_LOGO_PATH = INLINE_FALLBACK_LOGO;
 
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY =
@@ -74,6 +91,7 @@
     };
 
     const embedAllImagesInState = async (images, setImages, fallbackLogo) => {
+      // make a fresh embedded copy from whatever is currently in state/UI
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         toDataURL(images.logo || fallbackLogo),
         toDataURL(images.shakerRender),
@@ -136,7 +154,7 @@
         sketchupLink: ""
       });
 
-      // fetch proposals list (admin mode convenience)
+      // fetch proposals list (admin mode)
       useEffect(() => { (async () => {
         const { data, error } = await db.from('proposals').select('*');
         if (!error && data) setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
@@ -149,7 +167,7 @@
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // On first load, try to embed any path-based images so Print/PDF works even before uploads
+      // On first load, embed any path-based images so Print/PDF works even before uploads
       useEffect(() => {
         (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,6 +190,7 @@
             if (!row) return;
             setContent(row.content || content);
             setImages(row.images || images);
+            // ensure embedded copies are used in the client export/print
             await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
           } catch (err) {
             console.warn("Client auto-load failed:", err?.message);
@@ -226,24 +245,33 @@
         alert('Deleted "' + name + '".');
       };
 
-      // Print handler: embed images then print
+      // Print handler: embed images (from current UI) then print (avoids stale)
       const handlePrint = async () => {
-        await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
-        setTimeout(() => window.print(), 120); // let React re-render
+        const working = {
+          logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
+          shakerRender: await toDataURL(images.shakerRender),
+          euroRender: await toDataURL(images.euroRender),
+          shakerVanity: await toDataURL(images.shakerVanity),
+          euroVanity: await toDataURL(images.euroVanity),
+          floorPlan: await toDataURL(images.floorPlan),
+        };
+        setImages(prev => ({ ...prev, ...working }));
+        setTimeout(() => window.print(), 200);
       };
 
-      // -------- Export Client HTML (offline + images embedded) --------
+      // -------- Export Client HTML (offline + images embedded NOW) --------
       const exportClientHTML = async () => {
-        const c = content;
-        const img = images;
+        const c = { ...content };
 
-        // ensure all images are data URLs
-        const logoData   = await toDataURL(img.logo || DEFAULT_LOGO_PATH);
-        const shakerData = await toDataURL(img.shakerRender);
-        const euroData   = await toDataURL(img.euroRender);
-        const svData     = await toDataURL(img.shakerVanity);
-        const evData     = await toDataURL(img.euroVanity);
-        const planData   = await toDataURL(img.floorPlan);
+        // Build a local embedded-images snapshot from CURRENT UI (no stale cache)
+        const embedded = {
+          logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
+          shakerRender: await toDataURL(images.shakerRender),
+          euroRender: await toDataURL(images.euroRender),
+          shakerVanity: await toDataURL(images.shakerVanity),
+          euroVanity: await toDataURL(images.euroVanity),
+          floorPlan: await toDataURL(images.floorPlan),
+        };
 
         const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const has = (v) => v && ("" + v).trim().length > 0;
@@ -251,7 +279,7 @@
         const css =
           "body{margin:0;background:#f6f8fb;color:#0f172a;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}"+
           ".wrap{max-width:900px;margin:0 auto}.shadow{box-shadow:0 6px 20px rgba(2,6,23,.08)}"+
-          ".page{background:#fff;margin:28px auto;border-radius:6px;overflow:hidden}"+
+          ".page{background:#fff;margin:28px auto;border-radius:6px;overflow:hidden;page-break-after:always}"+
           ".bar{display:flex;justify-content:space-between;align-items:flex-start;padding:24px 28px;background:#1e293b}"+
           ".logo{max-height:160px;object-fit:contain}.hdrR{color:#fff;font-size:14px;text-align:right}.muted{color:#cbd5e1}"+
           ".sec{padding:36px}.tac{text-align:center}.small{font-size:14px;color:#475569;letter-spacing:.08em}"+
@@ -261,13 +289,24 @@
           ".kpi{background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:14px;text-align:center}.kbig{font-size:26px;margin-bottom:6px}.ksub{font-size:12px;color:#64748b;letter-spacing:.12em}"+
           ".footer{background:#0b1120;color:#e2e8f0;text-align:center;padding:36px 16px;margin-top:28px}"+
           ".footLogo{max-height:90px;object-fit:contain;margin:0 auto 10px;display:block}.footAddr{color:#94a3b8;font-size:14px}.footThanks{color:#cbd5e1;font-size:14px;margin-top:12px}"+
-          ".secTitle{font-size:22px;font-weight:300;color:#0f172a;margin:0;padding:26px 28px;border-bottom:1px solid #e5e7eb}.secBody{padding:28px}"+
-          ".two{display:grid;grid-template-columns:1fr 1fr;gap:28px}.imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:192px;overflow:hidden}"+
-          ".imgBox img{width:100%;height:100%;object-fit:cover}.cap{font-size:13px;color:#64748b;margin-top:8px}"+
-          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:256px;overflow:hidden}"+
-          ".layoutImg img{width:100%;height:100%;object-fit:contain}.btn3d{display:inline-block;background:#1f2937;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}"+
-          ".cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px}.tlItem{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start}.dot{width:12px;height:12px;border-radius:2px;margin-top:4px}"+
-          ".tlP{font:700 12px system-ui;letter-spacing:.06em;color:#0f172a;text-transform:uppercase}.tlT{color:#475569;margin-top:2px}.nxItem{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}.num{width:26px;height:26px;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px}";
+          ".secTitle{font-size:22px;font-weight:300;color:#0f172a;margin:0;padding:26px 28px;border-bottom:1px solid #e5e7eb}"+
+          ".secBody{padding:28px}"+
+          ".two{display:grid;grid-template-columns:1fr 1fr;gap:28px}"+
+          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:192px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
+          ".imgBox img{width:100%;height:100%;object-fit:cover}"+
+          ".cap{font-size:13px;color:#64748b;margin-top:8px}"+
+          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:256px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
+          ".layoutImg img{width:100%;height:100%;object-fit:contain}"+
+          ".btn3d{display:inline-block;background:#1f2937;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}"+
+          ".cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px}"+
+          ".tlItem{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
+          ".dot{width:12px;height:12px;border-radius:2px;margin-top:4px}"+
+          ".tlP{font:700 12px system-ui;letter-spacing:.06em;color:#0f172a;text-transform:uppercase}"+
+          ".tlT{color:#475569;margin-top:2px}"+
+          ".nxItem{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
+          ".num{width:26px;height:26px;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px}"+
+          "@page{size:8.5in 11in;margin:0.5in}"+
+          "@media print{img{break-inside:avoid;page-break-inside:avoid}}";
 
         const blockImg = (src, alt) =>
           src ? "<div class='imgBox'><img src='"+src+"'></div>" :
@@ -282,7 +321,7 @@
 
         // PAGE 1
         html += "<div class='wrap page shadow'><div class='bar'>"+
-          "<img src='"+(logoData || "")+"' alt='' class='logo'>"+
+          "<img src='"+(embedded.logo || "")+"' alt='' class='logo'>"+
           "<div class='hdrR'><div>PROJECT "+esc(c.projectNumber)+"</div><div class='muted'>"+esc(c.date)+"</div></div></div>"+
           "<div class='sec tac'><div class='small'>CUSTOM CABINETRY PROPOSAL</div><div class='h1'>"+esc(c.title)+"</div><div class='grad'></div>"+
           "<div class='panel'><div class='grid'><div class='kpi'><div class='kbig'>"+esc(c.totalInvestment)+"</div><div class='ksub'>INVESTMENT</div></div>"+
@@ -292,13 +331,13 @@
         // PAGE 2
         html += "<div class='wrap page shadow'><h2 class='secTitle'>Design Options &amp; Layout</h2><div class='sec'>"+
           "<div class='two'><div><h3 style='margin:0 0 10px;font:600 16px system-ui;color:#0f172a'>Shaker Style</h3>"+
-          blockImg(shakerData,'Shaker Kitchen')+"<div class='cap'>"+esc(c.shakerDescription)+"</div>"+
-          blockImg(svData,'Shaker Vanity')+"<div class='cap'>"+esc(c.shakerVanityDescription)+"</div></div>"+
+          blockImg(embedded.shakerRender,'Shaker Kitchen')+"<div class='cap'>"+esc(c.shakerDescription)+"</div>"+
+          blockImg(embedded.shakerVanity,'Shaker Vanity')+"<div class='cap'>"+esc(c.shakerVanityDescription)+"</div></div>"+
           "<div><h3 style='margin:0 0 10px;font:600 16px system-ui;color:#0f172a'>Euro Style</h3>"+
-          blockImg(euroData,'Euro Kitchen')+"<div class='cap'>"+esc(c.euroDescription)+"</div>"+
-          blockImg(evData,'Euro Vanity')+"<div class='cap'>"+esc(c.euroVanityDescription)+"</div></div></div>"+
+          blockImg(embedded.euroRender,'Euro Kitchen')+"<div class='cap'>"+esc(c.euroDescription)+"</div>"+
+          blockImg(embedded.euroVanity,'Euro Vanity')+"<div class='cap'>"+esc(c.euroVanityDescription)+"</div></div></div>"+
           "<div style='margin-top:18px;text-align:center'><h3 style='margin:0 0 10px;font:600 16px system-ui;color:#0f172a'>Architectural Layout</h3>"+
-          blockImgTall(planData)+"<div class='cap' style='margin-top:8px'>"+esc(c.floorPlanDescription)+"</div>"+
+          blockImgTall(embedded.floorPlan)+"<div class='cap' style='margin-top:8px'>"+esc(c.floorPlanDescription)+"</div>"+
           (has(c.onlinePlansLink) ? "<div style='margin-top:10px;font-size:14px'><span style='color:#475569'>View detailed plans:</span> <a href='"+esc(c.onlinePlansLink)+"' target='_blank' rel='noreferrer' style='color:#111827;text-decoration:underline'>"+esc(c.onlinePlansLink)+"</a></div>": "")+
           (has(c.sketchupLink) ? "<div style='margin-top:14px;background:#fffbeb;border:1px solid #fde68a;padding:14px;border-radius:8px;display:inline-block'><div style='font-weight:600;margin-bottom:6px;color:#0f172a'>🏠 VIEW IN 3D</div><div style='color:#475569;font-size:14px;margin-bottom:8px'>Experience your kitchen design in full 3D.</div><a class='btn3d' href='"+esc(c.sketchupLink)+"' target='_blank' rel='noreferrer'>View 3D Model</a></div>": "")+
           "</div></div></div>";
@@ -315,7 +354,7 @@
           "<div><h3 style='margin:0 0 6px;font:600 16px system-ui'>Project Timeline</h3><div style='margin-top:14px'>"+tl+"</div></div>"+
           "<div><h3 style='margin:0 0 6px;font:600 16px system-ui'>Next Steps</h3><div style='margin-top:14px'>"+steps+"</div></div>"+
           "</div>"+
-          "<div class='footer'><img src='"+(logoData || "")+"' alt='' class='footLogo'>"+
+          "<div class='footer'><img src='"+(embedded.logo || "")+"' alt='' class='footLogo'>"+
           "<div>"+esc(c.tagline)+"</div><div class='footAddr'>"+esc(c.address)+"</div>"+
           "<div class='footThanks'>Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that&#39;s the perfect fit for your home.</div></div></div>";
 
@@ -342,11 +381,7 @@
                     src={images.logo || DEFAULT_LOGO_PATH}
                     alt=""
                     className="h-10"
-                    onError={(e)=> {
-                      const tried = e.currentTarget.getAttribute('data-tried') || '';
-                      if (!tried) { e.currentTarget.src = DEFAULT_LOGO_ALT_PATH; e.currentTarget.setAttribute('data-tried','alt'); }
-                      else { e.currentTarget.style.display = 'none'; }
-                    }}
+                    onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
                   />
                   <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
                   {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
@@ -497,11 +532,7 @@
                   src={images.logo || DEFAULT_LOGO_PATH}
                   alt=""
                   className="logo-clean"
-                  onError={(e)=> {
-                    const tried = e.currentTarget.getAttribute('data-tried') || '';
-                    if (!tried) { e.currentTarget.src = DEFAULT_LOGO_ALT_PATH; e.currentTarget.setAttribute('data-tried','alt'); }
-                    else { e.currentTarget.style.display = 'none'; }
-                  }}
+                  onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
                 />
                 <div className="text-right text-white text-sm">
                   <div className="font-medium tracking-wide">PROJECT {content.projectNumber}</div>
@@ -541,23 +572,33 @@
                 <div className="grid md:grid-cols-2 gap-10 mb-10">
                   <div className="space-y-4 text-center">
                     <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Shaker Style</h3>
-                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">{images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}</div>
+                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">
+                      {images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}
+                    </div>
                     <p className="text-sm text-slate-600">{content.shakerDescription}</p>
-                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">{images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}</div>
+                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">
+                      {images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}
+                    </div>
                     <p className="text-sm text-slate-600">{content.shakerVanityDescription}</p>
                   </div>
                   <div className="space-y-4 text-center">
                     <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Euro Style</h3>
-                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">{images.euroRender ? <img src={images.euroRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}</div>
+                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">
+                      {images.euroRender ? <img src={images.euroRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}
+                    </div>
                     <p className="text-sm text-slate-600">{content.euroDescription}</p>
-                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">{images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}</div>
+                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">
+                      {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
+                    </div>
                     <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 text-center">
                   <h3 className="text-lg font-medium text-slate-800 tracking-tight">Architectural Layout</h3>
-                  <div className="bg-slate-50 p-6 card">{images.floorPlan ? <img src={images.floorPlan} className="w-full h-64 object-contain"/> : <div className="text-slate-400 text-sm h-64 flex items-center justify-center">Floor Plan</div>}</div>
+                  <div className="bg-slate-50 p-6 card">
+                    {images.floorPlan ? <img src={images.floorPlan} className="w-full h-64 object-contain"/> : <div className="text-slate-400 text-sm h-64 flex items-center justify-center">Floor Plan</div>}
+                  </div>
                   <p className="text-slate-600 text-sm">{content.floorPlanDescription}</p>
                   {content.onlinePlansLink ? <div className="text-sm"><span className="text-slate-600">View detailed plans:</span> <a className="text-slate-800 underline" target="_blank" rel="noreferrer" href={content.onlinePlansLink}>{content.onlinePlansLink}</a></div> : null}
                   {content.sketchupLink ? <div className="bg-amber-50 border border-amber-200 p-6 mt-4 text-center card"><h4 className="text-lg font-medium text-slate-800 mb-2">🏠 VIEW IN 3D</h4><p className="text-slate-600 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href={content.sketchupLink} target="_blank" rel="noreferrer" className="inline-block bg-slate-800 text-white px-6 py-2 rounded">View 3D Model</a></div> : null}
@@ -579,11 +620,11 @@
                   <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Project Timeline</h3>
                   <div className="mt-6 space-y-4">
                     {content.timeline.map((t,i)=> (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className={["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"][i%5] + " w-4 h-4 mt-1"}></div>
+                      <div key={i} className="flex items-start gap-3 tlItem">
+                        <div className={["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"][i%5] + " w-4 h-4 mt-1 dot"}></div>
                         <div>
-                          <div className="font-bold text-slate-800 text-sm uppercase">{t.period}</div>
-                          <div className="text-slate-600 mt-1">{t.task}</div>
+                          <div className="font-bold text-slate-800 text-sm uppercase tlP">{t.period}</div>
+                          <div className="text-slate-600 mt-1 tlT">{t.task}</div>
                         </div>
                       </div>
                     ))}
@@ -594,8 +635,8 @@
                   <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Next Steps</h3>
                   <div className="mt-6 space-y-3">
                     {content.nextSteps.map((s,i)=> (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className="w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm">{i+1}</div>
+                      <div key={i} className="flex items-start gap-3 nxItem">
+                        <div className="w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm num">{i+1}</div>
                         <span className="text-slate-700">{s}</span>
                       </div>
                     ))}
@@ -610,11 +651,7 @@
                   alt=""
                   className="mx-auto mb-4"
                   style={{maxHeight:"90px", objectFit:"contain"}}
-                  onError={(e)=> {
-                    const tried = e.currentTarget.getAttribute('data-tried') || '';
-                    if (!tried) { e.currentTarget.src = DEFAULT_LOGO_ALT_PATH; e.currentTarget.setAttribute('data-tried','alt'); }
-                    else { e.currentTarget.style.display = 'none'; }
-                  }}
+                  onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
                 />
                 <div className="text-white text-base mb-1 tracking-wide">{content.tagline}</div>
                 <div className="text-slate-300 text-sm">{content.address}</div>
