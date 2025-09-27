@@ -9,7 +9,7 @@
   <link rel="icon"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
-  <!-- React + Babel (CDN) -->
+  <!-- React + Babel -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -96,6 +96,7 @@
     function App() {
       const urlParams = new URLSearchParams(window.location.search);
       const isClient = urlParams.get("client") === "true";
+      const clientId = urlParams.get("id") || ""; // optional proposal name to load in client view
 
       const [savedProposals, setSavedProposals] = useState([]);
       const [currentName, setCurrentName] = useState("");
@@ -135,24 +136,49 @@
         sketchupLink: ""
       });
 
-      // fetch proposals (list)
+      // fetch proposals list (admin mode convenience)
       useEffect(() => { (async () => {
         const { data, error } = await db.from('proposals').select('*');
         if (!error && data) setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
       })() }, []);
 
-      // auto-save
+      // auto-save while editing a named proposal
       useEffect(() => {
         if (!currentName) return;
         const id = setInterval(() => save(currentName, false), 30000);
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // On first load, embed any path-based images so Print/PDF works
+      // On first load, try to embed any path-based images so Print/PDF works even before uploads
       useEffect(() => {
         (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
+
+      // Client View: auto-load a proposal (by ?id=NAME or most recent), then embed images
+      useEffect(() => {
+        if (!isClient) return;
+        (async () => {
+          try {
+            let target = clientId;
+            if (!target) {
+              const { data, error } = await db.from("proposals").select("name").order("created_at", { ascending:false }).limit(1);
+              if (error) throw error;
+              if (data && data[0]) target = data[0].name;
+            }
+            if (!target) return; // nothing in DB yet
+            const { data: row, error: e2 } = await db.from("proposals").select("*").eq("name", target).maybeSingle();
+            if (e2) throw e2;
+            if (!row) return;
+            setContent(row.content || content);
+            setImages(row.images || images);
+            await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
+          } catch (err) {
+            console.warn("Client auto-load failed:", err?.message);
+          }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [isClient, clientId]);
 
       // uploads
       const onImgUpload = (key, file) => {
@@ -345,7 +371,28 @@
           {/* CLIENT MODE TOOLBAR */}
           {isClient && (
             <div className="bg-white shadow-sm border-b print:hidden">
-              <div className="max-w-4xl mx-auto p-4 flex items-center justify-center gap-3">
+              <div className="max-w-4xl mx-auto p-4 flex items-center justify-center gap-3 flex-wrap">
+                <button
+                  onClick={async () => {
+                    const pick = prompt("Type the exact proposal name to load:");
+                    if (!pick) return;
+                    try {
+                      const { data: row, error } = await db.from("proposals")
+                        .select("*").eq("name", pick.trim()).maybeSingle();
+                      if (error) throw error;
+                      if (!row) return alert("Not found.");
+                      setContent(row.content || content);
+                      setImages(row.images || images);
+                      await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
+                      alert('Loaded "' + pick.trim() + '" for client view.');
+                    } catch (e) {
+                      alert("Load failed: " + e.message);
+                    }
+                  }}
+                  className="bg-sky-600 text-white px-6 py-2 rounded"
+                >
+                  Load from Cloud
+                </button>
                 <button onClick={handlePrint} className="bg-slate-800 text-white px-6 py-2 rounded">Download PDF</button>
                 <button onClick={exportClientHTML} className="bg-orange-600 text-white px-6 py-2 rounded">Export HTML</button>
               </div>
