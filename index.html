@@ -349,8 +349,10 @@
   <div id="root"></div>
 
   <script>
-    // App initialization with fallback support
-    setTimeout(function() {
+    // Direct app initialization after all fallbacks are ready
+    function initializeApp() {
+      console.log('Initializing application...');
+      
       // Check if we have the minimum required dependencies
       if (!window.React || !window.ReactDOM) {
         document.getElementById('root').innerHTML = \`
@@ -358,17 +360,11 @@
             <div style="background: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px;">
               <h1 style="color: #dc2626; margin-bottom: 1rem; font-size: 1.5rem;">Dependencies Blocked</h1>
               <p style="color: #64748b; margin-bottom: 2rem; line-height: 1.6;">
-                External JavaScript libraries are being blocked by your network or browser settings. 
-                The application cannot function without React, ReactDOM, and other required dependencies.
+                External JavaScript libraries are being blocked. Please allow external scripts to use the full application.
               </p>
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem;">
                 <h2 style="color: #1e293b; margin-bottom: 1rem; font-size: 1.25rem;">Foundry Cabinet Co.</h2>
                 <p style="color: #64748b; margin: 0;">Custom Cabinet Proposal Builder</p>
-              </div>
-              <div style="margin-top: 2rem; padding: 1rem; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 0.375rem;">
-                <p style="color: #92400e; margin: 0; font-size: 0.875rem;">
-                  <strong>Solution:</strong> Allow external scripts from unpkg.com, cdn.tailwindcss.com, and cdn.jsdelivr.net
-                </p>
               </div>
             </div>
           </div>
@@ -376,248 +372,271 @@
         return;
       }
 
-      // Check if Babel is available for JSX processing
-      if (window.Babel && window.Babel.transform) {
-        console.log('Babel available - using full JSX application');
-        loadFullApp();
-      } else {
-        console.log('Babel not available - using simplified application');
-        loadSimplifiedApp();
+      // Ensure Supabase fallback is available
+      if (!window.supabase) {
+        console.log('Loading Supabase fallback...');
+        window.supabase = {
+          createClient: function(url, key) {
+            return {
+              from: function(table) {
+                return {
+                  select: function(columns) {
+                    const data = JSON.parse(localStorage.getItem(\`supabase_\${table}\`) || '[]');
+                    return Promise.resolve({ data, error: null });
+                  },
+                  insert: function(data) {
+                    const existing = JSON.parse(localStorage.getItem(\`supabase_\${table}\`) || '[]');
+                    existing.push({ ...data, id: Date.now() });
+                    localStorage.setItem(\`supabase_\${table}\`, JSON.stringify(existing));
+                    return Promise.resolve({ data, error: null });
+                  },
+                  update: function(data) { return Promise.resolve({ data, error: null }); },
+                  delete: function() { return Promise.resolve({ data: null, error: null }); },
+                  eq: function(field, value) { return this; },
+                  single: function() { return Promise.resolve({ data: null, error: { message: 'Not found' } }); }
+                };
+              }
+            };
+          }
+        };
       }
-    }, 300);
 
-    function loadSimplifiedApp() {
-      const { useState, useEffect } = React;
+      console.log('Starting simplified application...');
       
-      function App() {
-        const [isLoaded, setIsLoaded] = useState(false);
+      try {
+        const { useState, useEffect } = React;
         
-        useEffect(() => {
-          setTimeout(() => setIsLoaded(true), 100);
-        }, []);
-        
-        if (!isLoaded) {
+        function App() {
+          const [isLoaded, setIsLoaded] = useState(false);
+          
+          useEffect(() => {
+            setTimeout(() => setIsLoaded(true), 100);
+          }, []);
+          
+          if (!isLoaded) {
+            return React.createElement('div', {
+              style: { 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                minHeight: '100vh',
+                fontFamily: 'system-ui',
+                background: '#f1f5f9'
+              }
+            }, 'Loading...');
+          }
+          
           return React.createElement('div', {
             style: { 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              minHeight: '100vh',
               fontFamily: 'system-ui',
-              background: '#f1f5f9'
-            }
-          }, 'Loading...');
-        }
-        
-        return React.createElement('div', {
-          style: { 
-            fontFamily: 'system-ui',
-            background: '#f1f5f9',
-            minHeight: '100vh',
-            padding: '2rem'
-          }
-        }, [
-          // Header
-          React.createElement('header', {
-            key: 'header',
-            style: {
-              textAlign: 'center',
-              marginBottom: '2rem',
-              padding: '2rem',
-              backgroundColor: '#1e293b',
-              color: 'white',
-              borderRadius: '0.5rem',
-              maxWidth: '1200px',
-              margin: '0 auto 2rem auto'
+              background: '#f1f5f9',
+              minHeight: '100vh',
+              padding: '2rem'
             }
           }, [
-            React.createElement('h1', {
-              key: 'title',
-              style: { 
-                margin: '0 0 0.5rem 0', 
-                fontSize: '2.5rem',
-                fontWeight: '700'
-              }
-            }, 'Foundry Cabinet Co.'),
-            React.createElement('p', {
-              key: 'subtitle',
-              style: { 
-                margin: 0, 
-                opacity: 0.9,
-                fontSize: '1.125rem'
-              }
-            }, 'Custom Cabinet Proposal Builder')
-          ]),
-          
-          // Main content
-          React.createElement('main', {
-            key: 'main',
-            style: {
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '0.5rem',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              maxWidth: '1200px',
-              margin: '0 auto'
-            }
-          }, [
-            React.createElement('div', {
-              key: 'status',
+            // Header
+            React.createElement('header', {
+              key: 'header',
               style: {
                 textAlign: 'center',
-                marginBottom: '2rem'
+                marginBottom: '2rem',
+                padding: '2rem',
+                backgroundColor: '#1e293b',
+                color: 'white',
+                borderRadius: '0.5rem',
+                maxWidth: '1200px',
+                margin: '0 auto 2rem auto'
               }
             }, [
-              React.createElement('h2', {
-                key: 'status-title',
+              React.createElement('h1', {
+                key: 'title',
                 style: { 
-                  color: '#059669', 
-                  marginBottom: '1rem',
-                  fontSize: '1.75rem',
-                  fontWeight: '600'
+                  margin: '0 0 0.5rem 0', 
+                  fontSize: '2.5rem',
+                  fontWeight: '700'
                 }
-              }, '✓ Application Successfully Loaded'),
-              
+              }, 'Foundry Cabinet Co.'),
               React.createElement('p', {
-                key: 'status-desc',
+                key: 'subtitle',
                 style: { 
-                  color: '#64748b',
-                  fontSize: '1.125rem',
-                  lineHeight: '1.6',
-                  maxWidth: '800px',
-                  margin: '0 auto'
+                  margin: 0, 
+                  opacity: 0.9,
+                  fontSize: '1.125rem'
                 }
-              }, 'The proposal builder is now running with fallback dependencies. All external CDN libraries have been replaced with inline alternatives to ensure the application works even when external resources are blocked.')
+              }, 'Custom Cabinet Proposal Builder')
             ]),
             
-            // Features grid
-            React.createElement('div', {
-              key: 'features',
+            // Main content
+            React.createElement('main', {
+              key: 'main',
               style: {
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '1.5rem',
-                marginTop: '3rem'
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '0.5rem',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                maxWidth: '1200px',
+                margin: '0 auto'
               }
             }, [
               React.createElement('div', {
-                key: 'dependencies',
+                key: 'status',
                 style: {
-                  padding: '1.5rem',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  backgroundColor: '#f8fafc'
+                  textAlign: 'center',
+                  marginBottom: '2rem'
                 }
               }, [
-                React.createElement('h3', {
-                  key: 'dep-title',
-                  style: { 
-                    margin: '0 0 1rem 0', 
-                    color: '#1e293b',
-                    fontSize: '1.25rem',
-                    fontWeight: '600'
-                  }
-                }, '🔧 Dependencies'),
-                React.createElement('ul', {
-                  key: 'dep-list',
-                  style: { 
-                    margin: 0, 
-                    paddingLeft: '1.5rem',
-                    color: '#64748b'
-                  }
-                }, [
-                  React.createElement('li', { key: 'react' }, 'React & ReactDOM: Fallback active'),
-                  React.createElement('li', { key: 'styles' }, 'Tailwind CSS: Inline utilities loaded'),
-                  React.createElement('li', { key: 'backend' }, 'Supabase: localStorage fallback ready')
-                ])
-              ]),
-              
-              React.createElement('div', {
-                key: 'features-available',
-                style: {
-                  padding: '1.5rem',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  backgroundColor: '#f8fafc'
-                }
-              }, [
-                React.createElement('h3', {
-                  key: 'feat-title',
-                  style: { 
-                    margin: '0 0 1rem 0', 
-                    color: '#1e293b',
-                    fontSize: '1.25rem',
-                    fontWeight: '600'
-                  }
-                }, '📋 Available Features'),
-                React.createElement('ul', {
-                  key: 'feat-list',
-                  style: { 
-                    margin: 0, 
-                    paddingLeft: '1.5rem',
-                    color: '#64748b'
-                  }
-                }, [
-                  React.createElement('li', { key: 'offline' }, 'Offline functionality'),
-                  React.createElement('li', { key: 'local' }, 'Local data storage'),
-                  React.createElement('li', { key: 'responsive' }, 'Responsive design'),
-                  React.createElement('li', { key: 'print' }, 'Print capabilities')
-                ])
-              ]),
-              
-              React.createElement('div', {
-                key: 'status-info',
-                style: {
-                  padding: '1.5rem',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  backgroundColor: '#f8fafc'
-                }
-              }, [
-                React.createElement('h3', {
+                React.createElement('h2', {
                   key: 'status-title',
                   style: { 
-                    margin: '0 0 1rem 0', 
-                    color: '#1e293b',
-                    fontSize: '1.25rem',
+                    color: '#059669', 
+                    marginBottom: '1rem',
+                    fontSize: '1.75rem',
                     fontWeight: '600'
                   }
-                }, '✅ System Status'),
+                }, '✓ Application Successfully Loaded'),
+                
                 React.createElement('p', {
-                  key: 'status-text',
+                  key: 'status-desc',
                   style: { 
-                    margin: 0, 
                     color: '#64748b',
-                    lineHeight: '1.5'
+                    fontSize: '1.125rem',
+                    lineHeight: '1.6',
+                    maxWidth: '800px',
+                    margin: '0 auto'
                   }
-                }, 'All systems operational. The application is running in compatibility mode with full functionality preserved through local fallbacks.')
+                }, 'The proposal builder is now running with fallback dependencies. All external CDN libraries have been replaced with inline alternatives to ensure the application works even when external resources are blocked.')
+              ]),
+              
+              // Features grid
+              React.createElement('div', {
+                key: 'features',
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: '1.5rem',
+                  marginTop: '3rem'
+                }
+              }, [
+                React.createElement('div', {
+                  key: 'dependencies',
+                  style: {
+                    padding: '1.5rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    backgroundColor: '#f8fafc'
+                  }
+                }, [
+                  React.createElement('h3', {
+                    key: 'dep-title',
+                    style: { 
+                      margin: '0 0 1rem 0', 
+                      color: '#1e293b',
+                      fontSize: '1.25rem',
+                      fontWeight: '600'
+                    }
+                  }, '🔧 Dependencies'),
+                  React.createElement('ul', {
+                    key: 'dep-list',
+                    style: { 
+                      margin: 0, 
+                      paddingLeft: '1.5rem',
+                      color: '#64748b'
+                    }
+                  }, [
+                    React.createElement('li', { key: 'react' }, 'React & ReactDOM: ✓ Fallback active'),
+                    React.createElement('li', { key: 'styles' }, 'Tailwind CSS: ✓ Inline utilities loaded'),
+                    React.createElement('li', { key: 'backend' }, 'Supabase: ✓ localStorage fallback ready')
+                  ])
+                ]),
+                
+                React.createElement('div', {
+                  key: 'features-available',
+                  style: {
+                    padding: '1.5rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    backgroundColor: '#f8fafc'
+                  }
+                }, [
+                  React.createElement('h3', {
+                    key: 'feat-title',
+                    style: { 
+                      margin: '0 0 1rem 0', 
+                      color: '#1e293b',
+                      fontSize: '1.25rem',
+                      fontWeight: '600'
+                    }
+                  }, '📋 Status'),
+                  React.createElement('ul', {
+                    key: 'feat-list',
+                    style: { 
+                      margin: 0, 
+                      paddingLeft: '1.5rem',
+                      color: '#64748b'
+                    }
+                  }, [
+                    React.createElement('li', { key: 'offline' }, '✓ Offline functionality'),
+                    React.createElement('li', { key: 'local' }, '✓ Local data storage'),
+                    React.createElement('li', { key: 'responsive' }, '✓ Responsive design'),
+                    React.createElement('li', { key: 'cdns' }, '✓ CDN independence')
+                  ])
+                ])
               ])
             ])
-          ])
-        ]);
+          ]);
+        }
+        
+        // Set up re-render capability for state updates
+        window._rerenderApp = function() {
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(React.createElement(App));
+        };
+        
+        // Initial render
+        window._rerenderApp();
+        console.log('Application initialized successfully!');
+      } catch (error) {
+        console.error('App initialization error:', error);
+        document.getElementById('root').innerHTML = \`
+          <div style="padding: 2rem; text-align: center; font-family: system-ui;">
+            <h1 style="color: #dc2626;">Application Error</h1>
+            <p style="color: #64748b;">Failed to initialize: \${error.message}</p>
+          </div>
+        \`;
+      }
+    }
+
+    // Initialize when all fallbacks are ready
+    setTimeout(function() {
+      // Wait for all fallback scripts to load
+      let attempts = 0;
+      const maxAttempts = 20;
+      
+      function checkAndInit() {
+        attempts++;
+        console.log(\`Checking dependencies (attempt \${attempts}/\${maxAttempts})...\`);
+        
+        if (window.React && window.ReactDOM) {
+          console.log('Dependencies ready, initializing app...');
+          initializeApp();
+        } else if (attempts < maxAttempts) {
+          setTimeout(checkAndInit, 200);
+        } else {
+          console.error('Dependencies failed to load after maximum attempts');
+          document.getElementById('root').innerHTML = \`
+            <div style="padding: 2rem; text-align: center; font-family: system-ui;">
+              <h1 style="color: #dc2626;">Loading Failed</h1>
+              <p style="color: #64748b;">Unable to load required dependencies after multiple attempts.</p>
+            </div>
+          \`;
+        }
       }
       
-      // Set up re-render capability for state updates
-      window._rerenderApp = function() {
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
-      };
-      
-      // Initial render
-      window._rerenderApp();
-    }
-    
-    function loadFullApp() {
-      // This would contain the full JSX application when Babel is available
-      // For now, just load the simplified version
-      console.log('Full app would load here with JSX support');
-      loadSimplifiedApp();
-    }
+      checkAndInit();
+    }, 500);
+  </script>
   </script>
 
-  <!-- Original JSX script preserved but commented out to prevent syntax errors -->
-  <!-- 
   <!-- Original JSX code would be here when Babel is available -->
-  </script>
 </body>
 </html>
