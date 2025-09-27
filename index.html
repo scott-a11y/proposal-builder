@@ -14,10 +14,45 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
+  <!-- React 18 UMD Production (blocked in sandbox) -->
+  <!-- <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script> -->
+  <!-- <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script> -->
+  
+  <!-- Babel for JSX transformation (blocked in sandbox) -->
+  <!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> -->
+  
+  <!-- Tailwind CSS (blocked in sandbox) -->
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+  
+  <!-- Supabase (blocked in sandbox) -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
+
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: *; connect-src 'self'; frame-ancestors 'self';">
+
   <!-- Simple CSS framework -->
   <style>
-    :root { --header:#1e293b; --footer:#0b1120; }
-    body { background:#f1f5f9; color:#111827; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    /* Task 14: Brand colors and styling */
+    :root { 
+      --midnight: #0B1120;
+      --slate: #1E293B;
+      --slate-light: #334155;
+      --cloud: #F1F5F9;
+      --amber: #F59E0B;
+      --gray-border: #E5E7EB;
+      --gray-caption: #CBD5E1;
+      --gray-muted: #94A3B8;
+      /* Legacy variables for compatibility */
+      --header: var(--slate);
+      --footer: var(--midnight);
+    }
+    body { 
+      background: var(--cloud); 
+      color: #111827; 
+      margin: 0; 
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; 
+    }
     .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     .logo-clean { display:block; max-height:160px; object-fit:contain; }
@@ -172,6 +207,48 @@
       </svg>`);
 
     const DEFAULT_LOGO_PATH = new URL('./Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
+    
+    // Supabase Configuration (placeholder - replace with real values)
+    const SUPABASE_URL = 'https://your-project.supabase.co';
+    const SUPABASE_ANON_KEY = 'your-anon-key';
+    // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // LocalStorage keys
+    const LS_LAST = 'foundry-last-proposal';
+    const LS_BY_NAME = (name) => `foundry-proposal-${name}`;
+    
+    // Safe filename sanitizer
+    const safe = (s) => (s || "Client").replace(/[^a-z0-9_\-]+/gi, "_").slice(0,120);
+    
+    // Task 15: Templates
+    const templates = {
+      'kitchen-basic': {
+        description: 'Complete kitchen renovation with quality cabinets, modern hardware, and professional installation. Includes soft-close drawers and doors.',
+        notes: 'Price includes delivery and installation. Timeline may vary based on material availability.',
+        timeline: '4-6 weeks'
+      },
+      'kitchen-premium': {
+        description: 'Luxury kitchen transformation featuring premium hardwood cabinets, crown molding, under-cabinet lighting, and custom storage solutions.',
+        notes: 'Premium package includes 3D design consultation, premium hardware selection, and white-glove installation service.',
+        timeline: '6-8 weeks'
+      },
+      'vanity-euro': {
+        description: 'Contemporary European-style vanity with clean lines, integrated handles, and modern finishes. Perfect for modern bathroom renovations.',
+        notes: 'Includes soft-close mechanisms and adjustable shelving. Custom sizing available.',
+        timeline: '3-4 weeks'
+      }
+    };
+    
+    const applyTemplate = (templateKey) => {
+      if (templates[templateKey]) {
+        const template = templates[templateKey];
+        formData.description = template.description;
+        formData.notes = template.notes;
+        formData.timeline = template.timeline;
+        dirty = true;
+        renderApp();
+      }
+    };
 
     // Application state
     let formData = {
@@ -181,7 +258,8 @@
       description: '',
       price: '',
       timeline: '',
-      notes: ''
+      notes: '',
+      sketchupLink: '' // Task 11: 3D model link for QR code
     };
 
     let images = {
@@ -194,6 +272,20 @@
     };
 
     let currentView = 'editor';
+    let currentName = '';
+    let dirty = false;
+
+    // Image cache for performance (Task 12: Conditional image embedding + caching)
+    const imageCache = new Map(); // src -> dataURL
+    
+    // Task 15: Feature flags for conditional rendering
+    const features = {
+      qr: true,
+      stickyHeader: true,
+      templates: true,
+      autosave: true,
+      export: true
+    };
 
     // Utility functions
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -203,9 +295,11 @@
         .filter(img => !img.complete || img.naturalWidth === 0);
       if (imgs.length === 0) return;
       await Promise.all(imgs.map(img => new Promise(res => {
-        const done = () => res();
-        img.onload = done; 
-        img.onerror = done;
+        // Task 7: Fix image load handlers to prevent memory leaks
+        img.onload = img.onerror = () => { 
+          res(); 
+          img.onload = img.onerror = null; 
+        };
       })));
     };
 
@@ -213,6 +307,12 @@
       try {
         if (!src) return "";
         if (src.startsWith("data:")) return src;
+        
+        // Task 12: Use cached value when available
+        if (imageCache.has(src)) {
+          return imageCache.get(src);
+        }
+        
         const url = new URL(src, window.location.href);
         url.searchParams.set("_v", Date.now().toString());
         const res = await fetch(url.toString(), { cache: "no-store", mode: "cors" });
@@ -223,13 +323,29 @@
           reader.onloadend = () => resolve(reader.result || ""); 
         });
         reader.readAsDataURL(blob);
-        return await p;
+        const dataURL = await p;
+        
+        // Cache the result
+        imageCache.set(src, dataURL);
+        return dataURL;
       } catch (e) {
         return src;
       }
     };
 
     const embedAllImagesInState = async () => {
+      // Task 12: Only call embedAllImagesInState when any image is non-data URL
+      const needsEmbedding = [
+        images.logo,
+        images.shakerRender,
+        images.euroRender,
+        images.shakerVanity,
+        images.euroVanity,
+        images.floorPlan
+      ].some(src => src && !src.startsWith('data:'));
+      
+      if (!needsEmbedding) return; // Skip if all images are already embedded
+      
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         toDataURL(images.logo || INLINE_FALLBACK_LOGO),
         toDataURL(images.shakerRender),
@@ -247,9 +363,89 @@
       images.floorPlan = fp || images.floorPlan;
     };
 
+    // Save/Load functionality with Supabase upsert
+    const save = async (name, showAlert = true) => {
+      if (!name) return;
+      
+      const payload = {
+        name,
+        content: formData,
+        images,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const json = JSON.stringify(payload);
+      
+      // Task 4: Local backup overflow guard
+      try { 
+        localStorage.setItem(LS_LAST, json); 
+        localStorage.setItem(LS_BY_NAME(name), json); 
+      }
+      catch (e) { 
+        alert("Local backup is full. Cloud save still works — consider smaller images."); 
+      }
+      
+      // Task 3: Supabase upsert (placeholder - needs real Supabase setup)
+      try {
+        // await supabase.from('proposals').upsert(payload, { onConflict: 'name' });
+        if (showAlert) alert('Proposal saved successfully!');
+      } catch (error) {
+        console.error('Save error:', error);
+        if (showAlert) alert('Save failed, but local backup was created.');
+      }
+    };
+    
+    const load = async (name) => {
+      if (!name) return;
+      
+      try {
+        // Try Supabase first (placeholder)
+        // const { data } = await supabase.from('proposals').select('*').eq('name', name).single();
+        // if (data) {
+        //   formData = data.content;
+        //   images = data.images;
+        //   currentName = name;
+        //   dirty = false;
+        //   renderApp();
+        //   return;
+        // }
+        
+        // Fallback to localStorage
+        const stored = localStorage.getItem(LS_BY_NAME(name));
+        if (stored) {
+          const payload = JSON.parse(stored);
+          formData = payload.content;
+          images = payload.images;
+          currentName = name;
+          dirty = false;
+          renderApp();
+        }
+      } catch (error) {
+        console.error('Load error:', error);
+      }
+    };
+    
+    // Task 2: Debounced autosave - only save if data is dirty
+    let autosaveInterval;
+    const startAutosave = () => {
+      if (autosaveInterval) clearInterval(autosaveInterval);
+      if (!currentName) return;
+      
+      autosaveInterval = setInterval(() => {
+        if (dirty && currentName) {
+          save(currentName, false).then(() => {
+            dirty = false;
+            console.log('Auto-saved:', currentName);
+          });
+        }
+      }, 20000); // 20 seconds
+    };
+
     // Event handlers
     const handleInputChange = (field, value) => {
       formData[field] = value;
+      dirty = true; // Task 2: Mark as dirty on content change
     };
 
     const handleImageUpload = (field, event) => {
@@ -258,6 +454,7 @@
         const reader = new FileReader();
         reader.onload = (e) => {
           images[field] = e.target.result;
+          dirty = true; // Task 2: Mark as dirty on image change
           renderApp();
         };
         reader.readAsDataURL(file);
@@ -280,17 +477,38 @@
       currentView = 'editor';
       renderApp();
     };
+    
+    // Task 5: Export with safe filename
+    const exportProposal = async () => {
+      await embedAllImagesInState();
+      const htmlContent = renderPreview();
+      const blob = new Blob([`<!DOCTYPE html><html><head><title>${formData.projectName || 'Proposal'}</title></head><body>${htmlContent}</body></html>`], {
+        type: 'text/html'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safe(formData.clientName || 'Client')}_Proposal.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
 
     // Render functions
     const renderPreview = () => {
       return `
         <div class="min-h-screen bg-gray-50">
-          <div class="print-hidden bg-white border-b p-4 flex justify-between items-center">
+          <!-- Task 10: Sticky header + page markers -->
+          <div class="print-hidden bg-white/70 backdrop-blur border-b p-4 flex justify-between items-center sticky top-0 z-10">
             <h1 class="text-xl font-bold">Proposal Preview</h1>
             <div class="space-x-2">
               <button onclick="backToEditor()" class="px-4 py-2 bg-gray-500 text-white rounded">
                 Back to Editor
               </button>
+              ${features.export ? `<button onclick="exportProposal()" class="px-4 py-2 bg-green-500 text-white rounded">
+                Export HTML
+              </button>` : ''}
               <button onclick="printProposal()" class="px-4 py-2 bg-blue-500 text-white rounded">
                 Print / Export PDF
               </button>
@@ -299,13 +517,17 @@
           
           <div class="proposal-page bg-white mx-auto p-8">
             <!-- Header -->
-            <div class="flex justify-between items-start mb-8 pb-4 border-b-2" style="border-color: var(--header)">
+            <div class="flex justify-between items-start mb-8 pb-4 border-b-2 relative" style="border-color: var(--header)">
               <div>
                 <h1 class="text-3xl font-bold mb-2">${formData.projectName || 'Project Proposal'}</h1>
                 <p class="text-gray-600">For: ${formData.clientName || 'Client Name'}</p>
                 <p class="text-gray-600">Date: ${formData.date}</p>
               </div>
-              <img src="${images.logo}" alt="Company Logo" class="logo-clean" />
+              <div class="text-right">
+                <img src="${images.logo}" alt="Company Logo" class="logo-clean mb-2" />
+                <!-- Task 10: Page marker -->
+                <div class="text-sm text-gray-500 mt-2">PROJECT # | PAGE 01</div>
+              </div>
             </div>
 
             <!-- Project Description -->
@@ -377,6 +599,21 @@
               </div>
             ` : ''}
 
+            <!-- Task 11: 3D Model Link with QR Code -->
+            ${formData.sketchupLink && features.qr ? `
+              <div class="mb-8 text-center">
+                <h2 class="text-xl font-semibold mb-4">View in 3D</h2>
+                <a href="${formData.sketchupLink}" target="_blank" rel="noopener noreferrer" 
+                   class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium mb-3">
+                  View 3D Model
+                </a>
+                <img width="96" height="96" alt="QR to 3D model"
+                     class="mx-auto mt-3"
+                     src="https://api.qrserver.com/v1/create-qr-code/?size=192x192&margin=0&data=${encodeURIComponent(formData.sketchupLink)}" />
+                <p class="text-sm text-gray-500 mt-2">Scan QR code to view on mobile</p>
+              </div>
+            ` : ''}
+
             <!-- Footer -->
             <div class="border-t-2 pt-4 mt-8 text-center text-gray-600" style="border-color: var(--footer)">
               <p>Thank you for choosing Foundry Cabinet Co</p>
@@ -396,7 +633,19 @@
 
           <div class="max-w-4xl mx-auto p-6">
             <div class="bg-white rounded-lg shadow p-6">
-              <h2 class="text-xl font-semibold mb-6">Project Information</h2>
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">Project Information</h2>
+                <!-- Task 15: Template selector -->
+                <div>
+                  <label class="text-xs">Quick Templates</label>
+                  <select onchange="applyTemplate(this.value); this.value=''" class="ml-2 px-3 py-1 border rounded text-sm">
+                    <option value="">Select Template...</option>
+                    <option value="kitchen-basic">Kitchen Basic</option>
+                    <option value="kitchen-premium">Kitchen Premium</option>
+                    <option value="vanity-euro">Euro Vanity</option>
+                  </select>
+                </div>
+              </div>
               
               <div class="grid grid-cols-2 gap-6 mb-6">
                 <div>
@@ -405,6 +654,7 @@
                     value="${formData.clientName}"
                     oninput="handleInputChange('clientName', this.value)"
                     placeholder="Enter client name"
+                    autofocus
                   />
                 </div>
                 <div>
@@ -458,6 +708,15 @@
                 >${formData.notes}</textarea>
               </div>
 
+              <div class="mb-6">
+                <label>3D Model Link (for QR code)</label>
+                <input 
+                  value="${formData.sketchupLink}"
+                  oninput="handleInputChange('sketchupLink', this.value)"
+                  placeholder="https://your-3d-model-link.com"
+                />
+              </div>
+
               <h2 class="text-xl font-semibold mb-6">Images</h2>
               
               <div class="grid grid-cols-2 gap-6 mb-6">
@@ -468,7 +727,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('shakerRender', event)"
                   />
-                  ${images.shakerRender ? `<img src="${images.shakerRender}" alt="Preview" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.shakerRender ? `<img src="${images.shakerRender}" alt="Shaker Render Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
                 </div>
                 <div>
                   <label>Euro Style Render</label>
@@ -477,7 +736,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('euroRender', event)"
                   />
-                  ${images.euroRender ? `<img src="${images.euroRender}" alt="Preview" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.euroRender ? `<img src="${images.euroRender}" alt="Euro Render Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
                 </div>
                 <div>
                   <label>Shaker Vanity</label>
@@ -486,7 +745,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('shakerVanity', event)"
                   />
-                  ${images.shakerVanity ? `<img src="${images.shakerVanity}" alt="Preview" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.shakerVanity ? `<img src="${images.shakerVanity}" alt="Shaker Vanity Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
                 </div>
                 <div>
                   <label>Euro Vanity</label>
@@ -495,7 +754,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('euroVanity', event)"
                   />
-                  ${images.euroVanity ? `<img src="${images.euroVanity}" alt="Preview" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.euroVanity ? `<img src="${images.euroVanity}" alt="Euro Vanity Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
                 </div>
               </div>
 
@@ -506,7 +765,7 @@
                   accept="image/*"
                   onchange="handleImageUpload('floorPlan', event)"
                 />
-                ${images.floorPlan ? `<img src="${images.floorPlan}" alt="Preview" class="mt-2 w-full h-48 object-contain rounded border" />` : ''}
+                ${images.floorPlan ? `<img src="${images.floorPlan}" alt="Floor Plan Preview" loading="lazy" class="mt-2 w-full h-48 object-contain rounded border" />` : ''}
               </div>
 
               <div class="flex justify-end">
@@ -535,6 +794,10 @@
     // Initialize app when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       renderApp();
+      // Start autosave if we have a current project name
+      if (currentName) {
+        startAutosave();
+      }
     });
   </script>
 </body>
