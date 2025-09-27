@@ -102,10 +102,11 @@
               this._states[stateId] = typeof newValue === 'function' ? 
                 newValue(this._states[stateId]) : newValue;
               
-              // Simple re-render trigger
-              if (window._rerenderApp) {
-                setTimeout(window._rerenderApp, 0);
-              }
+              // Trigger re-render by re-running the app
+              setTimeout(function() {
+                var root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(React.createElement(window._AppComponent));
+              }, 0);
             };
             
             return [this._states[stateId], setState];
@@ -384,28 +385,419 @@
         var useEffect = React.useEffect;
         
         function App() {
-          // Skip loading state for simplicity with fallback React
-          return React.createElement('div', {
-            style: { 
-              fontFamily: 'system-ui',
-              background: '#f1f5f9',
-              minHeight: '100vh',
-              padding: '2rem'
-            }
-          }, [
-            React.createElement('header', {
-              key: 'header',
-              style: {
-                textAlign: 'center',
-                marginBottom: '2rem',
-                padding: '2rem',
-                backgroundColor: '#1e293b',
-                color: 'white',
-                borderRadius: '0.5rem',
-                maxWidth: '1200px',
-                margin: '0 auto 2rem auto'
-              }
-            }, [
+          var useState = React.useState;
+          var useEffect = React.useEffect;
+
+          // State management
+          var proposalState = useState({
+            customerInfo: { name: '', address: '', phone: '', email: '' },
+            projectDetails: { roomType: 'kitchen', style: 'modern', color: 'white' },
+            cabinetSpecs: { upperCabinets: 0, baseCabinets: 0, pantryUnits: 0, islands: 0 },
+            totalCost: 0,
+            currentStep: 1
+          });
+          var proposal = proposalState[0];
+          var setProposal = proposalState[1];
+
+          var updateProposal = function(updates) {
+            setProposal(function(prev) {
+              var newProposal = Object.assign({}, prev, updates);
+              // Calculate total cost
+              var specs = newProposal.cabinetSpecs;
+              var baseCost = 150; // base cost per cabinet
+              var styleMult = newProposal.projectDetails.style === 'luxury' ? 1.5 : 
+                             newProposal.projectDetails.style === 'modern' ? 1.3 : 1.0;
+              newProposal.totalCost = Math.round((specs.upperCabinets * baseCost + 
+                                                specs.baseCabinets * baseCost * 1.2 + 
+                                                specs.pantryUnits * baseCost * 1.8 + 
+                                                specs.islands * baseCost * 2.5) * styleMult);
+              return newProposal;
+            });
+          };
+
+          var nextStep = function() {
+            updateProposal({ currentStep: Math.min(proposal.currentStep + 1, 4) });
+          };
+
+          var prevStep = function() {
+            updateProposal({ currentStep: Math.max(proposal.currentStep - 1, 1) });
+          };
+
+          var generateProposal = function() {
+            var proposalData = {
+              id: Date.now(),
+              date: new Date().toLocaleDateString(),
+              customer: proposal.customerInfo,
+              project: proposal.projectDetails,
+              cabinets: proposal.cabinetSpecs,
+              total: proposal.totalCost
+            };
+            
+            // Save to localStorage (Supabase fallback)
+            var proposals = JSON.parse(localStorage.getItem('proposals') || '[]');
+            proposals.push(proposalData);
+            localStorage.setItem('proposals', JSON.stringify(proposals));
+            
+            alert('Proposal generated and saved! Total: $' + proposal.totalCost.toLocaleString());
+          };
+
+          // Styles
+          var containerStyle = {
+            fontFamily: 'system-ui',
+            background: '#f1f5f9',
+            minHeight: '100vh',
+            padding: '1rem'
+          };
+
+          var headerStyle = {
+            textAlign: 'center',
+            marginBottom: '2rem',
+            padding: '2rem',
+            backgroundColor: '#1e293b',
+            color: 'white',
+            borderRadius: '0.5rem',
+            maxWidth: '1200px',
+            margin: '0 auto 2rem auto'
+          };
+
+          var cardStyle = {
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            maxWidth: '1200px',
+            margin: '0 auto',
+            marginBottom: '2rem'
+          };
+
+          var inputStyle = {
+            width: '100%',
+            padding: '0.75rem',
+            border: '1px solid #d1d5db',
+            borderRadius: '0.375rem',
+            fontSize: '1rem',
+            marginBottom: '1rem'
+          };
+
+          var buttonStyle = {
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderRadius: '0.375rem',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            marginRight: '1rem',
+            marginBottom: '0.5rem'
+          };
+
+          var primaryButtonStyle = Object.assign({}, buttonStyle, {
+            backgroundColor: '#2563eb',
+            color: 'white'
+          });
+
+          var secondaryButtonStyle = Object.assign({}, buttonStyle, {
+            backgroundColor: '#e5e7eb',
+            color: '#374151'
+          });
+
+          // Step components
+          var renderCustomerInfo = function() {
+            return React.createElement('div', { key: 'customer-info' }, [
+              React.createElement('h3', { 
+                key: 'title',
+                style: { fontSize: '1.5rem', marginBottom: '1.5rem', color: '#1e293b' }
+              }, 'Customer Information'),
+              
+              React.createElement('div', {
+                key: 'form',
+                style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
+              }, [
+                React.createElement('input', {
+                  key: 'name',
+                  type: 'text',
+                  placeholder: 'Customer Name',
+                  value: proposal.customerInfo.name,
+                  style: inputStyle,
+                  onChange: function(e) {
+                    updateProposal({
+                      customerInfo: Object.assign({}, proposal.customerInfo, { name: e.target.value })
+                    });
+                  }
+                }),
+                React.createElement('input', {
+                  key: 'phone',
+                  type: 'tel',
+                  placeholder: 'Phone Number',
+                  value: proposal.customerInfo.phone,
+                  style: inputStyle,
+                  onChange: function(e) {
+                    updateProposal({
+                      customerInfo: Object.assign({}, proposal.customerInfo, { phone: e.target.value })
+                    });
+                  }
+                }),
+                React.createElement('input', {
+                  key: 'address',
+                  type: 'text',
+                  placeholder: 'Address',
+                  value: proposal.customerInfo.address,
+                  style: Object.assign({}, inputStyle, { gridColumn: 'span 2' }),
+                  onChange: function(e) {
+                    updateProposal({
+                      customerInfo: Object.assign({}, proposal.customerInfo, { address: e.target.value })
+                    });
+                  }
+                }),
+                React.createElement('input', {
+                  key: 'email',
+                  type: 'email',
+                  placeholder: 'Email Address',
+                  value: proposal.customerInfo.email,
+                  style: Object.assign({}, inputStyle, { gridColumn: 'span 2' }),
+                  onChange: function(e) {
+                    updateProposal({
+                      customerInfo: Object.assign({}, proposal.customerInfo, { email: e.target.value })
+                    });
+                  }
+                })
+              ])
+            ]);
+          };
+
+          var renderProjectDetails = function() {
+            return React.createElement('div', { key: 'project-details' }, [
+              React.createElement('h3', {
+                key: 'title',
+                style: { fontSize: '1.5rem', marginBottom: '1.5rem', color: '#1e293b' }
+              }, 'Project Details'),
+              
+              React.createElement('div', {
+                key: 'form',
+                style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }
+              }, [
+                React.createElement('div', { key: 'room-type' }, [
+                  React.createElement('label', {
+                    key: 'label',
+                    style: { display: 'block', marginBottom: '0.5rem', fontWeight: '600' }
+                  }, 'Room Type'),
+                  React.createElement('select', {
+                    key: 'select',
+                    value: proposal.projectDetails.roomType,
+                    style: inputStyle,
+                    onChange: function(e) {
+                      updateProposal({
+                        projectDetails: Object.assign({}, proposal.projectDetails, { roomType: e.target.value })
+                      });
+                    }
+                  }, [
+                    React.createElement('option', { key: 'kitchen', value: 'kitchen' }, 'Kitchen'),
+                    React.createElement('option', { key: 'bathroom', value: 'bathroom' }, 'Bathroom'),
+                    React.createElement('option', { key: 'laundry', value: 'laundry' }, 'Laundry Room'),
+                    React.createElement('option', { key: 'office', value: 'office' }, 'Home Office')
+                  ])
+                ]),
+                
+                React.createElement('div', { key: 'style' }, [
+                  React.createElement('label', {
+                    key: 'label',
+                    style: { display: 'block', marginBottom: '0.5rem', fontWeight: '600' }
+                  }, 'Cabinet Style'),
+                  React.createElement('select', {
+                    key: 'select',
+                    value: proposal.projectDetails.style,
+                    style: inputStyle,
+                    onChange: function(e) {
+                      updateProposal({
+                        projectDetails: Object.assign({}, proposal.projectDetails, { style: e.target.value })
+                      });
+                    }
+                  }, [
+                    React.createElement('option', { key: 'traditional', value: 'traditional' }, 'Traditional'),
+                    React.createElement('option', { key: 'modern', value: 'modern' }, 'Modern'),
+                    React.createElement('option', { key: 'luxury', value: 'luxury' }, 'Luxury')
+                  ])
+                ]),
+                
+                React.createElement('div', { key: 'color' }, [
+                  React.createElement('label', {
+                    key: 'label',
+                    style: { display: 'block', marginBottom: '0.5rem', fontWeight: '600' }
+                  }, 'Cabinet Color'),
+                  React.createElement('select', {
+                    key: 'select',
+                    value: proposal.projectDetails.color,
+                    style: inputStyle,
+                    onChange: function(e) {
+                      updateProposal({
+                        projectDetails: Object.assign({}, proposal.projectDetails, { color: e.target.value })
+                      });
+                    }
+                  }, [
+                    React.createElement('option', { key: 'white', value: 'white' }, 'White'),
+                    React.createElement('option', { key: 'oak', value: 'oak' }, 'Natural Oak'),
+                    React.createElement('option', { key: 'cherry', value: 'cherry' }, 'Cherry'),
+                    React.createElement('option', { key: 'maple', value: 'maple' }, 'Maple'),
+                    React.createElement('option', { key: 'gray', value: 'gray' }, 'Gray')
+                  ])
+                ])
+              ])
+            ]);
+          };
+
+          var renderCabinetSpecs = function() {
+            var createQuantityInput = function(label, key, value) {
+              return React.createElement('div', { key: key }, [
+                React.createElement('label', {
+                  key: 'label',
+                  style: { display: 'block', marginBottom: '0.5rem', fontWeight: '600' }
+                }, label),
+                React.createElement('input', {
+                  key: 'input',
+                  type: 'number',
+                  min: '0',
+                  value: value,
+                  style: inputStyle,
+                  onChange: function(e) {
+                    var newSpecs = Object.assign({}, proposal.cabinetSpecs);
+                    newSpecs[key] = parseInt(e.target.value) || 0;
+                    updateProposal({ cabinetSpecs: newSpecs });
+                  }
+                })
+              ]);
+            };
+
+            return React.createElement('div', { key: 'cabinet-specs' }, [
+              React.createElement('h3', {
+                key: 'title',
+                style: { fontSize: '1.5rem', marginBottom: '1.5rem', color: '#1e293b' }
+              }, 'Cabinet Specifications'),
+              
+              React.createElement('div', {
+                key: 'form',
+                style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
+              }, [
+                createQuantityInput('Upper Cabinets', 'upperCabinets', proposal.cabinetSpecs.upperCabinets),
+                createQuantityInput('Base Cabinets', 'baseCabinets', proposal.cabinetSpecs.baseCabinets),
+                createQuantityInput('Pantry Units', 'pantryUnits', proposal.cabinetSpecs.pantryUnits),
+                createQuantityInput('Kitchen Islands', 'islands', proposal.cabinetSpecs.islands)
+              ]),
+              
+              React.createElement('div', {
+                key: 'cost-preview',
+                style: {
+                  marginTop: '2rem',
+                  padding: '1rem',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '0.375rem',
+                  border: '1px solid #e2e8f0'
+                }
+              }, [
+                React.createElement('h4', {
+                  key: 'title',
+                  style: { margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: '#1e293b' }
+                }, 'Estimated Cost'),
+                React.createElement('p', {
+                  key: 'cost',
+                  style: { margin: 0, fontSize: '1.5rem', fontWeight: '700', color: '#059669' }
+                }, '$' + proposal.totalCost.toLocaleString())
+              ])
+            ]);
+          };
+
+          var renderReview = function() {
+            return React.createElement('div', { key: 'review' }, [
+              React.createElement('h3', {
+                key: 'title',
+                style: { fontSize: '1.5rem', marginBottom: '1.5rem', color: '#1e293b' }
+              }, 'Proposal Review'),
+              
+              React.createElement('div', {
+                key: 'summary',
+                style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }
+              }, [
+                React.createElement('div', { key: 'customer' }, [
+                  React.createElement('h4', {
+                    key: 'title',
+                    style: { marginBottom: '1rem', color: '#1e293b' }
+                  }, 'Customer'),
+                  React.createElement('p', { key: 'name' }, proposal.customerInfo.name),
+                  React.createElement('p', { key: 'address' }, proposal.customerInfo.address),
+                  React.createElement('p', { key: 'phone' }, proposal.customerInfo.phone),
+                  React.createElement('p', { key: 'email' }, proposal.customerInfo.email)
+                ]),
+                
+                React.createElement('div', { key: 'project' }, [
+                  React.createElement('h4', {
+                    key: 'title',
+                    style: { marginBottom: '1rem', color: '#1e293b' }
+                  }, 'Project Details'),
+                  React.createElement('p', { key: 'room' }, 'Room: ' + proposal.projectDetails.roomType),
+                  React.createElement('p', { key: 'style' }, 'Style: ' + proposal.projectDetails.style),
+                  React.createElement('p', { key: 'color' }, 'Color: ' + proposal.projectDetails.color)
+                ])
+              ]),
+              
+              React.createElement('div', {
+                key: 'cabinets',
+                style: { marginTop: '2rem' }
+              }, [
+                React.createElement('h4', {
+                  key: 'title',
+                  style: { marginBottom: '1rem', color: '#1e293b' }
+                }, 'Cabinet Breakdown'),
+                React.createElement('ul', {
+                  key: 'list',
+                  style: { listStyle: 'none', padding: 0 }
+                }, [
+                  React.createElement('li', { key: 'upper' }, 'Upper Cabinets: ' + proposal.cabinetSpecs.upperCabinets),
+                  React.createElement('li', { key: 'base' }, 'Base Cabinets: ' + proposal.cabinetSpecs.baseCabinets),
+                  React.createElement('li', { key: 'pantry' }, 'Pantry Units: ' + proposal.cabinetSpecs.pantryUnits),
+                  React.createElement('li', { key: 'islands' }, 'Kitchen Islands: ' + proposal.cabinetSpecs.islands)
+                ])
+              ]),
+              
+              React.createElement('div', {
+                key: 'total',
+                style: {
+                  marginTop: '2rem',
+                  padding: '1.5rem',
+                  backgroundColor: '#1e293b',
+                  color: 'white',
+                  borderRadius: '0.5rem',
+                  textAlign: 'center'
+                }
+              }, [
+                React.createElement('h3', {
+                  key: 'title',
+                  style: { margin: '0 0 0.5rem 0' }
+                }, 'Total Proposal Amount'),
+                React.createElement('p', {
+                  key: 'amount',
+                  style: { margin: 0, fontSize: '2rem', fontWeight: '700' }
+                }, '$' + proposal.totalCost.toLocaleString())
+              ]),
+              
+              React.createElement('button', {
+                key: 'generate',
+                style: Object.assign({}, primaryButtonStyle, {
+                  width: '100%',
+                  marginTop: '2rem',
+                  fontSize: '1.125rem',
+                  padding: '1rem'
+                }),
+                onClick: generateProposal
+              }, 'Generate & Save Proposal')
+            ]);
+          };
+
+          var steps = [
+            { title: 'Customer Info', component: renderCustomerInfo },
+            { title: 'Project Details', component: renderProjectDetails },
+            { title: 'Cabinet Specs', component: renderCabinetSpecs },
+            { title: 'Review', component: renderReview }
+          ];
+
+          return React.createElement('div', { style: containerStyle }, [
+            React.createElement('header', { key: 'header', style: headerStyle }, [
               React.createElement('h1', {
                 key: 'title',
                 style: { margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }
@@ -415,74 +807,76 @@
                 style: { margin: 0, opacity: 0.9, fontSize: '1.125rem' }
               }, 'Custom Cabinet Proposal Builder')
             ]),
-            
-            React.createElement('main', {
-              key: 'main',
-              style: {
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '0.5rem',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                maxWidth: '1200px',
-                margin: '0 auto'
-              }
-            }, [
+
+            // Progress indicator
+            React.createElement('div', { key: 'progress', style: cardStyle }, [
               React.createElement('div', {
-                key: 'status',
-                style: { textAlign: 'center', marginBottom: '2rem' }
-              }, [
-                React.createElement('h2', {
-                  key: 'status-title',
-                  style: { color: '#059669', marginBottom: '1rem', fontSize: '1.75rem', fontWeight: '600' }
-                }, '✓ Application Successfully Loaded'),
-                
-                React.createElement('p', {
-                  key: 'status-desc',
-                  style: { color: '#64748b', fontSize: '1.125rem', lineHeight: '1.6', maxWidth: '800px', margin: '0 auto' }
-                }, 'The proposal builder is now running with fallback dependencies. External CDN resources have been replaced with local alternatives, ensuring the application works even when external scripts are blocked.')
-              ]),
+                key: 'steps',
+                style: { display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }
+              }, steps.map(function(step, index) {
+                var isActive = index + 1 === proposal.currentStep;
+                var isCompleted = index + 1 < proposal.currentStep;
+                return React.createElement('div', {
+                  key: index,
+                  style: {
+                    textAlign: 'center',
+                    flex: 1,
+                    padding: '0.5rem',
+                    borderRadius: '0.375rem',
+                    backgroundColor: isActive ? '#2563eb' : isCompleted ? '#059669' : '#e5e7eb',
+                    color: isActive || isCompleted ? 'white' : '#374151',
+                    margin: '0 0.25rem'
+                  }
+                }, [
+                  React.createElement('div', {
+                    key: 'number',
+                    style: { fontWeight: '700', fontSize: '1.125rem' }
+                  }, index + 1),
+                  React.createElement('div', {
+                    key: 'title',
+                    style: { fontSize: '0.875rem' }
+                  }, step.title)
+                ]);
+              }))
+            ]),
+
+            // Main content
+            React.createElement('div', { key: 'main', style: cardStyle }, [
+              steps[proposal.currentStep - 1].component(),
               
+              // Navigation buttons
               React.createElement('div', {
-                key: 'features',
-                style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '3rem' }
+                key: 'nav',
+                style: {
+                  marginTop: '2rem',
+                  paddingTop: '2rem',
+                  borderTop: '1px solid #e5e7eb',
+                  display: 'flex',
+                  justifyContent: 'space-between'
+                }
               }, [
-                React.createElement('div', {
-                  key: 'dependencies',
-                  style: { padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#f8fafc' }
-                }, [
-                  React.createElement('h3', {
-                    key: 'dep-title',
-                    style: { margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1.25rem', fontWeight: '600' }
-                  }, '🔧 Dependencies Fixed'),
-                  React.createElement('ul', {
-                    key: 'dep-list',
-                    style: { margin: 0, paddingLeft: '1.5rem', color: '#64748b' }
-                  }, [
-                    React.createElement('li', { key: 'react' }, '✓ React & ReactDOM: Local fallback active'),
-                    React.createElement('li', { key: 'styles' }, '✓ Tailwind CSS: Inline utilities loaded'),
-                    React.createElement('li', { key: 'backend' }, '✓ Supabase: localStorage fallback ready')
-                  ])
-                ]),
+                proposal.currentStep > 1 
+                  ? React.createElement('button', {
+                      key: 'prev',
+                      style: secondaryButtonStyle,
+                      onClick: prevStep
+                    }, 'Previous')
+                  : React.createElement('div', { key: 'spacer' }),
                 
-                React.createElement('div', {
-                  key: 'status-info',
-                  style: { padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#f8fafc' }
-                }, [
-                  React.createElement('h3', {
-                    key: 'status-title2',
-                    style: { margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1.25rem', fontWeight: '600' }
-                  }, '✅ Issue Resolved'),
-                  React.createElement('p', {
-                    key: 'status-text',
-                    style: { margin: 0, color: '#64748b', lineHeight: '1.5' }
-                  }, 'The CDN blocking issue has been resolved. The application now works offline and independently of external resources.')
-                ])
+                proposal.currentStep < 4 
+                  ? React.createElement('button', {
+                      key: 'next',
+                      style: primaryButtonStyle,
+                      onClick: nextStep
+                    }, 'Next')
+                  : null
               ])
             ])
           ]);
         }
         
         var root = ReactDOM.createRoot(document.getElementById('root'));
+        window._AppComponent = App; // Store reference for re-renders
         root.render(React.createElement(App));
         console.log('Manual application start successful!');
         
