@@ -14,22 +14,22 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <!-- React 18 UMD Production (blocked in sandbox) -->
-  <!-- <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script> -->
-  <!-- <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script> -->
+  <!-- React 18 UMD Production -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
-  <!-- Babel for JSX transformation (blocked in sandbox) -->
-  <!-- <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> -->
+  <!-- Babel for JSX transformation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <!-- Tailwind CSS (blocked in sandbox) -->
-  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Supabase (blocked in sandbox) -->
-  <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Content Security Policy -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: *; connect-src 'self'; frame-ancestors 'self';">
+    content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: blob: *; connect-src 'self' https://*.supabase.co; frame-ancestors 'self';">
 
   <!-- Simple CSS framework -->
   <style>
@@ -211,7 +211,7 @@
     // Supabase Configuration (placeholder - replace with real values)
     const SUPABASE_URL = 'https://your-project.supabase.co';
     const SUPABASE_ANON_KEY = 'your-anon-key';
-    // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
     
     // LocalStorage keys
     const LS_LAST = 'foundry-last-proposal';
@@ -386,9 +386,11 @@
         alert("Local backup is full. Cloud save still works — consider smaller images."); 
       }
       
-      // Task 3: Supabase upsert (placeholder - needs real Supabase setup)
+      // Task 3: Supabase upsert 
       try {
-        // await supabase.from('proposals').upsert(payload, { onConflict: 'name' });
+        if (supabase) {
+          await supabase.from('proposals').upsert(payload, { onConflict: 'name' });
+        }
         if (showAlert) alert('Proposal saved successfully!');
       } catch (error) {
         console.error('Save error:', error);
@@ -400,16 +402,18 @@
       if (!name) return;
       
       try {
-        // Try Supabase first (placeholder)
-        // const { data } = await supabase.from('proposals').select('*').eq('name', name).single();
-        // if (data) {
-        //   formData = data.content;
-        //   images = data.images;
-        //   currentName = name;
-        //   dirty = false;
-        //   renderApp();
-        //   return;
-        // }
+        // Try Supabase first
+        if (supabase) {
+          const { data } = await supabase.from('proposals').select('*').eq('name', name).single();
+          if (data) {
+            formData = data.content;
+            images = data.images;
+            currentName = name;
+            dirty = false;
+            renderApp();
+            return;
+          }
+        }
         
         // Fallback to localStorage
         const stored = localStorage.getItem(LS_BY_NAME(name));
@@ -580,7 +584,7 @@
               <div>
                 <h2 class="text-xl font-semibold mb-4">Investment</h2>
                 <p class="text-2xl font-bold text-green-600">
-                  ${formData.price ? '$' + formData.price : 'Price TBD'}
+                  ${formData.price ? (formData.price.startsWith('$') ? formData.price : '$' + formData.price) : 'Price TBD'}
                 </p>
               </div>
               <div>
