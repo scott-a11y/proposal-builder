@@ -30,7 +30,7 @@
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     .logo-clean { display:block; max-height:160px; object-fit:contain; }
 
-    /* bigger preview frames */
+    /* bigger preview frames so photos are actually visible */
     .img-frame { height: 21rem; }
     .img-frame-sm { height: 18rem; }
     .img-frame-layout { height: 26rem; }
@@ -40,8 +40,9 @@
       .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
       @page { size: 8.5in 11in; margin: 0.5in; }
-      .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-      .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
+      .two, .cols { display: grid !important; gap: 28px !important; }
+      .two { grid-template-columns: 1fr 1fr !important; }
+      .cols { grid-template-columns: 1.1fr 0.9fr !important; }
       .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
       img { break-inside: avoid !important; page-break-inside: avoid !important; }
     }
@@ -55,7 +56,7 @@
     const { createClient } = supabase;
 
     // ---------- CONFIG ----------
-    // Inline fallback logo so headers never break
+    // Inline fallback logo so header/footer never break even if file missing
     const INLINE_FALLBACK_LOGO =
       'data:image/svg+xml;utf8,' +
       encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
@@ -66,17 +67,18 @@
         </g>
       </svg>`);
 
-    // 🔗 default repo logo (change if yours is in /assets/)
+    // default repo logo — change the path if yours lives under /assets/
     const DEFAULT_LOGO_PATH = new URL('./Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
     // const DEFAULT_LOGO_PATH = new URL('./assets/Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
 
+    // Supabase — same project you’re already using
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ----------------------------
 
-    // UI bits
+    // small UI bits
     const Label = ({children}) => <label className="text-xs font-medium text-slate-600 uppercase tracking-wide">{children}</label>;
     const Input = (props) => <input {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white "+(props.className||"")} />;
     const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
@@ -94,7 +96,7 @@
     };
     const hasAnyImage = (imgs) => !!(imgs && (imgs.logo || imgs.shakerRender || imgs.euroRender || imgs.shakerVanity || imgs.euroVanity || imgs.floorPlan));
 
-    // convert URL/file to data URL (embeds perfectly for export/pdf). Cache-bust to avoid stale.
+    // turn a URL/file into a data: URL (so export + pdf work offline). We cache-bust to avoid stale.
     const toDataURL = async (src) => {
       try {
         if (!src) return "";
@@ -109,7 +111,8 @@
         reader.readAsDataURL(blob);
         return await p;
       } catch {
-        // fallback: leave original src (works online; upload via picker for guaranteed embedding)
+        // If a remote host blocks CORS, keep original URL so online view still works.
+        // Best practice: upload via the pickers so images are embedded as data:.
         return src;
       }
     };
@@ -134,11 +137,16 @@
       }));
     };
 
+    // localStorage fallback (so Client View still works if Supabase has issues)
+    const LS_LAST = "proposal:lastSaved";
+    const LS_BY_NAME = (n) => `proposal:${n}`;
+
     function App() {
       const urlParams = new URLSearchParams(window.location.search);
       const isClient = urlParams.get("client") === "true";
       const clientId = urlParams.get("id") || "";
 
+      const [netDown, setNetDown] = useState(false);
       const [savedProposals, setSavedProposals] = useState([]);
       const [currentName, setCurrentName] = useState("");
 
@@ -177,15 +185,18 @@
         sketchupLink: ""
       });
 
-      // initial proposals list (guard null)
+      // initial proposals list (guard nulls)
       useEffect(() => { (async () => {
-        const { data, error } = await db.from('proposals').select('*');
-        if (error) {
-          console.warn('fetch proposals failed:', error.message);
+        try {
+          const { data, error } = await db.from('proposals').select('*');
+          if (error) throw error;
+          setSavedProposals((data || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
+          setNetDown(false);
+        } catch (e) {
+          console.warn('fetch proposals failed:', e?.message || e);
           setSavedProposals([]);
-          return;
+          setNetDown(true);
         }
-        setSavedProposals((data || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
       })() }, []);
 
       // auto-save if named
@@ -195,18 +206,15 @@
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // first load: embed local/repo images so print/export work even before uploads
-      useEffect(() => { (async () => {
-        await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
-      })() }, []); // once
+      // On first load, embed local/repo images so Print/Export work immediately
+      useEffect(() => { (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })() }, []);
 
-      // CLIENT: pick target proposal: ?id OR newest with images OR newest
+      // CLIENT: auto-load ?id, else newest with images, else newest, else localStorage
       useEffect(() => {
         if (!isClient) return;
         (async () => {
           try {
             let targetName = clientId;
-
             const { data, error } = await db
               .from("proposals")
               .select("name, content, images, created_at");
@@ -226,21 +234,37 @@
               rows.find(x => x.hasImages) ||
               rows[0];
 
-            if (!picked) return;
+            if (picked) {
+              const chosen = picked.row;
+              setContent(chosen.content || content);
+              setImages(chosen.images || images);
+              await embedAllImagesInState(chosen.images || images, setImages, DEFAULT_LOGO_PATH);
+              setNetDown(false);
+              return;
+            }
 
-            const chosen = picked.row;
-            setContent(chosen.content || content);
-            setImages(chosen.images || images);
-
-            // embed now so client view + export/print have images ready
-            await embedAllImagesInState(chosen.images || images, setImages, DEFAULT_LOGO_PATH);
+            // fallback to localStorage
+            const local = JSON.parse(localStorage.getItem(LS_LAST) || "null");
+            if (local && local.content) {
+              setContent(local.content);
+              setImages(local.images || images);
+              await embedAllImagesInState(local.images || images, setImages, DEFAULT_LOGO_PATH);
+            }
           } catch (err) {
             console.warn("Client auto-load failed:", err?.message);
+            setNetDown(true);
+            const key = clientId ? LS_BY_NAME(clientId) : LS_LAST;
+            const local = JSON.parse(localStorage.getItem(key) || localStorage.getItem(LS_LAST) || "null");
+            if (local && local.content) {
+              setContent(local.content);
+              setImages(local.images || images);
+              await embedAllImagesInState(local.images || images, setImages, DEFAULT_LOGO_PATH);
+            }
           }
         })();
-      }, [isClient, clientId]); // run on client mode
+      }, [isClient, clientId]);
 
-      // uploads -> store as data URLs (perfect for embedding)
+      // uploads -> store as data URLs (guaranteed to embed)
       const onImgUpload = (key, file) => {
         const r = new FileReader();
         r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
@@ -249,14 +273,19 @@
 
       const setField = (k, v) => setContent(prev => ({ ...prev, [k]: v }));
 
-      // save/load/delete (hardened)
+      // save (cloud + local fallback)
       const save = async (name, alertOK=true) => {
+        const stamp = new Date().toISOString();
+        const payload = {
+          content: { ...content, __savedAt: stamp },
+          images:  { ...images,  __savedAt: stamp }
+        };
+
+        // always keep a local copy for client/offline mode
+        localStorage.setItem(LS_LAST, JSON.stringify({ name, ...payload, savedAt: stamp }));
+        localStorage.setItem(LS_BY_NAME(name), JSON.stringify({ name, ...payload, savedAt: stamp }));
+
         try {
-          const stamp = new Date().toISOString();
-          const payload = {
-            content: { ...content, __savedAt: stamp },
-            images:  { ...images,  __savedAt: stamp }
-          };
           const { data:existing, error:existErr } = await db.from('proposals').select('name').eq('name', name).maybeSingle();
           if (existErr && existErr.code !== 'PGRST116') throw existErr;
 
@@ -267,18 +296,16 @@
             const { error } = await db.from('proposals').insert([{ name, ...payload }]);
             if (error) throw error;
           }
+
           setCurrentName(name);
-
           const { data: rows, error: listErr } = await db.from('proposals').select('*');
-          if (listErr) {
-            console.warn('list proposals failed:', listErr.message);
-            setSavedProposals([]);
-          } else {
-            setSavedProposals((rows || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
-          }
-
+          if (!listErr) setSavedProposals((rows || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
+          setNetDown(false);
           if (alertOK) alert('Saved "' + name + '" to cloud.');
-        } catch (e) { alert("Save failed: " + (e?.message || e)); }
+        } catch (e) {
+          setNetDown(true);
+          if (alertOK) alert("Save failed: " + (e?.message || e));
+        }
       };
 
       const loadOne = (name) => {
@@ -292,11 +319,18 @@
 
       const deleteOne = async (name) => {
         if (!confirm('Delete "'+name+'"?')) return;
-        const { error } = await db.from('proposals').delete().eq('name', name);
-        if (error) return alert("Delete failed: " + error.message);
-        setSavedProposals(prev => prev.filter(p => p.name !== name));
-        if (currentName === name) setCurrentName("");
-        alert('Deleted "' + name + '".');
+        try {
+          const { error } = await db.from('proposals').delete().eq('name', name);
+          if (error) throw error;
+          setSavedProposals(prev => prev.filter(p => p.name !== name));
+          if (currentName === name) setCurrentName("");
+          alert('Deleted "' + name + '".');
+        } catch (e) {
+          alert("Delete failed (cloud). Removed local copy only.");
+        }
+        localStorage.removeItem(LS_BY_NAME(name));
+        const last = JSON.parse(localStorage.getItem(LS_LAST) || "null");
+        if (last?.name === name) localStorage.removeItem(LS_LAST);
       };
 
       // PRINT: re-embed + wait for load, then print
@@ -416,9 +450,16 @@
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       };
 
-      // UI
+      // ---------- UI ----------
       return (
         <div className="w-full min-h-screen">
+          {/* connectivity banner */}
+          {netDown && (
+            <div className="bg-amber-100 text-amber-900 text-sm py-2 px-4 text-center">
+              Cloud save/load temporarily unavailable — working from local copy. Your changes are safe on this device.
+            </div>
+          )}
+
           {/* ADMIN TOOLBAR */}
           {!isClient && (
             <header className="bg-white border-b print:hidden">
@@ -436,297 +477,5 @@
                 <div className="flex gap-2">
                   <button onClick={() => { const n=prompt('Name to save as:'); if(n) { setCurrentName(n.trim()); save(n.trim()); } }} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
                   <button onClick={async () => {
-                    const { data, error } = await db.from('proposals').select('name, created_at').order('created_at', { ascending:false });
-                    if (error) return alert("Load list failed: " + error.message);
-                    const names = (data||[]).map(d => d.name);
-                    const pick = prompt('Type the exact name to load:\n\n' + names.join('\n'));
-                    if (pick) loadOne(pick.trim());
-                  }} className="bg-sky-600 text-white px-4 py-2 rounded">Load</button>
-                  <button onClick={exportClientHTML} className="bg-orange-600 text-white px-4 py-2 rounded">Export for Client</button>
-                  {/* open client view pinned to current proposal if named */}
-                  <button
-                    onClick={async () => {
-                      if (!currentName) {
-                        window.open(window.location.pathname + '?client=true', '_blank');
-                        return;
-                      }
-                      await save(currentName, false);
-                      const url = window.location.pathname + `?client=true&id=${encodeURIComponent(currentName)}`;
-                      window.open(url, '_blank');
-                    }}
-                    className="bg-purple-600 text-white px-4 py-2 rounded"
-                  >
-                    Client View
-                  </button>
-                  <button onClick={handlePrint} className="bg-slate-800 text-white px-4 py-2 rounded">Print / Save PDF</button>
-                </div>
-              </div>
-            </header>
-          )}
-
-          {/* CLIENT MODE TOOLBAR */}
-          {isClient && (
-            <div className="bg-white shadow-sm border-b print:hidden">
-              <div className="max-w-4xl mx-auto p-4 flex items-center justify-center gap-3 flex-wrap">
-                <button
-                  onClick={async () => {
-                    const pick = prompt("Type the exact proposal name to load:");
-                    if (!pick) return;
                     try {
-                      const { data: row, error } = await db.from("proposals")
-                        .select("*").eq("name", pick.trim()).maybeSingle();
-                      if (error) throw error;
-                      if (!row) return alert("Not found.");
-                      setContent(row.content || content);
-                      setImages(row.images || images);
-                      await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
-                      alert('Loaded "' + pick.trim() + '" for client view.');
-                    } catch (e) {
-                      alert("Load failed: " + e.message);
-                    }
-                  }}
-                  className="bg-sky-600 text-white px-6 py-2 rounded"
-                >
-                  Load from Cloud
-                </button>
-                <button onClick={handlePrint} className="bg-slate-800 text-white px-6 py-2 rounded">Download PDF</button>
-                <button onClick={exportClientHTML} className="bg-orange-600 text-white px-6 py-2 rounded">Export HTML</button>
-              </div>
-            </div>
-          )}
-
-          {/* EDITOR GRID */}
-          {!isClient && (
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-8 p-6 print:hidden">
-              {/* LEFT: Content fields */}
-              <div className="lg:col-span-2 bg-white p-4 rounded border card">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div><Label>Title</Label><Input value={content.title} onChange={e=>setField('title', e.target.value)} /></div>
-                  <div><Label>Project #</Label><Input value={content.projectNumber} onChange={e=>setField('projectNumber', e.target.value)} /></div>
-                  <div><Label>Date</Label><Input value={content.date} onChange={e=>setField('date', e.target.value)} /></div>
-                  <div><Label>Client name</Label><Input value={content.clientName} onChange={e=>setField('clientName', e.target.value)} /></div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  <div><Label>Total investment</Label><Input value={content.totalInvestment} onChange={e=>setField('totalInvestment', e.target.value)} /></div>
-                  <div><Label>Warranty years</Label><Input value={content.warrantyYears} onChange={e=>setField('warrantyYears', e.target.value)} /></div>
-                </div>
-                <div className="mt-4"><Label>Executive summary</Label><TextArea value={content.executiveSummary} onChange={e=>setField('executiveSummary', e.target.value)} /></div>
-                <div className="mt-4"><Label>Warranty text</Label><TextArea value={content.warrantyText} onChange={e=>setField('warrantyText', e.target.value)} /></div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  <div><Label>Shaker description</Label><TextArea value={content.shakerDescription} onChange={e=>setField('shakerDescription', e.target.value)} /></div>
-                  <div><Label>Euro description</Label><TextArea value={content.euroDescription} onChange={e=>setField('euroDescription', e.target.value)} /></div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  <div><Label>Shaker Vanity description</Label><TextArea value={content.shakerVanityDescription} onChange={e=>setField('shakerVanityDescription', e.target.value)} /></div>
-                  <div><Label>Euro Vanity description</Label><TextArea value={content.euroVanityDescription} onChange={e=>setField('euroVanityDescription', e.target.value)} /></div>
-                </div>
-                <div className="mt-4"><Label>Floor plan description</Label><TextArea value={content.floorPlanDescription} onChange={e=>setField('floorPlanDescription', e.target.value)} /></div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  <div><Label>Online plans link</Label><Input value={content.onlinePlansLink} onChange={e=>setField('onlinePlansLink', e.target.value)} placeholder="https://…" /></div>
-                  <div><Label>SketchUp 3D link</Label><Input value={content.sketchupLink} onChange={e=>setField('sketchupLink', e.target.value)} placeholder="https://…" /></div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
-                  <div><Label>Tagline</Label><Input value={content.tagline} onChange={e=>setField('tagline', e.target.value)} /></div>
-                  <div><Label>Footer address</Label><Input value={content.address} onChange={e=>setField('address', e.target.value)} /></div>
-                </div>
-              </div>
-
-              {/* RIGHT: Images + Timeline */}
-              <div className="bg-white p-6 rounded border card space-y-7">
-                <div className="font-semibold text-slate-700">Visual Assets</div>
-                <div className="space-y-3">
-                  {[["logo","Company Logo"],["shakerRender","Shaker Kitchen"],["euroRender","Euro Kitchen"],["shakerVanity","Shaker Vanity"],["euroVanity","Euro Vanity"],["floorPlan","Floor Plan"]].map(([k,label]) => (
-                    <div key={k} className="flex items-center justify-between gap-2">
-                      <span className="text-sm text-slate-700">{label}</span>
-                      <input type="file" accept="image/*" onChange={e=> e.target.files[0] && onImgUpload(k, e.target.files[0])} className="text-sm"/>
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <div className="font-semibold text-slate-700 mb-2">Timeline</div>
-                  {content.timeline.map((t,i)=>(
-                    <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
-                      <Input
-                        className="md:col-span-4"
-                        value={t.period}
-                        onChange={e=>setContent(prev=>({ ...prev, timeline: prev.timeline.map((x,idx)=> idx===i?({ ...x, period:e.target.value }):x) }))}
-                      />
-                      <Input
-                        className="md:col-span-7"
-                        value={t.task}
-                        onChange={e=>setContent(prev=>({ ...prev, timeline: prev.timeline.map((x,idx)=> idx===i?({ ...x, task:e.target.value }):x) }))}
-                      />
-                      <div className="md:col-span-1 flex md:justify-end">
-                        <button
-                          className="bg-red-500 text-white text-xs rounded px-3 py-2 w-full md:w-auto"
-                          onClick={()=>setContent(prev=>({ ...prev, timeline: prev.timeline.filter((_,idx)=>idx!==i) }))}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button className="bg-slate-700 text-white text-xs rounded px-3 py-1" onClick={()=>setContent(prev=>({ ...prev, timeline:[...prev.timeline, {period:"NEW PERIOD", task:"New Task"}] }))}>+ Add</button>
-                </div>
-
-                <div>
-                  <div className="font-semibold text-slate-700 mb-2">Next Steps</div>
-                  {content.nextSteps.map((s,i)=>(
-                    <div key={i} className="flex items-center gap-2 mb-2">
-                      <Input value={s} onChange={e=>setContent(prev=>({ ...prev, nextSteps: prev.nextSteps.map((x,idx)=> idx===i? e.target.value : x) }))} />
-                      <button className="bg-red-500 text-white text-xs rounded px-3 py-2" onClick={()=>setContent(prev=>({ ...prev, nextSteps: prev.nextSteps.filter((_,idx)=>idx!==i) }))}>Remove</button>
-                    </div>
-                  ))}
-                  <button className="bg-slate-700 text-white text-xs rounded px-3 py-1" onClick={()=>setContent(prev=>({ ...prev, nextSteps:[...prev.nextSteps, "New step"] }))}>+ Add</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* PREVIEW PAGES */}
-          <div className="proposal-container max-w-none mx-auto bg-white">
-            {/* PAGE 1 */}
-            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
-              <div className="px-8 pt-8 pb-3 flex justify-between items-start" style={{background:"var(--header)"}}>
-                <img
-                  src={images.logo || DEFAULT_LOGO_PATH}
-                  alt=""
-                  className="logo-clean"
-                  onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
-                />
-                <div className="text-right text-white text-sm">
-                  <div className="font-medium tracking-wide">PROJECT {content.projectNumber}</div>
-                  <div className="text-slate-300">{content.date}</div>
-                </div>
-              </div>
-              <div className="px-10 py-10 text-center">
-                <div className="text-sm font-medium text-slate-600 uppercase tracking-widest mb-4">CUSTOM CABINETRY PROPOSAL</div>
-                <h1 className="text-4xl font-light text-slate-800 mb-6">{content.title}</h1>
-                <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6"></div>
-                <div className="bg-slate-50 p-8 border-l-4 border-slate-800 text-left card">
-                  <div className="grid md:grid-cols-2 gap-8 mb-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-light text-slate-800 mb-2">{content.totalInvestment}</div>
-                      <div className="text-sm text-slate-600 uppercase tracking-wide">Investment</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-light text-slate-800 mb-2">{content.warrantyYears}</div>
-                      <div className="text-sm text-slate-600 uppercase tracking-wide">Year Warranty</div>
-                    </div>
-                  </div>
-                  <p className="text-base leading-relaxed text-slate-700 mb-4">{content.executiveSummary}</p>
-                  <p className="text-sm text-slate-600">{content.warrantyText}</p>
-                </div>
-              </div>
-            </section>
-
-            {/* PAGE 2 */}
-            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
-              <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-light text-slate-800 tracking-tight">Design Options & Layout</h2>
-                  <div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 02</div>
-                </div>
-              </div>
-              <div className="px-8 flex-1">
-                <div className="grid md:grid-cols-2 gap-10 mb-10">
-                  <div className="space-y-4 text-center">
-                    <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Shaker Style</h3>
-                    <div className="bg-slate-50 p-4 card img-frame flex items-center justify-center">
-                      {images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}
-                    </div>
-                    <p className="text-sm text-slate-600">{content.shakerDescription}</p>
-                    <div className="bg-slate-50 p-4 card img-frame-sm flex items-center justify-center mt-4">
-                      {images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}
-                    </div>
-                    <p className="text-sm text-slate-600">{content.shakerVanityDescription}</p>
-                  </div>
-                  <div className="space-y-4 text-center">
-                    <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Euro Style</h3>
-                    <div className="bg-slate-50 p-4 card img-frame flex items-center justify-center">
-                      {images.euroRender ? <img src={images.euroRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}
-                    </div>
-                    <p className="text-sm text-slate-600">{content.euroDescription}</p>
-                    <div className="bg-slate-50 p-4 card img-frame-sm flex items-center justify-center mt-4">
-                      {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
-                    </div>
-                    <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-center">
-                  <h3 className="text-lg font-medium text-slate-800 tracking-tight">Architectural Layout</h3>
-                  <div className="bg-slate-50 p-6 card">
-                    {images.floorPlan ? <img src={images.floorPlan} className="w-full img-frame-layout object-contain"/> : <div className="text-slate-400 text-sm img-frame-layout flex items-center justify-center">Floor Plan</div>}
-                  </div>
-                  <p className="text-slate-600 text-sm">{content.floorPlanDescription}</p>
-                  {content.onlinePlansLink ? <div className="text-sm"><span className="text-slate-600">View detailed plans:</span> <a className="text-slate-800 underline" target="_blank" rel="noreferrer" href={content.onlinePlansLink}>{content.onlinePlansLink}</a></div> : null}
-                  {content.sketchupLink ? <div className="bg-amber-50 border border-amber-200 p-6 mt-4 text-center card"><h4 className="text-lg font-medium text-slate-800 mb-2">🏠 VIEW IN 3D</h4><p className="text-slate-600 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href={content.sketchupLink} target="_blank" rel="noreferrer" className="inline-block bg-slate-800 text-white px-6 py-2 rounded">View 3D Model</a></div> : null}
-                </div>
-              </div>
-            </section>
-
-            {/* PAGE 3 — Timeline & unified footer */}
-            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
-              <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
-                  <div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 03</div>
-                </div>
-              </div>
-
-              <div className="px-8 flex-1 flex flex-col gap-16 mt-2">
-                <div>
-                  <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Project Timeline</h3>
-                  <div className="mt-6 space-y-4">
-                    {content.timeline.map((t,i)=> (
-                      <div key={i} className="flex items-start gap-3 tlItem">
-                        <div className={["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"][i%5] + " w-4 h-4 mt-1 dot"}></div>
-                        <div>
-                          <div className="font-bold text-slate-800 text-sm uppercase tlP">{t.period}</div>
-                          <div className="text-slate-600 mt-1 tlT">{t.task}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Next Steps</h3>
-                  <div className="mt-6 space-y-3">
-                    {content.nextSteps.map((s,i)=> (
-                      <div key={i} className="flex items-start gap-3 nxItem">
-                        <div className="w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm num">{i+1}</div>
-                        <span className="text-slate-700">{s}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Unified footer */}
-              <div className="text-center p-12 mt-10" style={{background:"var(--footer)"}}>
-                <img
-                  src={images.logo || DEFAULT_LOGO_PATH}
-                  alt=""
-                  className="mx-auto mb-4"
-                  style={{maxHeight:"90px", objectFit:"contain"}}
-                  onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
-                />
-                <div className="text-white text-base mb-1 tracking-wide">{content.tagline}</div>
-                <div className="text-slate-300 text-sm">{content.address}</div>
-                <div className="text-slate-200 text-sm mt-4">
-                  Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that's the perfect fit for your home.
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html>
+                      const { data, error } = await db.from
