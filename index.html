@@ -10,9 +10,9 @@
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
   <!-- React + Babel (UMD) -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- Tailwind + Supabase -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -74,17 +74,14 @@
     const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
 
     // --- helpers to embed images as data URLs for print/export ---
-    // FIX: cache-bust + no-store so export never pulls stale images
     const toDataURL = async (src) => {
       try {
         if (!src) return "";
         if (src.startsWith("data:")) return src; // already embedded
-
-        // add a timestamp param to break caches
+        // cache-bust and bypass HTTP cache to avoid stale assets
         const url = new URL(src, window.location.href);
         url.searchParams.set("_v", Date.now().toString());
-
-        const res = await fetch(url.toString(), { cache: "no-store" });
+        const res = await fetch(url.toString(), { cache: "no-store" }); // <- changed from "force-cache"
         if (!res.ok) throw new Error("fetch failed");
         const blob = await res.blob();
         const reader = new FileReader();
@@ -205,7 +202,7 @@
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [isClient, clientId]);
 
-      // uploads (kept same API)
+      // uploads
       const onImgUpload = (key, file) => {
         const r = new FileReader();
         r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
@@ -267,7 +264,7 @@
 
       // -------- Export Client HTML (offline + images embedded NOW) --------
       const exportClientHTML = async () => {
-        // FIX: ensure the latest keystroke/state is committed before exporting
+        // ensure latest state is flushed before export (fix)
         await new Promise(requestAnimationFrame);
 
         const c = { ...content };
@@ -597,7 +594,7 @@
                     </div>
                     <p className="text-sm text-slate-600">{content.euroDescription}</p>
                     <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">
-                      {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
+                      {images.euroVanity ? <img src={images.eroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
                   </div>
@@ -616,7 +613,7 @@
             </section>
 
             {/* PAGE 3 — Timeline & unified footer */}
-            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
+            <section className="proposal-page w-full max-w-4xl mx_auto bg-white shadow mb-8">
               <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
