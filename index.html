@@ -12,7 +12,7 @@
           <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text>
         </svg>'/>
 
-  <!-- React + Babel (same stack as before) -->
+  <!-- React + Babel -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -44,7 +44,8 @@
     const { createClient } = supabase;
 
     // -------- CONFIG --------
-    const DEFAULT_LOGO_PATH = "Foundry-Cabinetco-Logo-2-White-Text.png"; // put this file next to index.html
+    const DEFAULT_LOGO_PATH = "Foundry-Cabinetco-Logo-2-White-Text.png"; // place this file next to index.html
+    const DEFAULT_LOGO_ALT_PATH = "./Foundry-Cabinetco-Logo-2-White-Text.png";
 
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY =
@@ -157,7 +158,7 @@
         alert('Deleted "' + name + '".');
       };
 
-      // -------- Export Client HTML (NO nested backticks) --------
+      // -------- Export Client HTML (string concat; no nested backticks) --------
       const exportClientHTML = () => {
         const c = content; const img = images;
         function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -170,10 +171,10 @@
           + "<style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}}</style>"
           + "</head><body><div class='proposal-container max-w-none mx-auto bg-white'>";
 
-        // page 1
+        // PAGE 1
         inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"
           + "<div class='px-8 pt-8 pb-3 flex justify-between items-start' style='background:#1e293b'>"
-          +   "<img src='"+(img.logo||"")+"' alt='Logo' style='max-height:160px;object-fit:contain'/>"
+          +   "<img src='"+(img.logo || DEFAULT_LOGO_PATH)+"' alt='' style='max-height:160px;object-fit:contain' onerror='this.src=\""+DEFAULT_LOGO_ALT_PATH+"\";this.onerror=function(){this.style.display=\"none\";}'/>"
           +   "<div class='text-right text-white text-sm'><div class='font-medium tracking-wide'>PROJECT "+esc(c.projectNumber)+"</div><div class='text-slate-300'>"+esc(c.date)+"</div></div>"
           + "</div>"
           + "<div class='px-10 py-10 text-center'>"
@@ -196,7 +197,7 @@
           + "</div>"
           + "</section>";
 
-        // page 2
+        // PAGE 2
         function blockImageOr(src, label, h){ return src ? "<img src='"+src+"' class='w-full "+(h||"h-48")+" object-cover'/>" : "<div class='text-slate-400 text-sm'>"+label+"</div>"; }
         inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"
           + "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'><div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Design Options & Layout</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 02</div></div></div>"
@@ -204,22 +205,22 @@
           +   "<div class='grid grid-cols-2 gap-10 mb-10'>"
           +     "<div class='space-y-4 text-center'>"
           +       "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Shaker Style</h3>"
-          +       "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+blockImageOr(images.shakerRender,"Shaker Kitchen","h-48")+"</div>"
+          +       "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+blockImageOr(img.shakerRender,"Shaker Kitchen","h-48")+"</div>"
           +       "<p class='text-sm text-slate-600'>"+esc(c.shakerDescription)+"</p>"
-          +       "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+blockImageOr(images.shakerVanity,"Shaker Vanity","h-40")+"</div>"
+          +       "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+blockImageOr(img.shakerVanity,"Shaker Vanity","h-40")+"</div>"
           +       "<p class='text-sm text-slate-600'>"+esc(c.shakerVanityDescription)+"</p>"
           +     "</div>"
           +     "<div class='space-y-4 text-center'>"
           +       "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Euro Style</h3>"
-          +       "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+blockImageOr(images.euroRender,"Euro Kitchen","h-48")+"</div>"
+          +       "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+blockImageOr(img.euroRender,"Euro Kitchen","h-48")+"</div>"
           +       "<p class='text-sm text-slate-600'>"+esc(c.euroDescription)+"</p>"
-          +       "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+blockImageOr(images.euroVanity,"Euro Vanity","h-40")+"</div>"
+          +       "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+blockImageOr(img.euroVanity,"Euro Vanity","h-40")+"</div>"
           +       "<p class='text-sm text-slate-600'>"+esc(c.euroVanityDescription)+"</p>"
           +     "</div>"
           +   "</div>"
           +   "<div class='space-y-3 text-center'>"
           +     "<h3 class='text-lg font-medium text-slate-800 tracking-tight'>Architectural Layout</h3>"
-          +     "<div class='bg-slate-50 p-6 card'>"+blockImageOr(images.floorPlan,"Floor Plan","h-64 object-contain")+"</div>"
+          +     "<div class='bg-slate-50 p-6 card'>"+blockImageOr(img.floorPlan,"Floor Plan","h-64 object-contain")+"</div>"
           +     "<p class='text-slate-600 text-sm'>"+esc(c.floorPlanDescription)+"</p>"
           +     (has(c.onlinePlansLink) ? "<div class='text-sm'><span class='text-slate-600'>View detailed plans:</span> <a class='text-slate-800 underline' target='_blank' rel='noreferrer' href='"+esc(c.onlinePlansLink)+"'>"+esc(c.onlinePlansLink)+"</a></div>" : "")
           +     (has(c.sketchupLink) ? "<div class='bg-amber-50 border border-amber-200 p-6 mt-4 text-center card'><h4 class='text-lg font-medium text-slate-800 mb-2'>🏠 VIEW IN 3D</h4><p class='text-slate-600 text-sm mb-4'>Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href='"+esc(c.sketchupLink)+"' target='_blank' rel='noreferrer' class='inline-block bg-slate-800 text-white px-6 py-2 rounded'>View 3D Model</a></div>" : "")
@@ -227,7 +228,7 @@
           + "</div>"
           + "</section>";
 
-        // page 3
+        // PAGE 3 — Timeline & unified footer (no separate thank-you card)
         function tlItem(colorClass, period, task){ return "<div class='flex items-start gap-3'><div class='w-4 h-4 "+colorClass+" mt-1'></div><div><div class='font-bold text-slate-800 text-sm uppercase'>"+esc(period)+"</div><div class='text-slate-600 mt-1'>"+esc(task)+"</div></div></div>"; }
         var tlHTML = ""; (c.timeline||[]).forEach(function(t,i){ var colors=["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"]; tlHTML += tlItem(colors[i%5], t.period, t.task); });
         function stepItem(i, text){ return "<div class='flex items-start gap-3'><div class='w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm'>"+(i+1)+"</div><span class='text-slate-700'>"+esc(text)+"</span></div>"; }
@@ -238,13 +239,12 @@
           + "<div class='px-8 flex-1 flex flex-col gap-12'>"
           +   "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Project Timeline</h3><div class='mt-6 space-y-4'>"+tlHTML+"</div></div>"
           +   "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Next Steps</h3><div class='mt-6 space-y-3'>"+stepsHTML+"</div></div>"
-          +   "<div class='bg-slate-800 text-white p-8 text-center card'><p class='text-base leading-relaxed'>"+esc(c.closingNote)+"</p></div>"
           + "</div>"
           + "<div class='text-center p-10' style='background:#0b1120'>"
-          +   "<img src='"+(img.logo||"")+"' alt='Company Logo' class='mx-auto mb-4' style='max-height:80px;object-fit:contain'/>"
+          +   "<img src='"+(img.logo || DEFAULT_LOGO_PATH)+"' alt='' style='max-height:90px;object-fit:contain' onerror='this.src=\""+DEFAULT_LOGO_ALT_PATH+"\";this.onerror=function(){this.style.display=\"none\";}'/>"
           +   "<div class='text-white text-base mb-1 tracking-wide'>"+esc(c.tagline)+"</div>"
           +   "<div class='text-slate-300 text-sm'>"+esc(c.address)+"</div>"
-          +   "<div class='text-slate-200 text-sm mt-2'>"+esc(c.closingNote)+"</div>"
+          +   "<div class='text-slate-200 text-sm mt-4'>Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that&#39;s the perfect fit for your home.</div>"
           + "</div>"
           + "</section>";
 
@@ -266,7 +266,16 @@
             <header className="bg-white border-b print:hidden">
               <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src={images.logo} alt="logo" className="h-10" />
+                  <img
+                    src={images.logo || DEFAULT_LOGO_PATH}
+                    alt=""
+                    className="h-10"
+                    onError={(e)=> {
+                      const tried = e.currentTarget.getAttribute('data-tried') || '';
+                      if (!tried) { e.currentTarget.src = DEFAULT_LOGO_ALT_PATH; e.currentTarget.setAttribute('data-tried','alt'); }
+                      else { e.currentTarget.style.display = 'none'; }
+                    }}
+                  />
                   <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
                   {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
                 </div>
@@ -363,7 +372,16 @@
             {/* PAGE 1 (header has logo) */}
             <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
               <div className="px-8 pt-8 pb-3 flex justify-between items-start" style={{background:"var(--header)"}}>
-                <img src={images.logo} alt="Logo" className="logo-clean" />
+                <img
+                  src={images.logo || DEFAULT_LOGO_PATH}
+                  alt=""
+                  className="logo-clean"
+                  onError={(e)=> {
+                    const tried = e.currentTarget.getAttribute('data-tried') || '';
+                    if (!tried) { e.currentTarget.src = DEFAULT_LOGO_ALT_PATH; e.currentTarget.setAttribute('data-tried','alt'); }
+                    else { e.currentTarget.style.display = 'none'; }
+                  }}
+                />
                 <div className="text-right text-white text-sm">
                   <div className="font-medium tracking-wide">PROJECT {content.projectNumber}</div>
                   <div className="text-slate-300">{content.date}</div>
@@ -431,7 +449,7 @@
               </div>
             </section>
 
-            {/* PAGE 3 (footer has logo) */}
+            {/* PAGE 3 — Timeline & unified footer */}
             <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
               <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
                 <div className="flex justify-between items-center">
@@ -439,6 +457,7 @@
                   <div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 03</div>
                 </div>
               </div>
+
               <div className="px-8 flex-1 flex flex-col gap-12">
                 <div>
                   <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Project Timeline</h3>
@@ -454,6 +473,7 @@
                     ))}
                   </div>
                 </div>
+
                 <div>
                   <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Next Steps</h3>
                   <div className="mt-6 space-y-3">
@@ -465,15 +485,26 @@
                     ))}
                   </div>
                 </div>
-                <div className="bg-slate-800 text-white p-8 text-center card">
-                  <p className="text-base leading-relaxed">{content.closingNote}</p>
-                </div>
               </div>
+
+              {/* Unified footer: logo + tagline + address + thank-you */}
               <div className="text-center p-10" style={{background:"var(--footer)"}}>
-                <img src={images.logo} alt="Company Logo" className="mx-auto mb-4" style={{maxHeight:"80px", objectFit:"contain"}}/>
+                <img
+                  src={images.logo || DEFAULT_LOGO_PATH}
+                  alt=""
+                  className="mx-auto mb-4"
+                  style={{maxHeight:"90px", objectFit:"contain"}}
+                  onError={(e)=> {
+                    const tried = e.currentTarget.getAttribute('data-tried') || '';
+                    if (!tried) { e.currentTarget.src = DEFAULT_LOGO_ALT_PATH; e.currentTarget.setAttribute('data-tried','alt'); }
+                    else { e.currentTarget.style.display = 'none'; }
+                  }}
+                />
                 <div className="text-white text-base mb-1 tracking-wide">{content.tagline}</div>
                 <div className="text-slate-300 text-sm">{content.address}</div>
-                <div className="text-slate-200 text-sm mt-2">{content.closingNote}</div>
+                <div className="text-slate-200 text-sm mt-4">
+                  Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that's the perfect fit for your home.
+                </div>
               </div>
             </section>
           </div>
