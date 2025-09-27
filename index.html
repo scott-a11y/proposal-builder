@@ -1,193 +1,513 @@
-<!DOCTYPE html>
+# Build a FINAL full app with Supabase + embedded logo + export/print + editor.
+# This is a fresh write to avoid any expired links.
+
+import base64, pathlib
+
+# Embed the preferred white-text logo
+logo_path = pathlib.Path("/mnt/data/Foundry-Cabinetco-Logo-2-White-Text.png")
+b64_logo = ""
+if logo_path.exists():
+    b64_logo = "data:image/png;base64," + base64.b64encode(logo_path.read_bytes()).decode("utf-8")
+
+html = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Foundry Cabinet Co. - Proposal Builder</title>
+  <title>Foundry Cabinet · Co — Proposal Builder</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root { --header:#1e293b; --footer:#0b1120; }
+    body { background:#f1f5f9; color:#111827; }
+    .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
+    .logo-pop { filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)) drop-shadow(0 0 8px rgba(255,255,255,.35)); }
+    .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      .print\\:hidden { display: none !important; }
+      .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
       @page { size: 8.5in 11in; margin: 0.25in; }
-      .proposal-container, body { background: white !important; }
-      body { font-size: 12px !important; }
+      body { background:white !important; }
     }
-    .proposal-page { display: flex; flex-direction: column; min-height: 800px; box-sizing: border-box; }
-    .timeline-item { display: flex !important; align-items: flex-start !important; margin-bottom: 1.5rem !important; page-break-inside: avoid !important; }
-    .content-section { overflow-wrap: break-word; word-wrap: break-word; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { createClient } = supabase;
-    const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     const { useState, useEffect } = React;
+    const { createClient } = supabase;
 
-    function ProposalBuilder() {
+    // Embedded logo
+    const DEFAULT_LOGO = "__EMBED_LOGO__";
+
+    // Supabase creds
+    const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const Label = ({children}) => <label className="text-xs font-medium text-slate-600 uppercase tracking-wide">{children}</label>;
+    const Input = (props) => <input {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white "+(props.className||"")} />;
+    const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
+
+    function App() {
       const urlParams = new URLSearchParams(window.location.search);
-      const isClientMode = urlParams.get("client") === "true";
+      const isClient = urlParams.get("client") === "true";
 
       const [savedProposals, setSavedProposals] = useState([]);
-      const [currentProposalName, setCurrentProposalName] = useState("");
-      const [showLoadDialog, setShowLoadDialog] = useState(false);
+      const [currentName, setCurrentName] = useState("");
+      const [showLoad, setShowLoad] = useState(false);
 
       const [images, setImages] = useState({
-        logo: null,
-        shakerRender: null,
-        euroRender: null,
-        shakerVanity: null,
-        euroVanity: null,
-        floorPlan: null
+        logo: DEFAULT_LOGO, shakerRender: null, euroRender: null,
+        shakerVanity: null, euroVanity: null, floorPlan: null
       });
 
       const [content, setContent] = useState({
         title: "Custom Cabinet Proposal – Forest Grove, Oregon",
         projectNumber: "FCB-2025-001",
-        date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        date: new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }),
         clientName: "Valued Client",
-        executiveSummary: "We are pleased to present this proposal...",
+        executiveSummary: "We are pleased to present this proposal for custom cabinetry for your Forest Grove home. Two distinct style options: classic Shaker and modern Euro/Flat Panel.",
         totalInvestment: "$7,595",
         warrantyYears: "3",
-        warrantyText: "This includes build, delivery, and installation with a 3-year workmanship warranty.",
-        shakerDescription: "Classic framed doors...",
-        euroDescription: "Modern frameless full-overlay...",
-        shakerVanityDescription: "Classic framed vanity...",
-        euroVanityDescription: "Modern frameless vanity...",
-        floorPlanDescription: "Plan view showing placement...",
-        onlinePlansLink: "",
-        sketchupLink: "",
-        closingNote: "Thank you for considering Foundry Cabinet Co.",
+        warrantyText: "Professional build, delivery, installation, backed by a 3‑year workmanship warranty.",
+        shakerDescription: "Classic framed doors with recessed panels. Painted finish.",
+        euroDescription: "Modern frameless full‑overlay doors. Natural finish or your chosen color.",
+        shakerVanityDescription: "Classic framed vanity doors with recessed panels. Painted finish.",
+        euroVanityDescription: "Modern frameless full‑overlay vanity doors. Natural finish or your chosen color.",
+        floorPlanDescription: "Plan view showing placement and dimensions.",
+        closingNote: "Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that's the perfect fit for your home.",
         tagline: "Driven by Precision. Evolved by Design.",
+        address: "866 N Columbia Blvd, Suite B-110, Portland, OR 97217",
         timeline: [
-          { period: "WEEKS 1–2", task: "Design Development & Final Approval" },
-          { period: "WEEKS 3–6", task: "Material Procurement & Shop Preparation" },
-          { period: "WEEKS 7–12", task: "Custom Fabrication & Finishing" },
-          { period: "WEEKS 13–14", task: "Professional Installation" },
-          { period: "WEEK 15", task: "Final Walkthrough & Warranty Activation" }
+          { period:"WEEKS 1–2", task:"Design Development & Final Approval" },
+          { period:"WEEKS 3–6", task:"Material Procurement & Shop Preparation" },
+          { period:"WEEKS 7–12", task:"Custom Fabrication & Finishing" },
+          { period:"WEEKS 13–14", task:"Professional Installation" },
+          { period:"WEEK 15", task:"Final Walkthrough & Warranty Activation" }
         ],
-        nextSteps: [
-          "Select Shaker or Euro style",
-          "Approve proposal & sign agreement",
-          "Submit deposit to secure schedule"
-        ]
+        nextSteps: ["Select Shaker or Euro style","Approve proposal & sign agreement","Submit deposit to secure schedule"],
+        onlinePlansLink: "",
+        sketchupLink: ""
       });
 
-      // simplified save/load for brevity...
-      const handleSaveClick = () => {
-        const name = prompt("Enter a name for this proposal:");
-        if (name && name.trim()) {
-          setCurrentProposalName(name.trim());
-          alert("Proposal saved (stub). Connect Supabase save here.");
+      // Fetch proposals
+      useEffect(() => { (async () => {
+        const { data, error } = await db.from('proposals').select('*');
+        if (!error && data) {
+          setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
         }
+      })() }, []);
+
+      // Auto-save when named
+      useEffect(() => {
+        if (!currentName) return;
+        const id = setInterval(() => save(currentName, false), 30000);
+        return () => clearInterval(id);
+      }, [content, images, currentName]);
+
+      const onImgUpload = (key, file) => {
+        const r = new FileReader();
+        r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
+        r.readAsDataURL(file);
       };
 
+      const setField = (k, v) => setContent(prev => ({ ...prev, [k]: v }));
+
+      const save = async (name, alertOnOK=true) => {
+        try {
+          const payload = { content, images };
+          const { data:existing } = await db.from('proposals').select('name').eq('name', name).maybeSingle();
+          if (existing) {
+            const { error } = await db.from('proposals').update(payload).eq('name', name);
+            if (error) throw error;
+          } else {
+            const { error } = await db.from('proposals').insert([{ name, ...payload }]);
+            if (error) throw error;
+          }
+          setCurrentName(name);
+          const { data } = await db.from('proposals').select('*');
+          setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
+          if (alertOnOK) alert('Saved "' + name + '" to cloud.');
+        } catch (e) { alert("Save failed: " + e.message); }
+      };
+
+      const loadOne = (name) => {
+        const p = savedProposals.find(x => x.name === name);
+        if (p) { setContent(p.content); setImages(p.images || images); setCurrentName(name); setShowLoad(false); }
+      };
+
+      const deleteOne = async (name) => {
+        if (!confirm('Delete "'+name+'"?')) return;
+        const { error } = await db.from('proposals').delete().eq('name', name);
+        if (error) return alert("Delete failed: " + error.message);
+        setSavedProposals(prev => prev.filter(p => p.name !== name));
+        if (currentName === name) setCurrentName("");
+        alert('Deleted "' + name + '".');
+      };
+
+      // Export client HTML using concatenation (no template literals)
+      const exportClientHTML = () => {
+        const c = content; const img = images;
+        function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+        var inner = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"+
+          "<title>"+esc(c.title)+" - "+esc(c.clientName||"Client")+"</title>"+
+          "<script src='https://cdn.tailwindcss.com'><\/script>"+
+          "<style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.print\\:hidden{display:none!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}}</style>"+
+          "</head><body><div class='proposal-container max-w-none mx-auto bg-white'>";
+
+        // Cover
+        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"+
+          "<div class='px-8 pt-8 pb-3 flex justify-between items-start' style='background:#1e293b'>"+
+            "<img src='"+(img.logo||"")+"' alt='Logo' class='logo-pop' style='max-height:160px;object-fit:contain'/>"+
+            "<div class='text-right text-white text-sm'><div class='font-medium tracking-wide'>PROJECT "+esc(c.projectNumber)+"</div><div class='text-slate-300'>"+esc(c.date)+"</div></div>"+
+          "</div>"+
+          "<div class='px-10 py-10 text-center'>"+
+            "<div class='text-sm font-medium text-slate-600 uppercase tracking-widest mb-4'>CUSTOM CABINETRY PROPOSAL</div>"+
+            "<h1 class='text-4xl font-light text-slate-800 mb-6'>"+esc(c.title)+"</h1>"+
+            "<div class='w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6'></div>"+
+            "<div class='bg-slate-50 p-8 border-l-4 border-slate-800 text-left card'>"+
+              "<div class='grid md:grid-cols-2 gap-8 mb-6'>"+
+                "<div class='text-center'><div class='text-3xl font-light text-slate-800 mb-2'>"+esc(c.totalInvestment)+"</div><div class='text-sm text-slate-600 uppercase tracking-wide'>Investment</div></div>"+
+                "<div class='text-center'><div class='text-3xl font-light text-slate-800 mb-2'>"+esc(c.warrantyYears)+"</div><div class='text-sm text-slate-600 uppercase tracking-wide'>Year Warranty</div></div>"+
+              "</div>"+
+              "<p class='text-base leading-relaxed text-slate-700 mb-4'>"+esc(c.executiveSummary)+"</p>"+
+              "<p class='text-sm text-slate-600'>"+esc(c.warrantyText)+"</p>"+
+            "</div>"+
+          "</div>"+
+          "<div class='text-white p-6 text-center' style='background:#0f172a'>"+
+            "<div class='w-64 h-px bg-white/20 mx-auto mb-3'></div>"+
+            "<div class='text-sm tracking-wide'>"+esc(c.tagline)+"</div>"+
+            "<div class='text-xs text-slate-300 mt-1'>"+esc(c.address)+"</div>"+
+          "</div>"+
+        "</section>";
+
+        // Page 2
+        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"+
+          "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'>"+
+            "<div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Design Options & Layout</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 02</div></div>"+
+          "</div>"+
+          "<div class='px-8 flex-1'>"+
+            "<div class='grid grid-cols-2 gap-10 mb-10'>"+
+              "<div class='space-y-4 text-center'>"+
+                "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Shaker Style</h3>"+
+                "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+(images.shakerRender?"<img src='"+images.shakerRender+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Shaker Kitchen</div>")+"</div>"+
+                "<p class='text-sm text-slate-600'>"+esc(c.shakerDescription)+"</p>"+
+                "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+(images.shakerVanity?"<img src='"+images.shakerVanity+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Shaker Vanity</div>")+"</div>"+
+                "<p class='text-sm text-slate-600'>"+esc(c.shakerVanityDescription)+"</p>"+
+              "</div>"+
+              "<div class='space-y-4 text-center'>"+
+                "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Euro Style</h3>"+
+                "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+(images.euroRender?"<img src='"+images.euroRender+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Euro Kitchen</div>")+"</div>"+
+                "<p class='text-sm text-slate-600'>"+esc(c.euroDescription)+"</p>"+
+                "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+(images.euroVanity?"<img src='"+images.euroVanity+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Euro Vanity</div>")+"</div>"+
+                "<p class='text-sm text-slate-600'>"+esc(c.euroVanityDescription)+"</p>"+
+              "</div>"+
+            "</div>"+
+            "<div class='space-y-3 text-center'>"+
+              "<h3 class='text-lg font-medium text-slate-800 tracking-tight'>Architectural Layout</h3>"+
+              "<div class='bg-slate-50 p-6 card'>"+(images.floorPlan?"<img src='"+images.floorPlan+"' class='w-full h-64 object-contain'/>":"<div class='text-slate-400 text-sm h-64 flex items-center justify-center'>Floor Plan</div>")+"</div>"+
+              "<p class='text-slate-600 text-sm'>"+esc(c.floorPlanDescription)+"</p>"+
+              (contentStub("onlinePlansLink") ? "<div class='text-sm'><span class='text-slate-600'>View detailed plans:</span> <a class='text-slate-800 underline' target='_blank' rel='noreferrer' href='"+esc(c.onlinePlansLink)+"'>"+esc(c.onlinePlansLink)+"</a></div>" : "")+
+              (contentStub("sketchupLink") ? "<div class='bg-amber-50 border border-amber-200 p-6 mt-4 text-center card'><h4 class='text-lg font-medium text-slate-800 mb-2'>🏠 VIEW IN 3D</h4><p class='text-slate-600 text-sm mb-4'>Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href='"+esc(c.sketchupLink)+"' target='_blank' rel='noreferrer' class='inline-block bg-slate-800 text-white px-6 py-2 rounded'>View 3D Model</a></div>" : "")+
+            "</div>"+
+          "</div>"+
+        "</section>";
+
+        // Helper to check non-empty link fields
+        function contentStub(key){ return (c[key] && (""+c[key]).trim().length>0); }
+
+        // Page 3
+        function tlItem(colorClass, period, task){
+          return "<div class='flex items-start gap-3'><div class='w-4 h-4 "+colorClass+" mt-1'></div><div><div class='font-bold text-slate-800 text-sm uppercase'>"+esc(period)+"</div><div class='text-slate-600 mt-1'>"+esc(task)+"</div></div></div>";
+        }
+        var tl = ""; (c.timeline||[]).forEach(function(t,i){ var colors=["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"]; tl += tlItem(colors[i%5], t.period, t.task); });
+        function stepItem(i, text){ return "<div class='flex items-start gap-3'><div class='w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm'>"+(i+1)+"</div><span class='text-slate-700'>"+esc(text)+"</span></div>"; }
+        var steps=""; (c.nextSteps||[]).forEach(function(s,i){ steps+=stepItem(i,s); });
+
+        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"+
+          "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'><div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Timeline & Next Steps</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 03</div></div></div>"+
+          "<div class='px-8 flex-1 flex flex-col gap-12'>"+
+            "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Project Timeline</h3><div class='mt-6 space-y-4'>"+tl+"</div></div>"+
+            "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Next Steps</h3><div class='mt-6 space-y-3'>"+steps+"</div></div>"+
+            "<div class='bg-slate-800 text-white p-8 text-center card'><p class='text-base leading-relaxed'>"+esc(c.closingNote)+"</p></div>"+
+          "</div>"+
+          "<div class='text-center p-10' style='background:#0b1120'>"+
+            "<img src='"+(img.logo||"")+"' alt='Company Logo' class='mx-auto mb-4 object-contain logo-pop' style='max-height:72px'/>"+
+            "<div class='text-white text-base mb-1 tracking-wide'>"+esc(c.tagline)+"</div>"+
+            "<div class='text-slate-300 text-sm'>"+esc(c.address)+"</div>"+
+          "</div>"+
+        "</section>";
+
+        inner += "</div></body></html>";
+
+        const blob = new Blob([inner], {type:'text/html'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (c.projectNumber || "proposal") + "_" + (c.clientName||"Client").replace(/\s+/g,'_') + "_Proposal.html";
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      };
+
+      // ------- UI (admin/editor) -------
       return (
-        <div className="w-full bg-slate-100 min-h-screen">
-          {!isClientMode && (
-            <div className="bg-white shadow-lg border-b border-slate-200 print:hidden">
-              <div className="max-w-7xl mx-auto p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h1 className="text-3xl font-light text-slate-800 tracking-tight">Professional Proposal Builder</h1>
-                    {currentProposalName && (
-                      <div className="text-sm text-slate-500 mt-1">
-                        Current: <span className="font-medium">{currentProposalName}</span>
-                        <span className="ml-2 text-green-600">● Auto-saving</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex space-x-3">
-                    <button onClick={handleSaveClick} className="bg-green-600 text-white px-6 py-3">Save</button>
-                    <button onClick={() => window.print()} className="bg-slate-800 text-white px-6 py-3">Generate PDF</button>
-                  </div>
+        <div className="w-full min-h-screen">
+          {!isClient && (
+            <header className="bg-white border-b print:hidden">
+              <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={images.logo} alt="logo" className="h-10 logo-pop" />
+                  <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
+                  {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { const n=prompt('Name to save as:'); if(n) save(n.trim()); }} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
+                  <button onClick={() => setShowLoad(true)} className="bg-sky-600 text-white px-4 py-2 rounded">Load</button>
+                  <button onClick={exportClientHTML} className="bg-orange-600 text-white px-4 py-2 rounded">Export for Client</button>
+                  <button onClick={() => window.open(window.location.href + '?client=true', '_blank')} className="bg-purple-600 text-white px-4 py-2 rounded">Client View</button>
+                  <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-2 rounded">Print / Save PDF</button>
+                </div>
+              </div>
+            </header>
+          )}
+
+          {!isClient && (
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-6 p-4 print:hidden">
+              <div className="lg:col-span-2 bg-white p-4 rounded border card">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div><Label>Title</Label><Input value={content.title} onChange={e=>setField('title', e.target.value)} /></div>
+                  <div><Label>Project #</Label><Input value={content.projectNumber} onChange={e=>setField('projectNumber', e.target.value)} /></div>
+                  <div><Label>Date</Label><Input value={content.date} onChange={e=>setField('date', e.target.value)} /></div>
+                  <div><Label>Client name</Label><Input value={content.clientName} onChange={e=>setField('clientName', e.target.value)} /></div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div><Label>Total investment</Label><Input value={content.totalInvestment} onChange={e=>setField('totalInvestment', e.target.value)} /></div>
+                  <div><Label>Warranty years</Label><Input value={content.warrantyYears} onChange={e=>setField('warrantyYears', e.target.value)} /></div>
+                </div>
+                <div className="mt-4"><Label>Executive summary</Label><TextArea value={content.executiveSummary} onChange={e=>setField('executiveSummary', e.target.value)} /></div>
+                <div className="mt-4"><Label>Warranty text</Label><TextArea value={content.warrantyText} onChange={e=>setField('warrantyText', e.target.value)} /></div>
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div><Label>Shaker description</Label><TextArea value={content.shakerDescription} onChange={e=>setField('shakerDescription', e.target.value)} /></div>
+                  <div><Label>Euro description</Label><TextArea value={content.euroDescription} onChange={e=>setField('euroDescription', e.target.value)} /></div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div><Label>Shaker Vanity description</Label><TextArea value={content.shakerVanityDescription} onChange={e=>setField('shakerVanityDescription', e.target.value)} /></div>
+                  <div><Label>Euro Vanity description</Label><TextArea value={content.euroVanityDescription} onChange={e=>setField('euroVanityDescription', e.target.value)} /></div>
+                </div>
+                <div className="mt-4"><Label>Floor plan description</Label><TextArea value={content.floorPlanDescription} onChange={e=>setField('floorPlanDescription', e.target.value)} /></div>
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div><Label>Online plans link</Label><Input value={content.onlinePlansLink} onChange={e=>setField('onlinePlansLink', e.target.value)} placeholder="https://…" /></div>
+                  <div><Label>SketchUp 3D link</Label><Input value={content.sketchupLink} onChange={e=>setField('sketchupLink', e.target.value)} placeholder="https://…" /></div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div><Label>Tagline</Label><Input value={content.tagline} onChange={e=>setField('tagline', e.target.value)} /></div>
+                  <div><Label>Footer address</Label><Input value={content.address} onChange={e=>setField('address', e.target.value)} /></div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded border card">
+                <div className="font-semibold text-slate-700 mb-3">Visual Assets</div>
+                <div className="space-y-3">
+                  {[["logo","Company Logo"],["shakerRender","Shaker Kitchen"],["euroRender","Euro Kitchen"],["shakerVanity","Shaker Vanity"],["euroVanity","Euro Vanity"],["floorPlan","Floor Plan"]].map(([k,label]) => (
+                    <div key={k} className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-slate-700">{label}</span>
+                      <input type="file" accept="image/*" onChange={e=> e.target.files[0] && onImgUpload(k, e.target.files[0])} className="text-sm"/>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6">
+                  <div className="font-semibold text-slate-700 mb-2">Timeline</div>
+                  {content.timeline.map((t,i)=>(
+                    <div key={i} className="grid grid-cols-7 gap-2 mb-2">
+                      <Input className="col-span-3" value={t.period} onChange={e=>setContent(prev=>({ ...prev, timeline: prev.timeline.map((x,idx)=> idx===i?({ ...x, period:e.target.value }):x) }))} />
+                      <Input className="col-span-3" value={t.task} onChange={e=>setContent(prev=>({ ...prev, timeline: prev.timeline.map((x,idx)=> idx===i?({ ...x, task:e.target.value }):x) }))} />
+                      <button className="bg-red-500 text-white text-xs rounded px-2" onClick={()=>setContent(prev=>({ ...prev, timeline: prev.timeline.filter((_,idx)=>idx!==i) }))}>Remove</button>
+                    </div>
+                  ))}
+                  <button className="bg-slate-700 text-white text-xs rounded px-3 py-1" onClick={()=>setContent(prev=>({ ...prev, timeline:[...prev.timeline, {period:"NEW PERIOD", task:"New Task"}] }))}>+ Add</button>
+                </div>
+
+                <div className="mt-6">
+                  <div className="font-semibold text-slate-700 mb-2">Next Steps</div>
+                  {content.nextSteps.map((s,i)=>(
+                    <div key={i} className="flex items-center gap-2 mb-2">
+                      <Input value={s} onChange={e=>setContent(prev=>({ ...prev, nextSteps: prev.nextSteps.map((x,idx)=> idx===i? e.target.value : x) }))} />
+                      <button className="bg-red-500 text-white text-xs rounded px-2" onClick={()=>setContent(prev=>({ ...prev, nextSteps: prev.nextSteps.filter((_,idx)=>idx!==i) }))}>Remove</button>
+                    </div>
+                  ))}
+                  <button className="bg-slate-700 text-white text-xs rounded px-3 py-1" onClick={()=>setContent(prev=>({ ...prev, nextSteps:[...prev.nextSteps, "New step"] }))}>+ Add</button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Cover Page */}
-          <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-8 relative">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-6">
-                  <img src={images.logo} alt="Company Logo" className="max-w-40 max-h-16 object-contain"/>
-                  <div className="text-white">
-                    <div className="text-2xl font-light tracking-wide">FOUNDRY</div>
-                    <div className="text-lg font-light tracking-widest text-slate-300">CABINET · CO</div>
-                    <div className="text-xs text-slate-400">by District Design Build, LLC</div>
-                  </div>
-                </div>
+          {/* Preview Pages */}
+          <div className="proposal-container max-w-none mx-auto bg-white">
+            {/* Cover */}
+            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
+              <div className="px-8 pt-8 pb-3 flex justify-between items-start" style={{background:"var(--header)"}}>
+                <img src={images.logo} alt="Logo" className="logo-pop" style={{maxHeight:"160px", objectFit:"contain"}} />
                 <div className="text-right text-white text-sm">
                   <div className="font-medium tracking-wide">PROJECT {content.projectNumber}</div>
                   <div className="text-slate-300">{content.date}</div>
                 </div>
               </div>
-            </div>
-            <div className="flex-1 flex flex-col justify-center items-center text-center px-16 py-12">
-              <h1 className="text-4xl font-light text-slate-800">{content.title}</h1>
-              <p className="mt-6 text-slate-600">{content.executiveSummary}</p>
-            </div>
-          </div>
+              <div className="px-10 py-10 text-center">
+                <div className="text-sm font-medium text-slate-600 uppercase tracking-widest mb-4">CUSTOM CABINETRY PROPOSAL</div>
+                <h1 className="text-4xl font-light text-slate-800 mb-6">{content.title}</h1>
+                <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6"></div>
+                <div className="bg-slate-50 p-8 border-l-4 border-slate-800 text-left card">
+                  <div className="grid md:grid-cols-2 gap-8 mb-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-light text-slate-800 mb-2">{content.totalInvestment}</div>
+                      <div className="text-sm text-slate-600 uppercase tracking-wide">Investment</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-light text-slate-800 mb-2">{content.warrantyYears}</div>
+                      <div className="text-sm text-slate-600 uppercase tracking-wide">Year Warranty</div>
+                    </div>
+                  </div>
+                  <p className="text-base leading-relaxed text-slate-700 mb-4">{content.executiveSummary}</p>
+                  <p className="text-sm text-slate-600">{content.warrantyText}</p>
+                </div>
+              </div>
+              <div className="text-white p-6 text-center" style={{background:"#0f172a"}}>
+                <div className="w-64 h-px bg-white/20 mx-auto mb-3"></div>
+                <div className="text-sm tracking-wide">{content.tagline}</div>
+                <div className="text-xs text-slate-300 mt-1">{content.address}</div>
+              </div>
+            </section>
 
-          {/* Timeline / Next Steps / Closing */}
-          <div className="proposal-page w-full max-w-4xl mx-auto bg-white shadow-xl mb-8">
-            <div className="px-8 flex-1 flex flex-col">
-              <div className="grid grid-cols-2 gap-12 mb-12">
+            {/* Page 2 */}
+            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
+              <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-light text-slate-800 tracking-tight">Design Options & Layout</h2>
+                  <div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 02</div>
+                </div>
+              </div>
+              <div className="px-8 flex-1">
+                <div className="grid md:grid-cols-2 gap-10 mb-10">
+                  <div className="space-y-4 text-center">
+                    <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Shaker Style</h3>
+                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">{images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}</div>
+                    <p className="text-sm text-slate-600">{content.shakerDescription}</p>
+                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">{images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}</div>
+                    <p className="text-sm text-slate-600">{content.shakerVanityDescription}</p>
+                  </div>
+                  <div className="space-y-4 text-center">
+                    <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Euro Style</h3>
+                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">{images.euroRender ? <img src={images.euroRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}</div>
+                    <p className="text-sm text-slate-600">{content.euroDescription}</p>
+                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">{images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}</div>
+                    <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-center">
+                  <h3 className="text-lg font-medium text-slate-800 tracking-tight">Architectural Layout</h3>
+                  <div className="bg-slate-50 p-6 card">{images.floorPlan ? <img src={images.floorPlan} className="w-full h-64 object-contain"/> : <div className="text-slate-400 text-sm h-64 flex items-center justify-center">Floor Plan</div>}</div>
+                  <p className="text-slate-600 text-sm">{content.floorPlanDescription}</p>
+                  {content.onlinePlansLink ? <div className="text-sm"><span className="text-slate-600">View detailed plans:</span> <a className="text-slate-800 underline" target="_blank" rel="noreferrer" href={content.onlinePlansLink}>{content.onlinePlansLink}</a></div> : null}
+                  {content.sketchupLink ? <div className="bg-amber-50 border border-amber-200 p-6 mt-4 text-center card"><h4 className="text-lg font-medium text-slate-800 mb-2">🏠 VIEW IN 3D</h4><p className="text-slate-600 text-sm mb-4">Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href={content.sketchupLink} target="_blank" rel="noreferrer" className="inline-block bg-slate-800 text-white px-6 py-2 rounded">View 3D Model</a></div> : null}
+                </div>
+              </div>
+            </section>
+
+            {/* Page 3 */}
+            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
+              <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
+                  <div className="text-sm text-slate-500">PROJECT {content.projectNumber} | PAGE 03</div>
+                </div>
+              </div>
+              <div className="px-8 flex-1 flex flex-col gap-12">
                 <div>
-                  <h3 className="text-lg font-medium text-slate-800 border-b pb-3 mb-3">Project Timeline</h3>
-                  <div className="space-y-3">
-                    {content.timeline.map((item, idx) => (
-                      <div key={idx} className="flex items-start space-x-3">
-                        <div className="w-3 h-3 bg-slate-500 mt-1"></div>
+                  <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Project Timeline</h3>
+                  <div className="mt-6 space-y-4">
+                    {content.timeline.map((t,i)=> (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className={["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"][i%5] + " w-4 h-4 mt-1"}></div>
                         <div>
-                          <div className="font-bold text-slate-800 text-sm uppercase">{item.period}</div>
-                          <div className="text-slate-600 text-base">{item.task}</div>
+                          <div className="font-bold text-slate-800 text-sm uppercase">{t.period}</div>
+                          <div className="text-slate-600 mt-1">{t.task}</div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-slate-800 border-b pb-3 mb-3">Next Steps</h3>
-                  <ol className="list-decimal list-inside text-slate-700 space-y-2">
-                    {content.nextSteps.map((step, idx) => (
-                      <li key={idx}>{step}</li>
+                  <h3 className="text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3">Next Steps</h3>
+                  <div className="mt-6 space-y-3">
+                    {content.nextSteps.map((s,i)=> (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm">{i+1}</div>
+                        <span className="text-slate-700">{s}</span>
+                      </div>
                     ))}
-                  </ol>
+                  </div>
+                </div>
+                <div className="bg-slate-800 text-white p-8 text-center card">
+                  <p className="text-base leading-relaxed">{content.closingNote}</p>
                 </div>
               </div>
-
-              {/* Dark Footer */}
-              <div className="bg-slate-800 text-center p-8 mt-auto">
-                <img src={images.logo} alt="Company Logo" className="mx-auto max-h-16 mb-4 object-contain drop-shadow-lg"/>
-                <div className="text-white text-base mb-2 tracking-wide">
-                  {content.tagline}
-                </div>
-                <div className="text-slate-300 text-sm">
-                  866 N Columbia Blvd, Suite B-110<br/>
-                  Portland, OR 97217
-                </div>
+              <div className="text-center p-10" style={{background:"var(--footer)"}}>
+                <img src={images.logo} alt="Company Logo" className="mx-auto mb-4 object-contain logo-pop" style={{maxHeight:"72px"}}/>
+                <div className="text-white text-base mb-1 tracking-wide">{content.tagline}</div>
+                <div className="text-slate-300 text-sm">{content.address}</div>
               </div>
-            </div>
+            </section>
           </div>
 
+          {/* Load dialog */}
+          {showLoad && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
+              <div className="bg-white p-6 rounded shadow max-w-xl w-full max-h-[75vh] overflow-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-medium">Saved Proposals</h2>
+                  <button onClick={() => setShowLoad(false)} className="text-slate-500 text-2xl">×</button>
+                </div>
+                {savedProposals.length === 0 ? (
+                  <p className="text-slate-500 text-center py-8">No saved proposals found.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {savedProposals.map(p => (
+                      <div key={p.name} className="flex items-center justify-between p-3 border rounded">
+                        <div>
+                          <div className="font-medium">{p.name}</div>
+                          <div className="text-xs text-slate-500">Saved: {new Date(p.savedAt).toLocaleString()}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => loadOne(p.name)} className="bg-blue-600 text-white px-3 py-1 rounded text-sm">Load</button>
+                          <button onClick={() => deleteOne(p.name)} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<ProposalBuilder />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
+"""
+
+# inject logo and save
+html = html.replace("__EMBED_LOGO__", b64_logo)
+out_path = "/mnt/data/index-full-proposal-builder-FINAL.html"
+pathlib.Path(out_path).write_text(html, encoding="utf-8")
+out_path
