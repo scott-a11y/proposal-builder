@@ -29,11 +29,9 @@
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
-      @page { size: 8.5in 11in; margin: 0.5in; } /* breathing room */
-      /* keep grids intact in print */
+      @page { size: 8.5in 11in; margin: 0.5in; }
       .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
       .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
-      /* prevent image blocks from breaking/stacking odd */
       .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
       img { break-inside: avoid !important; page-break-inside: avoid !important; }
     }
@@ -58,8 +56,7 @@
         </g>
       </svg>`);
 
-    // You can swap to a PNG filename if you want (e.g. "Foundry-Cabinetco-Logo-2-White-Text.png")
-    // Keeping inline fallback ensures no missing logo even before you upload.
+    // Keep your inline fallback as default so the header/footer never break if a file is missing.
     const DEFAULT_LOGO_PATH = INLINE_FALLBACK_LOGO;
 
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
@@ -94,7 +91,6 @@
     };
 
     const embedAllImagesInState = async (images, setImages, fallbackLogo) => {
-      // make a fresh embedded copy from whatever is currently in state/UI
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         toDataURL(images.logo || fallbackLogo),
         toDataURL(images.shakerRender),
@@ -117,7 +113,7 @@
     function App() {
       const urlParams = new URLSearchParams(window.location.search);
       const isClient = urlParams.get("client") === "true";
-      const clientId = urlParams.get("id") || ""; // optional proposal name to load in client view
+      const clientId = urlParams.get("id") || "";
 
       const [savedProposals, setSavedProposals] = useState([]);
       const [currentName, setCurrentName] = useState("");
@@ -170,11 +166,10 @@
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // On first load, embed any path-based images so Print/PDF works even before uploads
+      // On first load, embed path-based images so Print/PDF works even before uploads
       useEffect(() => {
         (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
+      }, []); // eslint-disable-line
 
       // Client View: auto-load a proposal (by ?id=NAME or most recent), then embed images
       useEffect(() => {
@@ -187,20 +182,18 @@
               if (error) throw error;
               if (data && data[0]) target = data[0].name;
             }
-            if (!target) return; // nothing in DB yet
+            if (!target) return;
             const { data: row, error: e2 } = await db.from("proposals").select("*").eq("name", target).maybeSingle();
             if (e2) throw e2;
             if (!row) return;
             setContent(row.content || content);
             setImages(row.images || images);
-            // ensure embedded copies are used in the client export/print
             await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
           } catch (err) {
             console.warn("Client auto-load failed:", err?.message);
           }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [isClient, clientId]);
+      }, [isClient, clientId]); // eslint-disable-line
 
       // uploads
       const onImgUpload = (key, file) => {
@@ -402,7 +395,7 @@
                     if (pick) loadOne(pick.trim());
                   }} className="bg-sky-600 text-white px-4 py-2 rounded">Load</button>
                   <button onClick={exportClientHTML} className="bg-orange-600 text-white px-4 py-2 rounded">Export for Client</button>
-                  <!-- FIX #3: pin client view to the current proposal and save before opening -->
+                  {/* FIX #3: pin client view to the current proposal and save before opening */}
                   <button
                     onClick={async () => {
                       if (!currentName) {
