@@ -43,7 +43,28 @@
       .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
       .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
       .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
-      img { break-inside: avoid !important; page-break-inside: avoid !important; }
+      img { 
+        break-inside: avoid !important; 
+        page-break-inside: avoid !important;
+        max-width: 100% !important;
+        height: auto !important;
+        display: block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      /* Ensure image containers maintain their dimensions */
+      .img-frame, .img-frame-sm, .img-frame-layout {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+      }
+      /* Force images to be visible and properly sized */
+      .logo-clean {
+        max-height: 160px !important;
+        width: auto !important;
+        object-fit: contain !important;
+      }
     }
   </style>
 </head>
@@ -87,33 +108,84 @@
       const imgs = Array.from(root.querySelectorAll('img'))
         .filter(img => !img.complete || img.naturalWidth === 0);
       if (imgs.length === 0) return;
-      await Promise.all(imgs.map(img => new Promise(res => {
-        const done = () => res();
-        img.onload = done; img.onerror = done;
-      })));
+      
+      // Wait for all images with timeout
+      const promises = imgs.map(img => new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('Image load timeout:', img.src);
+          resolve();
+        }, 5000); // 5 second timeout per image
+        
+        const done = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+        
+        if (img.complete && img.naturalWidth > 0) {
+          done();
+        } else {
+          img.onload = done;
+          img.onerror = done;
+        }
+      }));
+      
+      await Promise.all(promises);
     };
     const hasAnyImage = (imgs) => !!(imgs && (imgs.logo || imgs.shakerRender || imgs.euroRender || imgs.shakerVanity || imgs.euroVanity || imgs.floorPlan));
 
     // Turn URL/file into data URL so export & PDF are self-contained
-    const toDataURL = async (src) => {
+    const toDataURL = async (src, retries = 2) => {
       try {
         if (!src) return "";
         if (src.startsWith("data:")) return src;
+        
         const url = new URL(src, window.location.href);
         url.searchParams.set("_v", Date.now().toString()); // cache-bust
-        const res = await fetch(url.toString(), { cache: "no-store", mode: "cors" });
-        if (!res.ok) throw new Error("fetch failed");
+        
+        const res = await fetch(url.toString(), { 
+          cache: "no-store", 
+          mode: "cors",
+          headers: {
+            'Accept': 'image/*,*/*;q=0.8'
+          }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         const blob = await res.blob();
+        
+        // Verify it's actually an image
+        if (!blob.type.startsWith('image/')) {
+          console.warn('Non-image content type:', blob.type, 'for', src);
+        }
+        
         const reader = new FileReader();
-        const p = new Promise((resolve) => { reader.onloadend = () => resolve(reader.result || ""); });
+        const p = new Promise((resolve, reject) => { 
+          reader.onloadend = () => resolve(reader.result || "");
+          reader.onerror = () => reject(new Error('FileReader error'));
+        });
         reader.readAsDataURL(blob);
         return await p;
-      } catch {
-        return src; // still fine for on-page; upload via picker for bulletproof embedding
+      } catch (error) {
+        console.warn('toDataURL failed for', src, ':', error.message);
+        
+        // Retry logic
+        if (retries > 0) {
+          console.log('Retrying toDataURL for', src, 'retries left:', retries);
+          await sleep(100 * (3 - retries)); // Progressive delay
+          return toDataURL(src, retries - 1);
+        }
+        
+        // Final fallback - return original src for on-page display
+        return src;
       }
     };
 
     const embedAllImagesInState = async (images, setImages, fallbackLogo) => {
+      console.log('Starting image embedding process...');
+      
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         toDataURL(images.logo || fallbackLogo),
         toDataURL(images.shakerRender),
@@ -122,15 +194,31 @@
         toDataURL(images.euroVanity),
         toDataURL(images.floorPlan),
       ]);
+      
+      const newImages = {
+        logo: logo || images.logo,
+        shakerRender: sh || images.shakerRender,
+        euroRender: eu || images.euroRender,
+        shakerVanity: sv || images.shakerVanity,
+        euroVanity: ev || images.euroVanity,
+        floorPlan: fp || images.floorPlan,
+      };
+      
+      console.log('Image embedding results:', {
+        logo: logo ? 'embedded' : 'unchanged',
+        shakerRender: sh ? 'embedded' : 'unchanged',
+        euroRender: eu ? 'embedded' : 'unchanged',
+        shakerVanity: sv ? 'embedded' : 'unchanged',
+        euroVanity: ev ? 'embedded' : 'unchanged',
+        floorPlan: fp ? 'embedded' : 'unchanged',
+      });
+      
       setImages((prev) => ({
         ...prev,
-        logo: logo || prev.logo,
-        shakerRender: sh || prev.shakerRender,
-        euroRender: eu || prev.euroRender,
-        shakerVanity: sv || prev.shakerVanity,
-        euroVanity: ev || prev.euroVanity,
-        floorPlan: fp || prev.floorPlan,
+        ...newImages
       }));
+      
+      return newImages;
     };
 
     // ---------- localStorage fallback (if Supabase blocked) ----------
@@ -329,9 +417,40 @@
 
       // Print: re-embed + wait -> print
       const handlePrint = async () => {
-        await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
-        await sleep(75);
+        console.log('Starting print process...');
+        
+        // Force re-embedding of all images as data URLs
+        const embeddedImages = await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
+        
+        // Give more time for state updates and re-rendering
+        await sleep(500);
+        
+        // Verify images are embedded as data URLs
+        const verifyEmbedding = () => {
+          const imageElements = document.querySelectorAll('img');
+          let allEmbedded = true;
+          imageElements.forEach(img => {
+            if (img.src && !img.src.startsWith('data:') && !img.src.includes('svg+xml')) {
+              console.warn('Image not embedded:', img.src);
+              allEmbedded = false;
+            }
+          });
+          return allEmbedded;
+        };
+        
+        // Wait for all images to fully load
         await waitForImagesToLoad(document);
+        
+        // Additional verification and wait
+        if (!verifyEmbedding()) {
+          console.log('Some images not embedded, waiting longer...');
+          await sleep(1000);
+        }
+        
+        // Final wait to ensure everything is ready
+        await sleep(200);
+        
+        console.log('Print process ready, opening print dialog...');
         window.print();
       };
 
@@ -357,7 +476,7 @@
           ".wrap{max-width:900px;margin:0 auto}.shadow{box-shadow:0 6px 20px rgba(2,6,23,.08)}"+
           ".page{background:#fff;margin:28px auto;border-radius:6px;overflow:hidden;page-break-after:always}"+
           ".bar{display:flex;justify-content:space-between;align-items:flex-start;padding:24px 28px;background:#1e293b}"+
-          ".logo{max-height:160px;object-fit:contain}.hdrR{color:#fff;font-size:14px;text-align:right}.muted{color:#cbd5e1}"+
+          ".logo{max-height:160px;object-fit:contain;width:auto;display:block}.hdrR{color:#fff;font-size:14px;text-align:right}.muted{color:#cbd5e1}"+
           ".sec{padding:36px}.tac{text-align:center}.small{font-size:14px;color:#475569;letter-spacing:.08em}"+
           ".h1{font-size:34px;font-weight:300;margin:12px 0 18px}.grad{width:96px;height:2px;margin:0 auto 20px;background:linear-gradient(90deg,transparent,#f59e0b,transparent)}"+
           ".panel{background:#f8fafc;border-left:4px solid #1f2937;padding:22px;border-radius:6px}"+
@@ -369,10 +488,10 @@
           ".secBody{padding:28px}"+
           ".two{display:grid;grid-template-columns:1fr 1fr;gap:28px}"+
           ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:360px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
-          ".imgBox img{width:100%;height:100%;object-fit:cover}"+
+          ".imgBox img{width:100%;height:100%;object-fit:cover;display:block;max-width:100%}"+
           ".cap{font-size:13px;color:#64748b;margin-top:8px}"+
           ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:480px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
-          ".layoutImg img{width:100%;height:100%;object-fit:contain}"+
+          ".layoutImg img{width:100%;height:100%;object-fit:contain;display:block;max-width:100%}"+
           ".btn3d{display:inline-block;background:#1f2937;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}"+
           ".cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px}"+
           ".tlItem{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
@@ -382,7 +501,7 @@
           ".nxItem{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
           ".num{width:26px;height:26px;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px}"+
           "@page{size:8.5in 11in;margin:0.5in}"+
-          "@media print{img{break-inside:avoid;page-break-inside:avoid}}";
+          "@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}img{break-inside:avoid!important;page-break-inside:avoid!important;max-width:100%!important;height:auto!important;display:block!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.logo,.footLogo{width:auto!important;object-fit:contain!important}.imgBox,.layoutImg{display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}}";
 
         const blockImg = (src, alt) =>
           src ? "<div class='imgBox'><img src='"+src+"'></div>"
