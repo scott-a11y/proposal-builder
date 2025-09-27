@@ -219,6 +219,36 @@
     
     // Safe filename sanitizer
     const safe = (s) => (s || "Client").replace(/[^a-z0-9_\-]+/gi, "_").slice(0,120);
+    
+    // Task 15: Templates
+    const templates = {
+      'kitchen-basic': {
+        description: 'Complete kitchen renovation with quality cabinets, modern hardware, and professional installation. Includes soft-close drawers and doors.',
+        notes: 'Price includes delivery and installation. Timeline may vary based on material availability.',
+        timeline: '4-6 weeks'
+      },
+      'kitchen-premium': {
+        description: 'Luxury kitchen transformation featuring premium hardwood cabinets, crown molding, under-cabinet lighting, and custom storage solutions.',
+        notes: 'Premium package includes 3D design consultation, premium hardware selection, and white-glove installation service.',
+        timeline: '6-8 weeks'
+      },
+      'vanity-euro': {
+        description: 'Contemporary European-style vanity with clean lines, integrated handles, and modern finishes. Perfect for modern bathroom renovations.',
+        notes: 'Includes soft-close mechanisms and adjustable shelving. Custom sizing available.',
+        timeline: '3-4 weeks'
+      }
+    };
+    
+    const applyTemplate = (templateKey) => {
+      if (templates[templateKey]) {
+        const template = templates[templateKey];
+        formData.description = template.description;
+        formData.notes = template.notes;
+        formData.timeline = template.timeline;
+        dirty = true;
+        renderApp();
+      }
+    };
 
     // Application state
     let formData = {
@@ -247,6 +277,15 @@
 
     // Image cache for performance (Task 12: Conditional image embedding + caching)
     const imageCache = new Map(); // src -> dataURL
+    
+    // Task 15: Feature flags for conditional rendering
+    const features = {
+      qr: true,
+      stickyHeader: true,
+      templates: true,
+      autosave: true,
+      export: true
+    };
 
     // Utility functions
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -295,6 +334,18 @@
     };
 
     const embedAllImagesInState = async () => {
+      // Task 12: Only call embedAllImagesInState when any image is non-data URL
+      const needsEmbedding = [
+        images.logo,
+        images.shakerRender,
+        images.euroRender,
+        images.shakerVanity,
+        images.euroVanity,
+        images.floorPlan
+      ].some(src => src && !src.startsWith('data:'));
+      
+      if (!needsEmbedding) return; // Skip if all images are already embedded
+      
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         toDataURL(images.logo || INLINE_FALLBACK_LOGO),
         toDataURL(images.shakerRender),
@@ -455,9 +506,9 @@
               <button onclick="backToEditor()" class="px-4 py-2 bg-gray-500 text-white rounded">
                 Back to Editor
               </button>
-              <button onclick="exportProposal()" class="px-4 py-2 bg-green-500 text-white rounded">
+              ${features.export ? `<button onclick="exportProposal()" class="px-4 py-2 bg-green-500 text-white rounded">
                 Export HTML
-              </button>
+              </button>` : ''}
               <button onclick="printProposal()" class="px-4 py-2 bg-blue-500 text-white rounded">
                 Print / Export PDF
               </button>
@@ -549,7 +600,7 @@
             ` : ''}
 
             <!-- Task 11: 3D Model Link with QR Code -->
-            ${formData.sketchupLink ? `
+            ${formData.sketchupLink && features.qr ? `
               <div class="mb-8 text-center">
                 <h2 class="text-xl font-semibold mb-4">View in 3D</h2>
                 <a href="${formData.sketchupLink}" target="_blank" rel="noopener noreferrer" 
@@ -582,7 +633,19 @@
 
           <div class="max-w-4xl mx-auto p-6">
             <div class="bg-white rounded-lg shadow p-6">
-              <h2 class="text-xl font-semibold mb-6">Project Information</h2>
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">Project Information</h2>
+                <!-- Task 15: Template selector -->
+                <div>
+                  <label class="text-xs">Quick Templates</label>
+                  <select onchange="applyTemplate(this.value); this.value=''" class="ml-2 px-3 py-1 border rounded text-sm">
+                    <option value="">Select Template...</option>
+                    <option value="kitchen-basic">Kitchen Basic</option>
+                    <option value="kitchen-premium">Kitchen Premium</option>
+                    <option value="vanity-euro">Euro Vanity</option>
+                  </select>
+                </div>
+              </div>
               
               <div class="grid grid-cols-2 gap-6 mb-6">
                 <div>
