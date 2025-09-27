@@ -9,7 +9,7 @@
   <link rel="icon"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
-  <!-- Fight GH Pages/browser caching -->
+  <!-- Fight GH Pages/browser caching of the app shell -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -29,6 +29,11 @@
     .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     .logo-clean { display:block; max-height:160px; object-fit:contain; }
+
+    /* Bigger image frames in preview */
+    .img-frame { height: 21rem; }         /* kitchens */
+    .img-frame-sm { height: 18rem; }      /* vanities */
+    .img-frame-layout { height: 26rem; }  /* floor plan */
 
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -61,9 +66,9 @@
         </g>
       </svg>`);
 
-    // ✅ Default to your real repo logo. Keep inline fallback as safety.
-    // If your file lives in /assets/, change to: './assets/Foundry-Cabinetco-Logo-2-White-Text.png'
+    // ✅ Default to your real repo logo. If yours is in /assets/, change the path accordingly.
     const DEFAULT_LOGO_PATH = new URL('./Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
+    // const DEFAULT_LOGO_PATH = new URL('./assets/Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
 
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
     const SUPABASE_ANON_KEY =
@@ -76,23 +81,36 @@
     const Input = (props) => <input {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white "+(props.className||"")} />;
     const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
 
-    // --- helpers to embed images as data URLs for print/export ---
-    // Force fresh fetch so export never reuses stale cached images (GH Pages, etc.)
+    // --- image helpers ---
+    const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
+    const waitForImagesToLoad = async (root=document) => {
+      const imgs = Array.from(root.querySelectorAll('img'))
+        .filter(img => !img.complete || img.naturalWidth === 0);
+      if (imgs.length === 0) return;
+      await Promise.all(imgs.map(img => new Promise(res => {
+        const done = () => res();
+        img.onload = done; img.onerror = done;
+      })));
+    };
+
+    // Force fresh fetch so export/print never reuses stale cached images (GH Pages etc.)
     const toDataURL = async (src) => {
       try {
         if (!src) return "";
-        if (src.startsWith("data:")) return src; // already embedded
+        if (src.startsWith("data:")) return src; // already embedded (uploads)
         const url = new URL(src, window.location.href);
-        url.searchParams.set("_v", Date.now().toString());
-        const res = await fetch(url.toString(), { cache: "no-store" });
+        url.searchParams.set("_v", Date.now().toString()); // cache-buster
+        const res = await fetch(url.toString(), { cache: "no-store", mode: "cors" });
         if (!res.ok) throw new Error("fetch failed");
         const blob = await res.blob();
+        // If cross-origin blocks reading, this will still work via fetch+blob
         const reader = new FileReader();
         const p = new Promise((resolve) => { reader.onloadend = () => resolve(reader.result || ""); });
         reader.readAsDataURL(blob);
         return await p;
-      } catch {
-        return src; // fallback (may not print if path not reachable)
+      } catch (e) {
+        // CORS or offline: fall back to raw src (works online), export HTML will still reference it
+        return src;
       }
     };
 
@@ -125,8 +143,7 @@
       const [currentName, setCurrentName] = useState("");
 
       const [images, setImages] = useState({
-        // Start with your real logo by default
-        logo: DEFAULT_LOGO_PATH,
+        logo: DEFAULT_LOGO_PATH,  // start with real logo
         shakerRender: null, euroRender: null,
         shakerVanity: null, euroVanity: null, floorPlan: null
       });
@@ -160,10 +177,15 @@
         sketchupLink: ""
       });
 
-      // fetch proposals list (admin mode)
+      // fetch proposals list (admin mode) — guard against null
       useEffect(() => { (async () => {
         const { data, error } = await db.from('proposals').select('*');
-        if (!error && data) setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
+        if (error) {
+          console.warn('fetch proposals failed:', error.message);
+          setSavedProposals([]);
+          return;
+        }
+        setSavedProposals((data || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
       })() }, []);
 
       // auto-save while editing a named proposal
@@ -173,11 +195,10 @@
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // On first load, embed path-based images so Print/PDF works even before uploads
+      // On first load, embed repo/relative images so Print/PDF works even before uploads
       useEffect(() => {
         (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
+      }, []); // eslint-disable-line
 
       // Client View: auto-load proposal by ?id OR most recently SAVED, then embed images
       useEffect(() => {
@@ -186,7 +207,7 @@
           try {
             let target = clientId;
             if (!target) {
-              // pick the most recently saved using content.__savedAt (fallback created_at)
+              // pick most recently saved using content.__savedAt (fallback created_at)
               const { data, error } = await db.from("proposals").select("name, content, created_at");
               if (error) throw error;
               if (data && data.length) {
@@ -209,10 +230,9 @@
             console.warn("Client auto-load failed:", err?.message);
           }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [isClient, clientId]);
+      }, [isClient, clientId]); // eslint-disable-line
 
-      // uploads
+      // uploads -> always data URLs (embeds perfectly)
       const onImgUpload = (key, file) => {
         const r = new FileReader();
         r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
@@ -221,7 +241,7 @@
 
       const setField = (k, v) => setContent(prev => ({ ...prev, [k]: v }));
 
-      // save/load/delete
+      // save/load/delete — hardened against null maps
       const save = async (name, alertOK=true) => {
         try {
           const stamp = new Date().toISOString();
@@ -229,7 +249,9 @@
             content: { ...content, __savedAt: stamp },
             images:  { ...images,  __savedAt: stamp }
           };
-          const { data:existing } = await db.from('proposals').select('name').eq('name', name).maybeSingle();
+          const { data:existing, error:existErr } = await db.from('proposals').select('name').eq('name', name).maybeSingle();
+          if (existErr && existErr.code !== 'PGRST116') throw existErr;
+
           if (existing) {
             const { error } = await db.from('proposals').update(payload).eq('name', name);
             if (error) throw error;
@@ -238,10 +260,17 @@
             if (error) throw error;
           }
           setCurrentName(name);
-          const { data } = await db.from('proposals').select('*');
-          setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
+
+          const { data: rows, error: listErr } = await db.from('proposals').select('*');
+          if (listErr) {
+            console.warn('list proposals failed:', listErr.message);
+            setSavedProposals([]);
+          } else {
+            setSavedProposals((rows || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
+          }
+
           if (alertOK) alert('Saved "' + name + '" to cloud.');
-        } catch (e) { alert("Save failed: " + e.message); }
+        } catch (e) { alert("Save failed: " + (e?.message || e)); }
       };
 
       const loadOne = (name) => {
@@ -262,7 +291,7 @@
         alert('Deleted "' + name + '".');
       };
 
-      // Print handler: embed images (from current UI) then print (avoids stale)
+      // Print handler: embed images (from current UI) then wait for them to load, then print
       const handlePrint = async () => {
         const working = {
           logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
@@ -273,12 +302,14 @@
           floorPlan: await toDataURL(images.floorPlan),
         };
         setImages(prev => ({ ...prev, ...working }));
-        setTimeout(() => window.print(), 200);
+        await sleep(50);
+        await waitForImagesToLoad(document);
+        window.print();
       };
 
       // -------- Export Client HTML (offline + images embedded NOW) --------
       const exportClientHTML = async () => {
-        // ensure the latest keystroke/state is committed before exporting
+        // ensure latest keystroke/state is committed before exporting
         await new Promise(requestAnimationFrame);
 
         const c = { ...content };
@@ -296,6 +327,7 @@
         const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const has = (v) => v && ("" + v).trim().length > 0;
 
+        /* Larger frames in exported HTML too */
         const css =
           "body{margin:0;background:#f6f8fb;color:#0f172a;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}"+
           ".wrap{max-width:900px;margin:0 auto}.shadow{box-shadow:0 6px 20px rgba(2,6,23,.08)}"+
@@ -312,10 +344,10 @@
           ".secTitle{font-size:22px;font-weight:300;color:#0f172a;margin:0;padding:26px 28px;border-bottom:1px solid #e5e7eb}"+
           ".secBody{padding:28px}"+
           ".two{display:grid;grid-template-columns:1fr 1fr;gap:28px}"+
-          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:192px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
+          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:360px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
           ".imgBox img{width:100%;height:100%;object-fit:cover}"+
           ".cap{font-size:13px;color:#64748b;margin-top:8px}"+
-          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:256px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
+          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:480px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
           ".layoutImg img{width:100%;height:100%;object-fit:contain}"+
           ".btn3d{display:inline-block;background:#1f2937;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}"+
           ".cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px}"+
@@ -403,8 +435,8 @@
                     className="h-10"
                     onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
                   />
-                  <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
-                  {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
+                <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
+                {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => { const n=prompt('Name to save as:'); if(n) { setCurrentName(n.trim()); save(n.trim()); } }} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
@@ -606,22 +638,22 @@
                 <div className="grid md:grid-cols-2 gap-10 mb-10">
                   <div className="space-y-4 text-center">
                     <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Shaker Style</h3>
-                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">
+                    <div className="bg-slate-50 p-4 card img-frame flex items-center justify-center">
                       {images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.shakerDescription}</p>
-                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">
+                    <div className="bg-slate-50 p-4 card img-frame-sm flex items-center justify-center mt-4">
                       {images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.shakerVanityDescription}</p>
                   </div>
                   <div className="space-y-4 text-center">
                     <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Euro Style</h3>
-                    <div className="bg-slate-50 p-4 card h-48 flex items-center justify-center">
+                    <div className="bg-slate-50 p-4 card img-frame flex items-center justify-center">
                       {images.euroRender ? <img src={images.euroRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.euroDescription}</p>
-                    <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">
+                    <div className="bg-slate-50 p-4 card img-frame-sm flex items-center justify-center mt-4">
                       {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
@@ -631,7 +663,7 @@
                 <div className="space-y-3 text-center">
                   <h3 className="text-lg font-medium text-slate-800 tracking-tight">Architectural Layout</h3>
                   <div className="bg-slate-50 p-6 card">
-                    {images.floorPlan ? <img src={images.floorPlan} className="w-full h-64 object-contain"/> : <div className="text-slate-400 text-sm h-64 flex items-center justify-center">Floor Plan</div>}
+                    {images.floorPlan ? <img src={images.floorPlan} className="w-full img-frame-layout object-contain"/> : <div className="text-slate-400 text-sm img-frame-layout flex items-center justify-center">Floor Plan</div>}
                   </div>
                   <p className="text-slate-600 text-sm">{content.floorPlanDescription}</p>
                   {content.onlinePlansLink ? <div className="text-sm"><span className="text-slate-600">View detailed plans:</span> <a className="text-slate-800 underline" target="_blank" rel="noreferrer" href={content.onlinePlansLink}>{content.onlinePlansLink}</a></div> : null}
