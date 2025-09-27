@@ -1,31 +1,32 @@
-# Build a FINAL full app with Supabase + embedded logo + export/print + editor.
-# This is a fresh write to avoid any expired links.
-
-import base64, pathlib
-
-# Embed the preferred white-text logo
-logo_path = pathlib.Path("/mnt/data/Foundry-Cabinetco-Logo-2-White-Text.png")
-b64_logo = ""
-if logo_path.exists():
-    b64_logo = "data:image/png;base64," + base64.b64encode(logo_path.read_bytes()).decode("utf-8")
-
-html = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Foundry Cabinet · Co — Proposal Builder</title>
+
+  <!-- Favicon -->
+  <link rel="icon"
+        href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+          <rect width="100%" height="100%" fill="%230b1120"/>
+          <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text>
+        </svg>'/>
+
+  <!-- React + Babel (same stack as before) -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tailwind + Supabase -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root { --header:#1e293b; --footer:#0b1120; }
     body { background:#f1f5f9; color:#111827; }
     .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
-    .logo-pop { filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)) drop-shadow(0 0 8px rgba(255,255,255,.35)); }
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
+    .logo-clean { display:block; max-height:160px; object-fit:contain; }
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
@@ -42,13 +43,14 @@ html = r"""<!DOCTYPE html>
     const { useState, useEffect } = React;
     const { createClient } = supabase;
 
-    // Embedded logo
-    const DEFAULT_LOGO = "__EMBED_LOGO__";
+    // -------- CONFIG --------
+    const DEFAULT_LOGO_PATH = "Foundry-Cabinetco-Logo-2-White-Text.png"; // put this file next to index.html
 
-    // Supabase creds
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xenlvZWducXV5cWZuZ21ha3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTkzNzYsImV4cCI6MjA3NDQzNTM3Nn0.lcQ8VW3zSdvyoZkJbhnT3CeyeYbxswEiAhZnAjo5Lac";
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // -------------------------
 
     const Label = ({children}) => <label className="text-xs font-medium text-slate-600 uppercase tracking-wide">{children}</label>;
     const Input = (props) => <input {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white "+(props.className||"")} />;
@@ -60,10 +62,10 @@ html = r"""<!DOCTYPE html>
 
       const [savedProposals, setSavedProposals] = useState([]);
       const [currentName, setCurrentName] = useState("");
-      const [showLoad, setShowLoad] = useState(false);
 
       const [images, setImages] = useState({
-        logo: DEFAULT_LOGO, shakerRender: null, euroRender: null,
+        logo: DEFAULT_LOGO_PATH,
+        shakerRender: null, euroRender: null,
         shakerVanity: null, euroVanity: null, floorPlan: null
       });
 
@@ -75,11 +77,11 @@ html = r"""<!DOCTYPE html>
         executiveSummary: "We are pleased to present this proposal for custom cabinetry for your Forest Grove home. Two distinct style options: classic Shaker and modern Euro/Flat Panel.",
         totalInvestment: "$7,595",
         warrantyYears: "3",
-        warrantyText: "Professional build, delivery, installation, backed by a 3‑year workmanship warranty.",
+        warrantyText: "Professional build, delivery, installation, backed by a 3-year workmanship warranty.",
         shakerDescription: "Classic framed doors with recessed panels. Painted finish.",
-        euroDescription: "Modern frameless full‑overlay doors. Natural finish or your chosen color.",
+        euroDescription: "Modern frameless full-overlay doors. Natural finish or your chosen color.",
         shakerVanityDescription: "Classic framed vanity doors with recessed panels. Painted finish.",
-        euroVanityDescription: "Modern frameless full‑overlay vanity doors. Natural finish or your chosen color.",
+        euroVanityDescription: "Modern frameless full-overlay vanity doors. Natural finish or your chosen color.",
         floorPlanDescription: "Plan view showing placement and dimensions.",
         closingNote: "Thank you for considering Foundry Cabinet Co. We look forward to creating cabinetry that's the perfect fit for your home.",
         tagline: "Driven by Precision. Evolved by Design.",
@@ -96,21 +98,20 @@ html = r"""<!DOCTYPE html>
         sketchupLink: ""
       });
 
-      // Fetch proposals
+      // fetch proposals
       useEffect(() => { (async () => {
         const { data, error } = await db.from('proposals').select('*');
-        if (!error && data) {
-          setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
-        }
+        if (!error && data) setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
       })() }, []);
 
-      // Auto-save when named
+      // auto-save
       useEffect(() => {
         if (!currentName) return;
         const id = setInterval(() => save(currentName, false), 30000);
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
+      // uploads
       const onImgUpload = (key, file) => {
         const r = new FileReader();
         r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
@@ -119,7 +120,8 @@ html = r"""<!DOCTYPE html>
 
       const setField = (k, v) => setContent(prev => ({ ...prev, [k]: v }));
 
-      const save = async (name, alertOnOK=true) => {
+      // save/load/delete
+      const save = async (name, alertOK=true) => {
         try {
           const payload = { content, images };
           const { data:existing } = await db.from('proposals').select('name').eq('name', name).maybeSingle();
@@ -133,13 +135,17 @@ html = r"""<!DOCTYPE html>
           setCurrentName(name);
           const { data } = await db.from('proposals').select('*');
           setSavedProposals(data.map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
-          if (alertOnOK) alert('Saved "' + name + '" to cloud.');
+          if (alertOK) alert('Saved "' + name + '" to cloud.');
         } catch (e) { alert("Save failed: " + e.message); }
       };
 
       const loadOne = (name) => {
         const p = savedProposals.find(x => x.name === name);
-        if (p) { setContent(p.content); setImages(p.images || images); setCurrentName(name); setShowLoad(false); }
+        if (!p) return alert("Not found.");
+        setContent(p.content);
+        setImages(p.images || images);
+        setCurrentName(name);
+        alert('Loaded "' + name + '".');
       };
 
       const deleteOne = async (name) => {
@@ -151,99 +157,96 @@ html = r"""<!DOCTYPE html>
         alert('Deleted "' + name + '".');
       };
 
-      // Export client HTML using concatenation (no template literals)
+      // -------- Export Client HTML (NO nested backticks) --------
       const exportClientHTML = () => {
         const c = content; const img = images;
         function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+        function has(v){ return v && (""+v).trim().length>0; }
 
-        var inner = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"+
-          "<title>"+esc(c.title)+" - "+esc(c.clientName||"Client")+"</title>"+
-          "<script src='https://cdn.tailwindcss.com'><\/script>"+
-          "<style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.print\\:hidden{display:none!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}}</style>"+
-          "</head><body><div class='proposal-container max-w-none mx-auto bg-white'>";
+        var inner = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+          + "<title>"+esc(c.title)+" - "+esc(c.clientName||"Client")+"</title>"
+          + "<link rel='icon' href='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22><rect width=%22100%%22 height=%22100%%22 fill=%230b1120/><text x=%2250%%22 y=%2255%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2236%22 fill=%22white%22>F</text></svg>'/>"
+          + "<script src='https://cdn.tailwindcss.com'><\\/script>"
+          + "<style>@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.proposal-page{width:8.5in!important;height:11in!important;margin:0!important;page-break-after:always!important;overflow:hidden!important}@page{size:8.5in 11in;margin:0.25in}}</style>"
+          + "</head><body><div class='proposal-container max-w-none mx-auto bg-white'>";
 
-        // Cover
-        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"+
-          "<div class='px-8 pt-8 pb-3 flex justify-between items-start' style='background:#1e293b'>"+
-            "<img src='"+(img.logo||"")+"' alt='Logo' class='logo-pop' style='max-height:160px;object-fit:contain'/>"+
-            "<div class='text-right text-white text-sm'><div class='font-medium tracking-wide'>PROJECT "+esc(c.projectNumber)+"</div><div class='text-slate-300'>"+esc(c.date)+"</div></div>"+
-          "</div>"+
-          "<div class='px-10 py-10 text-center'>"+
-            "<div class='text-sm font-medium text-slate-600 uppercase tracking-widest mb-4'>CUSTOM CABINETRY PROPOSAL</div>"+
-            "<h1 class='text-4xl font-light text-slate-800 mb-6'>"+esc(c.title)+"</h1>"+
-            "<div class='w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6'></div>"+
-            "<div class='bg-slate-50 p-8 border-l-4 border-slate-800 text-left card'>"+
-              "<div class='grid md:grid-cols-2 gap-8 mb-6'>"+
-                "<div class='text-center'><div class='text-3xl font-light text-slate-800 mb-2'>"+esc(c.totalInvestment)+"</div><div class='text-sm text-slate-600 uppercase tracking-wide'>Investment</div></div>"+
-                "<div class='text-center'><div class='text-3xl font-light text-slate-800 mb-2'>"+esc(c.warrantyYears)+"</div><div class='text-sm text-slate-600 uppercase tracking-wide'>Year Warranty</div></div>"+
-              "</div>"+
-              "<p class='text-base leading-relaxed text-slate-700 mb-4'>"+esc(c.executiveSummary)+"</p>"+
-              "<p class='text-sm text-slate-600'>"+esc(c.warrantyText)+"</p>"+
-            "</div>"+
-          "</div>"+
-          "<div class='text-white p-6 text-center' style='background:#0f172a'>"+
-            "<div class='w-64 h-px bg-white/20 mx-auto mb-3'></div>"+
-            "<div class='text-sm tracking-wide'>"+esc(c.tagline)+"</div>"+
-            "<div class='text-xs text-slate-300 mt-1'>"+esc(c.address)+"</div>"+
-          "</div>"+
-        "</section>";
+        // page 1
+        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"
+          + "<div class='px-8 pt-8 pb-3 flex justify-between items-start' style='background:#1e293b'>"
+          +   "<img src='"+(img.logo||"")+"' alt='Logo' style='max-height:160px;object-fit:contain'/>"
+          +   "<div class='text-right text-white text-sm'><div class='font-medium tracking-wide'>PROJECT "+esc(c.projectNumber)+"</div><div class='text-slate-300'>"+esc(c.date)+"</div></div>"
+          + "</div>"
+          + "<div class='px-10 py-10 text-center'>"
+          +   "<div class='text-sm font-medium text-slate-600 uppercase tracking-widest mb-4'>CUSTOM CABINETRY PROPOSAL</div>"
+          +   "<h1 class='text-4xl font-light text-slate-800 mb-6'>"+esc(c.title)+"</h1>"
+          +   "<div class='w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6'></div>"
+          +   "<div class='bg-slate-50 p-8 border-l-4 border-slate-800 text-left card'>"
+          +     "<div class='grid md:grid-cols-2 gap-8 mb-6'>"
+          +       "<div class='text-center'><div class='text-3xl font-light text-slate-800 mb-2'>"+esc(c.totalInvestment)+"</div><div class='text-sm text-slate-600 uppercase tracking-wide'>Investment</div></div>"
+          +       "<div class='text-center'><div class='text-3xl font-light text-slate-800 mb-2'>"+esc(c.warrantyYears)+"</div><div class='text-sm text-slate-600 uppercase tracking-wide'>Year Warranty</div></div>"
+          +     "</div>"
+          +     "<p class='text-base leading-relaxed text-slate-700 mb-4'>"+esc(c.executiveSummary)+"</p>"
+          +     "<p class='text-sm text-slate-600'>"+esc(c.warrantyText)+"</p>"
+          +   "</div>"
+          + "</div>"
+          + "<div class='text-white p-6 text-center' style='background:#0f172a'>"
+          +   "<div class='w-64 h-px bg-white/20 mx-auto mb-3'></div>"
+          +   "<div class='text-sm tracking-wide'>"+esc(c.tagline)+"</div>"
+          +   "<div class='text-xs text-slate-300 mt-1'>"+esc(c.address)+"</div>"
+          + "</div>"
+          + "</section>";
 
-        // Page 2
-        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"+
-          "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'>"+
-            "<div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Design Options & Layout</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 02</div></div>"+
-          "</div>"+
-          "<div class='px-8 flex-1'>"+
-            "<div class='grid grid-cols-2 gap-10 mb-10'>"+
-              "<div class='space-y-4 text-center'>"+
-                "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Shaker Style</h3>"+
-                "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+(images.shakerRender?"<img src='"+images.shakerRender+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Shaker Kitchen</div>")+"</div>"+
-                "<p class='text-sm text-slate-600'>"+esc(c.shakerDescription)+"</p>"+
-                "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+(images.shakerVanity?"<img src='"+images.shakerVanity+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Shaker Vanity</div>")+"</div>"+
-                "<p class='text-sm text-slate-600'>"+esc(c.shakerVanityDescription)+"</p>"+
-              "</div>"+
-              "<div class='space-y-4 text-center'>"+
-                "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Euro Style</h3>"+
-                "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+(images.euroRender?"<img src='"+images.euroRender+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Euro Kitchen</div>")+"</div>"+
-                "<p class='text-sm text-slate-600'>"+esc(c.euroDescription)+"</p>"+
-                "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+(images.euroVanity?"<img src='"+images.euroVanity+"' class='w-full h-full object-cover'/>":"<div class='text-slate-400 text-sm'>Euro Vanity</div>")+"</div>"+
-                "<p class='text-sm text-slate-600'>"+esc(c.euroVanityDescription)+"</p>"+
-              "</div>"+
-            "</div>"+
-            "<div class='space-y-3 text-center'>"+
-              "<h3 class='text-lg font-medium text-slate-800 tracking-tight'>Architectural Layout</h3>"+
-              "<div class='bg-slate-50 p-6 card'>"+(images.floorPlan?"<img src='"+images.floorPlan+"' class='w-full h-64 object-contain'/>":"<div class='text-slate-400 text-sm h-64 flex items-center justify-center'>Floor Plan</div>")+"</div>"+
-              "<p class='text-slate-600 text-sm'>"+esc(c.floorPlanDescription)+"</p>"+
-              (contentStub("onlinePlansLink") ? "<div class='text-sm'><span class='text-slate-600'>View detailed plans:</span> <a class='text-slate-800 underline' target='_blank' rel='noreferrer' href='"+esc(c.onlinePlansLink)+"'>"+esc(c.onlinePlansLink)+"</a></div>" : "")+
-              (contentStub("sketchupLink") ? "<div class='bg-amber-50 border border-amber-200 p-6 mt-4 text-center card'><h4 class='text-lg font-medium text-slate-800 mb-2'>🏠 VIEW IN 3D</h4><p class='text-slate-600 text-sm mb-4'>Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href='"+esc(c.sketchupLink)+"' target='_blank' rel='noreferrer' class='inline-block bg-slate-800 text-white px-6 py-2 rounded'>View 3D Model</a></div>" : "")+
-            "</div>"+
-          "</div>"+
-        "</section>";
+        // page 2
+        function blockImageOr(src, label, h){ return src ? "<img src='"+src+"' class='w-full "+(h||"h-48")+" object-cover'/>" : "<div class='text-slate-400 text-sm'>"+label+"</div>"; }
+        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"
+          + "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'><div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Design Options & Layout</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 02</div></div></div>"
+          + "<div class='px-8 flex-1'>"
+          +   "<div class='grid grid-cols-2 gap-10 mb-10'>"
+          +     "<div class='space-y-4 text-center'>"
+          +       "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Shaker Style</h3>"
+          +       "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+blockImageOr(images.shakerRender,"Shaker Kitchen","h-48")+"</div>"
+          +       "<p class='text-sm text-slate-600'>"+esc(c.shakerDescription)+"</p>"
+          +       "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+blockImageOr(images.shakerVanity,"Shaker Vanity","h-40")+"</div>"
+          +       "<p class='text-sm text-slate-600'>"+esc(c.shakerVanityDescription)+"</p>"
+          +     "</div>"
+          +     "<div class='space-y-4 text-center'>"
+          +       "<h3 class='text-lg font-semibold text-slate-800 tracking-tight'>Euro Style</h3>"
+          +       "<div class='bg-slate-50 p-4 card h-48 flex items-center justify-center'>"+blockImageOr(images.euroRender,"Euro Kitchen","h-48")+"</div>"
+          +       "<p class='text-sm text-slate-600'>"+esc(c.euroDescription)+"</p>"
+          +       "<div class='bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4'>"+blockImageOr(images.euroVanity,"Euro Vanity","h-40")+"</div>"
+          +       "<p class='text-sm text-slate-600'>"+esc(c.euroVanityDescription)+"</p>"
+          +     "</div>"
+          +   "</div>"
+          +   "<div class='space-y-3 text-center'>"
+          +     "<h3 class='text-lg font-medium text-slate-800 tracking-tight'>Architectural Layout</h3>"
+          +     "<div class='bg-slate-50 p-6 card'>"+blockImageOr(images.floorPlan,"Floor Plan","h-64 object-contain")+"</div>"
+          +     "<p class='text-slate-600 text-sm'>"+esc(c.floorPlanDescription)+"</p>"
+          +     (has(c.onlinePlansLink) ? "<div class='text-sm'><span class='text-slate-600'>View detailed plans:</span> <a class='text-slate-800 underline' target='_blank' rel='noreferrer' href='"+esc(c.onlinePlansLink)+"'>"+esc(c.onlinePlansLink)+"</a></div>" : "")
+          +     (has(c.sketchupLink) ? "<div class='bg-amber-50 border border-amber-200 p-6 mt-4 text-center card'><h4 class='text-lg font-medium text-slate-800 mb-2'>🏠 VIEW IN 3D</h4><p class='text-slate-600 text-sm mb-4'>Experience your kitchen design in full 3D. Rotate, zoom, and explore every detail.</p><a href='"+esc(c.sketchupLink)+"' target='_blank' rel='noreferrer' class='inline-block bg-slate-800 text-white px-6 py-2 rounded'>View 3D Model</a></div>" : "")
+          +   "</div>"
+          + "</div>"
+          + "</section>";
 
-        // Helper to check non-empty link fields
-        function contentStub(key){ return (c[key] && (""+c[key]).trim().length>0); }
-
-        // Page 3
-        function tlItem(colorClass, period, task){
-          return "<div class='flex items-start gap-3'><div class='w-4 h-4 "+colorClass+" mt-1'></div><div><div class='font-bold text-slate-800 text-sm uppercase'>"+esc(period)+"</div><div class='text-slate-600 mt-1'>"+esc(task)+"</div></div></div>";
-        }
-        var tl = ""; (c.timeline||[]).forEach(function(t,i){ var colors=["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"]; tl += tlItem(colors[i%5], t.period, t.task); });
+        // page 3
+        function tlItem(colorClass, period, task){ return "<div class='flex items-start gap-3'><div class='w-4 h-4 "+colorClass+" mt-1'></div><div><div class='font-bold text-slate-800 text-sm uppercase'>"+esc(period)+"</div><div class='text-slate-600 mt-1'>"+esc(task)+"</div></div></div>"; }
+        var tlHTML = ""; (c.timeline||[]).forEach(function(t,i){ var colors=["bg-amber-500","bg-slate-500","bg-slate-600","bg-slate-700","bg-slate-800"]; tlHTML += tlItem(colors[i%5], t.period, t.task); });
         function stepItem(i, text){ return "<div class='flex items-start gap-3'><div class='w-6 h-6 border-2 border-slate-800 flex items-center justify-center font-bold text-sm'>"+(i+1)+"</div><span class='text-slate-700'>"+esc(text)+"</span></div>"; }
-        var steps=""; (c.nextSteps||[]).forEach(function(s,i){ steps+=stepItem(i,s); });
+        var stepsHTML=""; (c.nextSteps||[]).forEach(function(s,i){ stepsHTML+=stepItem(i,s); });
 
-        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"+
-          "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'><div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Timeline & Next Steps</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 03</div></div></div>"+
-          "<div class='px-8 flex-1 flex flex-col gap-12'>"+
-            "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Project Timeline</h3><div class='mt-6 space-y-4'>"+tl+"</div></div>"+
-            "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Next Steps</h3><div class='mt-6 space-y-3'>"+steps+"</div></div>"+
-            "<div class='bg-slate-800 text-white p-8 text-center card'><p class='text-base leading-relaxed'>"+esc(c.closingNote)+"</p></div>"+
-          "</div>"+
-          "<div class='text-center p-10' style='background:#0b1120'>"+
-            "<img src='"+(img.logo||"")+"' alt='Company Logo' class='mx-auto mb-4 object-contain logo-pop' style='max-height:72px'/>"+
-            "<div class='text-white text-base mb-1 tracking-wide'>"+esc(c.tagline)+"</div>"+
-            "<div class='text-slate-300 text-sm'>"+esc(c.address)+"</div>"+
-          "</div>"+
-        "</section>";
+        inner += "<section class='proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8'>"
+          + "<div class='border-b border-slate-200 pb-6 mb-8 px-8 pt-8'><div class='flex justify-between items-center'><h2 class='text-2xl font-light text-slate-800 tracking-tight'>Timeline & Next Steps</h2><div class='text-sm text-slate-500'>PROJECT "+esc(c.projectNumber)+" | PAGE 03</div></div></div>"
+          + "<div class='px-8 flex-1 flex flex-col gap-12'>"
+          +   "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Project Timeline</h3><div class='mt-6 space-y-4'>"+tlHTML+"</div></div>"
+          +   "<div><h3 class='text-lg font-medium text-slate-800 tracking-tight border-b border-slate-200 pb-3'>Next Steps</h3><div class='mt-6 space-y-3'>"+stepsHTML+"</div></div>"
+          +   "<div class='bg-slate-800 text-white p-8 text-center card'><p class='text-base leading-relaxed'>"+esc(c.closingNote)+"</p></div>"
+          + "</div>"
+          + "<div class='text-center p-10' style='background:#0b1120'>"
+          +   "<img src='"+(img.logo||"")+"' alt='Company Logo' class='mx-auto mb-4' style='max-height:80px;object-fit:contain'/>"
+          +   "<div class='text-white text-base mb-1 tracking-wide'>"+esc(c.tagline)+"</div>"
+          +   "<div class='text-slate-300 text-sm'>"+esc(c.address)+"</div>"
+          +   "<div class='text-slate-200 text-sm mt-2'>"+esc(c.closingNote)+"</div>"
+          + "</div>"
+          + "</section>";
 
         inner += "</div></body></html>";
 
@@ -254,21 +257,28 @@ html = r"""<!DOCTYPE html>
         a.download = (c.projectNumber || "proposal") + "_" + (c.clientName||"Client").replace(/\s+/g,'_') + "_Proposal.html";
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       };
+      // ---------------------------------------------------------
 
-      // ------- UI (admin/editor) -------
+      // UI
       return (
         <div className="w-full min-h-screen">
           {!isClient && (
             <header className="bg-white border-b print:hidden">
               <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src={images.logo} alt="logo" className="h-10 logo-pop" />
+                  <img src={images.logo} alt="logo" className="h-10" />
                   <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
                   {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { const n=prompt('Name to save as:'); if(n) save(n.trim()); }} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
-                  <button onClick={() => setShowLoad(true)} className="bg-sky-600 text-white px-4 py-2 rounded">Load</button>
+                  <button onClick={() => { const n=prompt('Name to save as:'); if(n) { setCurrentName(n.trim()); save(n.trim()); } }} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
+                  <button onClick={async () => {
+                    const { data, error } = await db.from('proposals').select('name, created_at').order('created_at', { ascending:false });
+                    if (error) return alert("Load list failed: " + error.message);
+                    const names = (data||[]).map(d => d.name);
+                    const pick = prompt('Type the exact name to load:\n\n' + names.join('\n'));
+                    if (pick) loadOne(pick.trim());
+                  }} className="bg-sky-600 text-white px-4 py-2 rounded">Load</button>
                   <button onClick={exportClientHTML} className="bg-orange-600 text-white px-4 py-2 rounded">Export for Client</button>
                   <button onClick={() => window.open(window.location.href + '?client=true', '_blank')} className="bg-purple-600 text-white px-4 py-2 rounded">Client View</button>
                   <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-2 rounded">Print / Save PDF</button>
@@ -350,10 +360,10 @@ html = r"""<!DOCTYPE html>
 
           {/* Preview Pages */}
           <div className="proposal-container max-w-none mx-auto bg-white">
-            {/* Cover */}
+            {/* PAGE 1 (header has logo) */}
             <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
               <div className="px-8 pt-8 pb-3 flex justify-between items-start" style={{background:"var(--header)"}}>
-                <img src={images.logo} alt="Logo" className="logo-pop" style={{maxHeight:"160px", objectFit:"contain"}} />
+                <img src={images.logo} alt="Logo" className="logo-clean" />
                 <div className="text-right text-white text-sm">
                   <div className="font-medium tracking-wide">PROJECT {content.projectNumber}</div>
                   <div className="text-slate-300">{content.date}</div>
@@ -385,7 +395,7 @@ html = r"""<!DOCTYPE html>
               </div>
             </section>
 
-            {/* Page 2 */}
+            {/* PAGE 2 (NO logo) */}
             <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
               <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
                 <div className="flex justify-between items-center">
@@ -421,7 +431,7 @@ html = r"""<!DOCTYPE html>
               </div>
             </section>
 
-            {/* Page 3 */}
+            {/* PAGE 3 (footer has logo) */}
             <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
               <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
                 <div className="flex justify-between items-center">
@@ -460,42 +470,13 @@ html = r"""<!DOCTYPE html>
                 </div>
               </div>
               <div className="text-center p-10" style={{background:"var(--footer)"}}>
-                <img src={images.logo} alt="Company Logo" className="mx-auto mb-4 object-contain logo-pop" style={{maxHeight:"72px"}}/>
+                <img src={images.logo} alt="Company Logo" className="mx-auto mb-4" style={{maxHeight:"80px", objectFit:"contain"}}/>
                 <div className="text-white text-base mb-1 tracking-wide">{content.tagline}</div>
                 <div className="text-slate-300 text-sm">{content.address}</div>
+                <div className="text-slate-200 text-sm mt-2">{content.closingNote}</div>
               </div>
             </section>
           </div>
-
-          {/* Load dialog */}
-          {showLoad && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
-              <div className="bg-white p-6 rounded shadow max-w-xl w-full max-h-[75vh] overflow-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-medium">Saved Proposals</h2>
-                  <button onClick={() => setShowLoad(false)} className="text-slate-500 text-2xl">×</button>
-                </div>
-                {savedProposals.length === 0 ? (
-                  <p className="text-slate-500 text-center py-8">No saved proposals found.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {savedProposals.map(p => (
-                      <div key={p.name} className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <div className="font-medium">{p.name}</div>
-                          <div className="text-xs text-slate-500">Saved: {new Date(p.savedAt).toLocaleString()}</div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => loadOne(p.name)} className="bg-blue-600 text-white px-3 py-1 rounded text-sm">Load</button>
-                          <button onClick={() => deleteOne(p.name)} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       );
     }
@@ -504,10 +485,3 @@ html = r"""<!DOCTYPE html>
   </script>
 </body>
 </html>
-"""
-
-# inject logo and save
-html = html.replace("__EMBED_LOGO__", b64_logo)
-out_path = "/mnt/data/index-full-proposal-builder-FINAL.html"
-pathlib.Path(out_path).write_text(html, encoding="utf-8")
-out_path
