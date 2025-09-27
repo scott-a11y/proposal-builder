@@ -350,20 +350,7 @@
 
                 <div>
                   <div className="font-semibold text-slate-700 mb-2">Timeline</div>
-                  {content.timeline.map((t,i)=>(
-                    <div key={i} className="grid grid-cols-1 sm:grid-cols-7 gap-2 mb-2">
-                      <Input className="sm:col-span-3" value={t.period}
-                        onChange={e=>setContent(prev=>({ ...prev, timeline: prev.timeline.map((x,idx)=> idx===i?({ ...x, period:e.target.value }):x) }))} />
-                      <Input className="sm:col-span-3" value={t.task}
-                        onChange={e=>setContent(prev=>({ ...prev, timeline: prev.timeline.map((x,idx)=> idx===i?({ ...x, task:e.target.value }):x) }))} />
-                      <button
-                        className="bg-red-500 text-white text-xs rounded px-2 py-2 sm:py-0 sm:h-[38px]"
-                        onClick={()=>setContent(prev=>({ ...prev, timeline: prev.timeline.filter((_,idx)=>idx!==i) }))}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
+                  content.timeline.map
                   <button className="bg-slate-700 text-white text-xs rounded px-3 py-1" onClick={()=>setContent(prev=>({ ...prev, timeline:[...prev.timeline, {period:"NEW PERIOD", task:"New Task"}] }))}>+ Add</button>
                 </div>
 
@@ -530,3 +517,4 @@
   </script>
 </body>
 </html>
+
