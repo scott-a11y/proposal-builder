@@ -9,7 +9,7 @@
   <link rel="icon"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
-  <!-- Fight GH Pages/browser caching of the app shell -->
+  <!-- No-cache app shell -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -30,16 +30,16 @@
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     .logo-clean { display:block; max-height:160px; object-fit:contain; }
 
-    /* Bigger image frames in preview */
-    .img-frame { height: 21rem; }         /* kitchens */
-    .img-frame-sm { height: 18rem; }      /* vanities */
-    .img-frame-layout { height: 26rem; }  /* floor plan */
+    /* bigger preview frames */
+    .img-frame { height: 21rem; }
+    .img-frame-sm { height: 18rem; }
+    .img-frame-layout { height: 26rem; }
 
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
-      @page { size: 8.5in 11in; margin: 0.5in; } /* breathing room */
+      @page { size: 8.5in 11in; margin: 0.5in; }
       .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
       .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
       .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
@@ -55,7 +55,7 @@
     const { createClient } = supabase;
 
     // ---------- CONFIG ----------
-    // Safe inline fallback logo (white text) so header/footer never break:
+    // Inline fallback logo so headers never break
     const INLINE_FALLBACK_LOGO =
       'data:image/svg+xml;utf8,' +
       encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
@@ -66,7 +66,7 @@
         </g>
       </svg>`);
 
-    // ✅ Default to your real repo logo. If yours is in /assets/, change the path accordingly.
+    // 🔗 default repo logo (change if yours is in /assets/)
     const DEFAULT_LOGO_PATH = new URL('./Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
     // const DEFAULT_LOGO_PATH = new URL('./assets/Foundry-Cabinetco-Logo-2-White-Text.png', window.location.href).toString();
 
@@ -76,12 +76,12 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ----------------------------
 
-    // --- UI primitives
+    // UI bits
     const Label = ({children}) => <label className="text-xs font-medium text-slate-600 uppercase tracking-wide">{children}</label>;
     const Input = (props) => <input {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white "+(props.className||"")} />;
     const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
 
-    // --- image helpers ---
+    // helpers
     const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
     const waitForImagesToLoad = async (root=document) => {
       const imgs = Array.from(root.querySelectorAll('img'))
@@ -92,24 +92,24 @@
         img.onload = done; img.onerror = done;
       })));
     };
+    const hasAnyImage = (imgs) => !!(imgs && (imgs.logo || imgs.shakerRender || imgs.euroRender || imgs.shakerVanity || imgs.euroVanity || imgs.floorPlan));
 
-    // Force fresh fetch so export/print never reuses stale cached images (GH Pages etc.)
+    // convert URL/file to data URL (embeds perfectly for export/pdf). Cache-bust to avoid stale.
     const toDataURL = async (src) => {
       try {
         if (!src) return "";
-        if (src.startsWith("data:")) return src; // already embedded (uploads)
+        if (src.startsWith("data:")) return src; // already embedded
         const url = new URL(src, window.location.href);
-        url.searchParams.set("_v", Date.now().toString()); // cache-buster
+        url.searchParams.set("_v", Date.now().toString());
         const res = await fetch(url.toString(), { cache: "no-store", mode: "cors" });
         if (!res.ok) throw new Error("fetch failed");
         const blob = await res.blob();
-        // If cross-origin blocks reading, this will still work via fetch+blob
         const reader = new FileReader();
         const p = new Promise((resolve) => { reader.onloadend = () => resolve(reader.result || ""); });
         reader.readAsDataURL(blob);
         return await p;
-      } catch (e) {
-        // CORS or offline: fall back to raw src (works online), export HTML will still reference it
+      } catch {
+        // fallback: leave original src (works online; upload via picker for guaranteed embedding)
         return src;
       }
     };
@@ -143,7 +143,7 @@
       const [currentName, setCurrentName] = useState("");
 
       const [images, setImages] = useState({
-        logo: DEFAULT_LOGO_PATH,  // start with real logo
+        logo: DEFAULT_LOGO_PATH,
         shakerRender: null, euroRender: null,
         shakerVanity: null, euroVanity: null, floorPlan: null
       });
@@ -177,7 +177,7 @@
         sketchupLink: ""
       });
 
-      // fetch proposals list (admin mode) — guard against null
+      // initial proposals list (guard null)
       useEffect(() => { (async () => {
         const { data, error } = await db.from('proposals').select('*');
         if (error) {
@@ -188,51 +188,59 @@
         setSavedProposals((data || []).map(p => ({ name:p.name, savedAt:p.created_at, content:p.content, images:p.images })));
       })() }, []);
 
-      // auto-save while editing a named proposal
+      // auto-save if named
       useEffect(() => {
         if (!currentName) return;
         const id = setInterval(() => save(currentName, false), 30000);
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // On first load, embed repo/relative images so Print/PDF works even before uploads
-      useEffect(() => {
-        (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
-      }, []); // eslint-disable-line
+      // first load: embed local/repo images so print/export work even before uploads
+      useEffect(() => { (async () => {
+        await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
+      })() }, []); // once
 
-      // Client View: auto-load proposal by ?id OR most recently SAVED, then embed images
+      // CLIENT: pick target proposal: ?id OR newest with images OR newest
       useEffect(() => {
         if (!isClient) return;
         (async () => {
           try {
-            let target = clientId;
-            if (!target) {
-              // pick most recently saved using content.__savedAt (fallback created_at)
-              const { data, error } = await db.from("proposals").select("name, content, created_at");
-              if (error) throw error;
-              if (data && data.length) {
-                const rows = data.map(r => ({
-                  name: r.name,
-                  savedAt: (r.content && r.content.__savedAt) ? new Date(r.content.__savedAt).getTime() : new Date(r.created_at).getTime()
-                }));
-                rows.sort((a,b) => b.savedAt - a.savedAt);
-                target = rows[0]?.name;
-              }
-            }
-            if (!target) return; // nothing in DB yet
-            const { data: row, error: e2 } = await db.from("proposals").select("*").eq("name", target).maybeSingle();
-            if (e2) throw e2;
-            if (!row) return;
-            setContent(row.content || content);
-            setImages(row.images || images);
-            await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
+            let targetName = clientId;
+
+            const { data, error } = await db
+              .from("proposals")
+              .select("name, content, images, created_at");
+            if (error) throw error;
+
+            const rows = (data || []).map(r => ({
+              name: r.name,
+              row: r,
+              savedAt: r?.content?.__savedAt
+                ? Date.parse(r.content.__savedAt)
+                : Date.parse(r.created_at || 0),
+              hasImages: hasAnyImage(r.images)
+            })).sort((a,b) => b.savedAt - a.savedAt);
+
+            let picked =
+              (targetName && rows.find(x => x.name === targetName)) ||
+              rows.find(x => x.hasImages) ||
+              rows[0];
+
+            if (!picked) return;
+
+            const chosen = picked.row;
+            setContent(chosen.content || content);
+            setImages(chosen.images || images);
+
+            // embed now so client view + export/print have images ready
+            await embedAllImagesInState(chosen.images || images, setImages, DEFAULT_LOGO_PATH);
           } catch (err) {
             console.warn("Client auto-load failed:", err?.message);
           }
         })();
-      }, [isClient, clientId]); // eslint-disable-line
+      }, [isClient, clientId]); // run on client mode
 
-      // uploads -> always data URLs (embeds perfectly)
+      // uploads -> store as data URLs (perfect for embedding)
       const onImgUpload = (key, file) => {
         const r = new FileReader();
         r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
@@ -241,7 +249,7 @@
 
       const setField = (k, v) => setContent(prev => ({ ...prev, [k]: v }));
 
-      // save/load/delete — hardened against null maps
+      // save/load/delete (hardened)
       const save = async (name, alertOK=true) => {
         try {
           const stamp = new Date().toISOString();
@@ -291,30 +299,19 @@
         alert('Deleted "' + name + '".');
       };
 
-      // Print handler: embed images (from current UI) then wait for them to load, then print
+      // PRINT: re-embed + wait for load, then print
       const handlePrint = async () => {
-        const working = {
-          logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
-          shakerRender: await toDataURL(images.shakerRender),
-          euroRender: await toDataURL(images.euroRender),
-          shakerVanity: await toDataURL(images.shakerVanity),
-          euroVanity: await toDataURL(images.euroVanity),
-          floorPlan: await toDataURL(images.floorPlan),
-        };
-        setImages(prev => ({ ...prev, ...working }));
-        await sleep(50);
+        await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
+        await sleep(75);
         await waitForImagesToLoad(document);
         window.print();
       };
 
-      // -------- Export Client HTML (offline + images embedded NOW) --------
+      // EXPORT HTML: embed current UI (offline-safe where possible)
       const exportClientHTML = async () => {
-        // ensure latest keystroke/state is committed before exporting
-        await new Promise(requestAnimationFrame);
-
+        await new Promise(requestAnimationFrame); // flush state
         const c = { ...content };
 
-        // Build a local embedded-images snapshot from CURRENT UI (no stale cache)
         const embedded = {
           logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
           shakerRender: await toDataURL(images.shakerRender),
@@ -327,7 +324,6 @@
         const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const has = (v) => v && ("" + v).trim().length > 0;
 
-        /* Larger frames in exported HTML too */
         const css =
           "body{margin:0;background:#f6f8fb;color:#0f172a;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}"+
           ".wrap{max-width:900px;margin:0 auto}.shadow{box-shadow:0 6px 20px rgba(2,6,23,.08)}"+
@@ -361,11 +357,11 @@
           "@media print{img{break-inside:avoid;page-break-inside:avoid}}";
 
         const blockImg = (src, alt) =>
-          src ? "<div class='imgBox'><img src='"+src+"'></div>" :
-                "<div class='imgBox' style='color:#94a3b8;font-size:13px'>"+esc(alt)+"</div>";
+          src ? "<div class='imgBox'><img src='"+src+"'></div>"
+              : "<div class='imgBox' style='color:#94a3b8;font-size:13px'>"+esc(alt)+"</div>";
         const blockImgTall = (src) =>
-          src ? "<div class='layoutImg'><img src='"+src+"'></div>" :
-                "<div class='layoutImg' style='color:#94a3b8;font-size:13px'>Floor Plan</div>";
+          src ? "<div class='layoutImg'><img src='"+src+"'></div>"
+              : "<div class='layoutImg' style='color:#94a3b8;font-size:13px'>Floor Plan</div>";
         const tlColor = (i) => ["#f59e0b","#64748b","#475569","#334155","#1e293b"][i%5];
 
         let html = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"+
@@ -419,7 +415,6 @@
         a.download = (c.projectNumber || "proposal") + "_" + (c.clientName||"Client").replace(/\s+/g,'_') + "_Proposal.html";
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       };
-      // ---------------------------------------------------------
 
       // UI
       return (
@@ -435,8 +430,8 @@
                     className="h-10"
                     onError={(e)=> { e.currentTarget.src = INLINE_FALLBACK_LOGO; }}
                   />
-                <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
-                {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
+                  <div className="text-slate-800 font-medium">Full Proposal Builder — Supabase</div>
+                  {currentName && <div className="ml-3 text-xs text-green-600">● Auto-saving</div>}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => { const n=prompt('Name to save as:'); if(n) { setCurrentName(n.trim()); save(n.trim()); } }} className="bg-emerald-600 text-white px-4 py-2 rounded">Save</button>
@@ -448,7 +443,7 @@
                     if (pick) loadOne(pick.trim());
                   }} className="bg-sky-600 text-white px-4 py-2 rounded">Load</button>
                   <button onClick={exportClientHTML} className="bg-orange-600 text-white px-4 py-2 rounded">Export for Client</button>
-                  {/* pin client view to current proposal and save before opening */}
+                  {/* open client view pinned to current proposal if named */}
                   <button
                     onClick={async () => {
                       if (!currentName) {
