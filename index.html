@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Foundry Cabinet · Co — Proposal Builder</title>
 
-  <!-- Favicon (inline, never 404s) -->
+  <!-- Favicon (inline to avoid 404) -->
   <link rel="icon"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
@@ -29,10 +29,12 @@
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
-      @page { size: 8.5in 11in; margin: 0.5in; } /* breathing room */
+      @page { size: 8.5in 11in; margin: 0.6in; } /* extra breathing room */
+
       /* keep grids intact in print */
       .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
       .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
+
       /* prevent image blocks from breaking/stacking odd */
       .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
       img { break-inside: avoid !important; page-break-inside: avoid !important; }
@@ -47,7 +49,6 @@
     const { createClient } = supabase;
 
     // ---------- CONFIG ----------
-    // Safe inline fallback logo (white text, transparent) so header/footer never break:
     const INLINE_FALLBACK_LOGO =
       'data:image/svg+xml;utf8,' +
       encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
@@ -57,9 +58,6 @@
           <text x="50%" y="70%" text-anchor="middle" font-size="28" letter-spacing="4">CABINET · CO</text>
         </g>
       </svg>`);
-
-    // You can swap to a PNG filename if you want (e.g. "Foundry-Cabinetco-Logo-2-White-Text.png")
-    // Keeping inline fallback ensures no missing logo even before you upload.
     const DEFAULT_LOGO_PATH = INLINE_FALLBACK_LOGO;
 
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
@@ -68,20 +66,19 @@
     const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ----------------------------
 
-    // --- UI primitives
+    // UI primitives
     const Label = ({children}) => <label className="text-xs font-medium text-slate-600 uppercase tracking-wide">{children}</label>;
     const Input = (props) => <input {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white "+(props.className||"")} />;
     const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
 
-    // --- helpers to embed images as data URLs for print/export ---
+    // Fetch any image (file path or URL) as a data URL with hard cache-bust
     const toDataURL = async (src) => {
       try {
         if (!src) return "";
         if (src.startsWith("data:")) return src; // already embedded
-        // cache-bust and bypass HTTP cache to avoid stale assets
-        const url = new URL(src, window.location.href);
-        url.searchParams.set("_v", Date.now().toString());
-        const res = await fetch(url.toString(), { cache: "no-store" }); // <- changed from "force-cache"
+        const bust = src.includes("?") ? "&" : "?";
+        const url  = src + bust + "t=" + Date.now();              // hard cache-bust
+        const res = await fetch(url, { cache: "no-store" });      // <- critical to avoid stale
         if (!res.ok) throw new Error("fetch failed");
         const blob = await res.blob();
         const reader = new FileReader();
@@ -89,12 +86,11 @@
         reader.readAsDataURL(blob);
         return await p;
       } catch {
-        return src; // fallback (may not print if path not reachable)
+        return src; // fallback (path-based)
       }
     };
 
     const embedAllImagesInState = async (images, setImages, fallbackLogo) => {
-      // make a fresh embedded copy from whatever is currently in state/UI
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         toDataURL(images.logo || fallbackLogo),
         toDataURL(images.shakerRender),
@@ -117,7 +113,7 @@
     function App() {
       const urlParams = new URLSearchParams(window.location.search);
       const isClient = urlParams.get("client") === "true";
-      const clientId = urlParams.get("id") || ""; // optional proposal name to load in client view
+      const clientId = urlParams.get("id") || "";
 
       const [savedProposals, setSavedProposals] = useState([]);
       const [currentName, setCurrentName] = useState("");
@@ -170,13 +166,10 @@
         return () => clearInterval(id);
       }, [content, images, currentName]);
 
-      // On first load, embed any path-based images so Print/PDF works even before uploads
-      useEffect(() => {
-        (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
+      // On first load, embed any path-based images
+      useEffect(() => { (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })(); }, []);
 
-      // Client View: auto-load a proposal (by ?id=NAME or most recent), then embed images
+      // Client View: auto-load a proposal and embed images
       useEffect(() => {
         if (!isClient) return;
         (async () => {
@@ -187,19 +180,17 @@
               if (error) throw error;
               if (data && data[0]) target = data[0].name;
             }
-            if (!target) return; // nothing in DB yet
+            if (!target) return;
             const { data: row, error: e2 } = await db.from("proposals").select("*").eq("name", target).maybeSingle();
             if (e2) throw e2;
             if (!row) return;
             setContent(row.content || content);
             setImages(row.images || images);
-            // ensure embedded copies are used in the client export/print
             await embedAllImagesInState(row.images || images, setImages, DEFAULT_LOGO_PATH);
           } catch (err) {
             console.warn("Client auto-load failed:", err?.message);
           }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [isClient, clientId]);
 
       // uploads
@@ -248,36 +239,24 @@
         alert('Deleted "' + name + '".');
       };
 
-      // Print handler: embed images (from current UI) then print (avoids stale)
+      // Print: embed *current* images then print (prevents stale/crowding)
       const handlePrint = async () => {
-        const working = {
-          logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
-          shakerRender: await toDataURL(images.shakerRender),
-          euroRender: await toDataURL(images.euroRender),
-          shakerVanity: await toDataURL(images.shakerVanity),
-          euroVanity: await toDataURL(images.euroVanity),
-          floorPlan: await toDataURL(images.floorPlan),
-        };
-        setImages(prev => ({ ...prev, ...working }));
-        setTimeout(() => window.print(), 200);
+        await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH);
+        setTimeout(() => window.print(), 220);
       };
 
       // -------- Export Client HTML (offline + images embedded NOW) --------
       const exportClientHTML = async () => {
-        // ensure latest state is flushed before export (fix)
-        await new Promise(requestAnimationFrame);
-
-        const c = { ...content };
-
-        // Build a local embedded-images snapshot from CURRENT UI (no stale cache)
+        // Snapshot current screen state
         const embedded = {
-          logo: await toDataURL(images.logo || DEFAULT_LOGO_PATH),
-          shakerRender: await toDataURL(images.shakerRender),
-          euroRender: await toDataURL(images.euroRender),
-          shakerVanity: await toDataURL(images.shakerVanity),
-          euroVanity: await toDataURL(images.euroVanity),
-          floorPlan: await toDataURL(images.floorPlan),
+          logo:          await toDataURL(images.logo  || DEFAULT_LOGO_PATH),
+          shakerRender:  await toDataURL(images.shakerRender),
+          euroRender:    await toDataURL(images.euroRender),
+          shakerVanity:  await toDataURL(images.shakerVanity),
+          euroVanity:    await toDataURL(images.euroVanity),
+          floorPlan:     await toDataURL(images.floorPlan),
         };
+        const c = JSON.parse(JSON.stringify(content)); // deep snapshot
 
         const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const has = (v) => v && ("" + v).trim().length > 0;
@@ -298,20 +277,20 @@
           ".secTitle{font-size:22px;font-weight:300;color:#0f172a;margin:0;padding:26px 28px;border-bottom:1px solid #e5e7eb}"+
           ".secBody{padding:28px}"+
           ".two{display:grid;grid-template-columns:1fr 1fr;gap:28px}"+
-          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:192px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
+          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:192px;overflow:hidden;margin-bottom:16px;break-inside:avoid;page-break-inside:avoid}"+
           ".imgBox img{width:100%;height:100%;object-fit:cover}"+
-          ".cap{font-size:13px;color:#64748b;margin-top:8px}"+
-          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:256px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
+          ".cap{font-size:13px;color:#64748b;margin:0 0 22px}"+
+          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:256px;overflow:hidden;margin-bottom:10px;break-inside:avoid;page-break-inside:avoid}"+
           ".layoutImg img{width:100%;height:100%;object-fit:contain}"+
           ".btn3d{display:inline-block;background:#1f2937;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}"+
           ".cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px}"+
-          ".tlItem{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
+          ".tlItem{display:flex;gap:10px;margin:0 0 14px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
           ".dot{width:12px;height:12px;border-radius:2px;margin-top:4px}"+
           ".tlP{font:700 12px system-ui;letter-spacing:.06em;color:#0f172a;text-transform:uppercase}"+
           ".tlT{color:#475569;margin-top:2px}"+
-          ".nxItem{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
+          ".nxItem{display:flex;gap:10px;margin:0 0 12px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
           ".num{width:26px;height:26px;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px}"+
-          "@page{size:8.5in 11in;margin:0.5in}"+
+          "@page{size:8.5in 11in;margin:0.6in}"+
           "@media print{img{break-inside:avoid;page-break-inside:avoid}}";
 
         const blockImg = (src, alt) =>
@@ -343,7 +322,7 @@
           blockImg(embedded.euroRender,'Euro Kitchen')+"<div class='cap'>"+esc(c.euroDescription)+"</div>"+
           blockImg(embedded.euroVanity,'Euro Vanity')+"<div class='cap'>"+esc(c.euroVanityDescription)+"</div></div></div>"+
           "<div style='margin-top:18px;text-align:center'><h3 style='margin:0 0 10px;font:600 16px system-ui;color:#0f172a'>Architectural Layout</h3>"+
-          blockImgTall(embedded.floorPlan)+"<div class='cap' style='margin-top:8px'>"+esc(c.floorPlanDescription)+"</div>"+
+          blockImgTall(embedded.floorPlan)+"<div class='cap'>"+esc(c.floorPlanDescription)+"</div>"+
           (has(c.onlinePlansLink) ? "<div style='margin-top:10px;font-size:14px'><span style='color:#475569'>View detailed plans:</span> <a href='"+esc(c.onlinePlansLink)+"' target='_blank' rel='noreferrer' style='color:#111827;text-decoration:underline'>"+esc(c.onlinePlansLink)+"</a></div>": "")+
           (has(c.sketchupLink) ? "<div style='margin-top:14px;background:#fffbeb;border:1px solid #fde68a;padding:14px;border-radius:8px;display:inline-block'><div style='font-weight:600;margin-bottom:6px;color:#0f172a'>🏠 VIEW IN 3D</div><div style='color:#475569;font-size:14px;margin-bottom:8px'>Experience your kitchen design in full 3D.</div><a class='btn3d' href='"+esc(c.sketchupLink)+"' target='_blank' rel='noreferrer'>View 3D Model</a></div>": "")+
           "</div></div></div>";
@@ -374,6 +353,10 @@
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       };
       // ---------------------------------------------------------
+
+      // uploads
+      const onImgInput = (key, e) => e.target.files?.[0] && onImgUpload(key, e.target.files[0]);
+      const setField = (k, v) => setContent(prev => ({ ...prev, [k]: v }));
 
       // UI
       return (
@@ -483,7 +466,7 @@
                   {[["logo","Company Logo"],["shakerRender","Shaker Kitchen"],["euroRender","Euro Kitchen"],["shakerVanity","Shaker Vanity"],["euroVanity","Euro Vanity"],["floorPlan","Floor Plan"]].map(([k,label]) => (
                     <div key={k} className="flex items-center justify-between gap-2">
                       <span className="text-sm text-slate-700">{label}</span>
-                      <input type="file" accept="image/*" onChange={e=> e.target.files[0] && onImgUpload(k, e.target.files[0])} className="text-sm"/>
+                      <input type="file" accept="image/*" onChange={e=> onImgInput(k, e)} className="text-sm"/>
                     </div>
                   ))}
                 </div>
@@ -594,7 +577,7 @@
                     </div>
                     <p className="text-sm text-slate-600">{content.euroDescription}</p>
                     <div className="bg-slate-50 p-4 card h-40 flex items-center justify-center mt-4">
-                      {images.euroVanity ? <img src={images.eroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
+                      {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
                   </div>
@@ -613,7 +596,7 @@
             </section>
 
             {/* PAGE 3 — Timeline & unified footer */}
-            <section className="proposal-page w-full max-w-4xl mx_auto bg-white shadow mb-8">
+            <section className="proposal-page w-full max-w-4xl mx-auto bg-white shadow mb-8">
               <div className="border-b border-slate-200 pb-6 mb-8 px-8 pt-8">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-light text-slate-800 tracking-tight">Timeline & Next Steps</h2>
