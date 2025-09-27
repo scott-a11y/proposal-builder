@@ -10,9 +10,9 @@
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
 
   <!-- React + Babel (UMD) -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
 
   <!-- Tailwind + Supabase -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -74,11 +74,17 @@
     const TextArea = (props) => <textarea {...props} className={"w-full border rounded px-3 py-2 text-sm bg-white min-h-[84px] "+(props.className||"")} />;
 
     // --- helpers to embed images as data URLs for print/export ---
+    // FIX: cache-bust + no-store so export never pulls stale images
     const toDataURL = async (src) => {
       try {
         if (!src) return "";
         if (src.startsWith("data:")) return src; // already embedded
-        const res = await fetch(src, { cache: "force-cache" });
+
+        // add a timestamp param to break caches
+        const url = new URL(src, window.location.href);
+        url.searchParams.set("_v", Date.now().toString());
+
+        const res = await fetch(url.toString(), { cache: "no-store" });
         if (!res.ok) throw new Error("fetch failed");
         const blob = await res.blob();
         const reader = new FileReader();
@@ -199,7 +205,7 @@
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [isClient, clientId]);
 
-      // uploads
+      // uploads (kept same API)
       const onImgUpload = (key, file) => {
         const r = new FileReader();
         r.onload = e => setImages(prev => ({ ...prev, [key]: e.target.result }));
@@ -261,6 +267,9 @@
 
       // -------- Export Client HTML (offline + images embedded NOW) --------
       const exportClientHTML = async () => {
+        // FIX: ensure the latest keystroke/state is committed before exporting
+        await new Promise(requestAnimationFrame);
+
         const c = { ...content };
 
         // Build a local embedded-images snapshot from CURRENT UI (no stale cache)
