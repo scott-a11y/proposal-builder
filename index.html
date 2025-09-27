@@ -29,7 +29,7 @@
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
-      @page { size: 8.5in 11in; margin: 0.5in; }
+      @page { size: 8.5in 11in; margin: 0.5in; } /* breathing room */
       .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
       .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
       .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
@@ -56,7 +56,7 @@
         </g>
       </svg>`);
 
-    // Keep your inline fallback as default so the header/footer never break if a file is missing.
+    // Keep inline fallback to avoid header/footer breaks.
     const DEFAULT_LOGO_PATH = INLINE_FALLBACK_LOGO;
 
     const SUPABASE_URL = "https://nqzyoegnquyqfngmaktn.supabase.co";
@@ -169,7 +169,8 @@
       // On first load, embed path-based images so Print/PDF works even before uploads
       useEffect(() => {
         (async () => { await embedAllImagesInState(images, setImages, DEFAULT_LOGO_PATH); })();
-      }, []); // eslint-disable-line
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
 
       // Client View: auto-load a proposal (by ?id=NAME or most recent), then embed images
       useEffect(() => {
@@ -193,7 +194,8 @@
             console.warn("Client auto-load failed:", err?.message);
           }
         })();
-      }, [isClient, clientId]); // eslint-disable-line
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [isClient, clientId]);
 
       // uploads
       const onImgUpload = (key, file) => {
