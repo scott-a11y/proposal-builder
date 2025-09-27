@@ -38,11 +38,26 @@
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .print\:hidden { display: none !important; }
-      .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
+      .proposal-page { 
+        width: 8.5in !important; 
+        height: 11in !important; 
+        margin: 0 !important; 
+        page-break-after: always !important; 
+        overflow: visible !important;
+        box-sizing: border-box !important;
+      }
       @page { size: 8.5in 11in; margin: 0.5in; }
-      .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-      .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
-      .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
+      .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; }
+      .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 20px !important; }
+      
+      /* Improved page break handling */
+      .imgBox, .layoutImg, .tlItem, .nxItem { 
+        break-inside: avoid !important; 
+        page-break-inside: avoid !important;
+        margin-bottom: 10px !important;
+      }
+      
+      /* Standardized image handling for print */
       img { 
         break-inside: avoid !important; 
         page-break-inside: avoid !important;
@@ -52,18 +67,48 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
-      /* Ensure image containers maintain their dimensions */
+      
+      /* Specific image container sizing for print */
       .img-frame, .img-frame-sm, .img-frame-layout {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        overflow: hidden !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 200px !important;
+        max-height: 400px !important;
       }
-      /* Force images to be visible and properly sized */
-      .logo-clean {
-        max-height: 160px !important;
+      
+      /* Logo and footer logo sizing */
+      .logo, .logo-clean, .footLogo {
+        max-height: 120px !important;
         width: auto !important;
         object-fit: contain !important;
+      }
+      
+      /* Image boxes for consistent sizing */
+      .imgBox {
+        height: auto !important;
+        min-height: 200px !important;
+        max-height: 300px !important;
+        padding: 10px !important;
+      }
+      
+      .imgBox img {
+        object-fit: contain !important;
+        max-height: 280px !important;
+      }
+      
+      .layoutImg {
+        height: auto !important;
+        min-height: 250px !important;
+        max-height: 400px !important;
+        padding: 10px !important;
+      }
+      
+      .layoutImg img {
+        object-fit: contain !important;
+        max-height: 380px !important;
       }
     }
   </style>
@@ -474,7 +519,7 @@
         const css =
           "body{margin:0;background:#f6f8fb;color:#0f172a;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}"+
           ".wrap{max-width:900px;margin:0 auto}.shadow{box-shadow:0 6px 20px rgba(2,6,23,.08)}"+
-          ".page{background:#fff;margin:28px auto;border-radius:6px;overflow:hidden;page-break-after:always}"+
+          ".page{background:#fff;margin:28px auto;border-radius:6px;overflow:visible;page-break-after:always}"+
           ".bar{display:flex;justify-content:space-between;align-items:flex-start;padding:24px 28px;background:#1e293b}"+
           ".logo{max-height:160px;object-fit:contain;width:auto;display:block}.hdrR{color:#fff;font-size:14px;text-align:right}.muted{color:#cbd5e1}"+
           ".sec{padding:36px}.tac{text-align:center}.small{font-size:14px;color:#475569;letter-spacing:.08em}"+
@@ -487,11 +532,11 @@
           ".secTitle{font-size:22px;font-weight:300;color:#0f172a;margin:0;padding:26px 28px;border-bottom:1px solid #e5e7eb}"+
           ".secBody{padding:28px}"+
           ".two{display:grid;grid-template-columns:1fr 1fr;gap:28px}"+
-          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:360px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
-          ".imgBox img{width:100%;height:100%;object-fit:cover;display:block;max-width:100%}"+
+          ".imgBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:360px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;padding:10px;box-sizing:border-box}"+
+          ".imgBox img{width:auto;height:auto;object-fit:contain;display:block;max-width:100%;max-height:100%}"+
           ".cap{font-size:13px;color:#64748b;margin-top:8px}"+
-          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:480px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}"+
-          ".layoutImg img{width:100%;height:100%;object-fit:contain;display:block;max-width:100%}"+
+          ".layoutImg{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;height:480px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;padding:10px;box-sizing:border-box}"+
+          ".layoutImg img{width:auto;height:auto;object-fit:contain;display:block;max-width:100%;max-height:100%}"+
           ".btn3d{display:inline-block;background:#1f2937;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}"+
           ".cols{display:grid;grid-template-columns:1.1fr 0.9fr;gap:28px}"+
           ".tlItem{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
@@ -501,7 +546,13 @@
           ".nxItem{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;break-inside:avoid;page-break-inside:avoid}"+
           ".num{width:26px;height:26px;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px}"+
           "@page{size:8.5in 11in;margin:0.5in}"+
-          "@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}img{break-inside:avoid!important;page-break-inside:avoid!important;max-width:100%!important;height:auto!important;display:block!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.logo,.footLogo{width:auto!important;object-fit:contain!important}.imgBox,.layoutImg{display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}}";
+          "@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}"+
+          "img{break-inside:avoid!important;page-break-inside:avoid!important;max-width:100%!important;height:auto!important;display:block!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}"+
+          ".logo,.footLogo{max-height:120px!important;width:auto!important;object-fit:contain!important}"+
+          ".imgBox,.layoutImg{display:flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important;height:auto!important;min-height:200px!important;padding:10px!important}"+
+          ".imgBox img,.layoutImg img{object-fit:contain!important;max-height:280px!important}"+
+          ".layoutImg img{max-height:380px!important}"+
+          ".imgBox,.layoutImg,.tlItem,.nxItem{break-inside:avoid!important;page-break-inside:avoid!important;margin-bottom:10px!important}}";
 
         const blockImg = (src, alt) =>
           src ? "<div class='imgBox'><img src='"+src+"'></div>"
@@ -797,22 +848,22 @@
                   <div className="space-y-4 text-center">
                     <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Shaker Style</h3>
                     <div className="bg-slate-50 p-4 card img-frame flex items-center justify-center">
-                      {images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}
+                      {images.shakerRender ? <img src={images.shakerRender} className="w-full h-full object-contain"/> : <div className="text-slate-400 text-sm">Shaker Kitchen</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.shakerDescription}</p>
                     <div className="bg-slate-50 p-4 card img-frame-sm flex items-center justify-center mt-4">
-                      {images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}
+                      {images.shakerVanity ? <img src={images.shakerVanity} className="w-full h-full object-contain"/> : <div className="text-slate-400 text-sm">Shaker Vanity</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.shakerVanityDescription}</p>
                   </div>
                   <div className="space-y-4 text-center">
                     <h3 className="text-lg font-semibold text-slate-800 tracking-tight">Euro Style</h3>
                     <div className="bg-slate-50 p-4 card img-frame flex items-center justify-center">
-                      {images.euroRender ? <img src={images.euroRender} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}
+                      {images.euroRender ? <img src={images.euroRender} className="w-full h-full object-contain"/> : <div className="text-slate-400 text-sm">Euro Kitchen</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.euroDescription}</p>
                     <div className="bg-slate-50 p-4 card img-frame-sm flex items-center justify-center mt-4">
-                      {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-cover"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
+                      {images.euroVanity ? <img src={images.euroVanity} className="w-full h-full object-contain"/> : <div className="text-slate-400 text-sm">Euro Vanity</div>}
                     </div>
                     <p className="text-sm text-slate-600">{content.euroVanityDescription}</p>
                   </div>
