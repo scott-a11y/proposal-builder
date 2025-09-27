@@ -403,7 +403,7 @@
                   <label>Client Name</label>
                   <input 
                     value="${formData.clientName}"
-                    onchange="handleInputChange('clientName', this.value)"
+                    oninput="handleInputChange('clientName', this.value)"
                     placeholder="Enter client name"
                   />
                 </div>
@@ -411,7 +411,7 @@
                   <label>Project Name</label>
                   <input 
                     value="${formData.projectName}"
-                    onchange="handleInputChange('projectName', this.value)"
+                    oninput="handleInputChange('projectName', this.value)"
                     placeholder="Enter project name"
                   />
                 </div>
@@ -420,14 +420,14 @@
                   <input 
                     type="date"
                     value="${formData.date}"
-                    onchange="handleInputChange('date', this.value)"
+                    oninput="handleInputChange('date', this.value)"
                   />
                 </div>
                 <div>
                   <label>Price</label>
                   <input 
                     value="${formData.price}"
-                    onchange="handleInputChange('price', this.value)"
+                    oninput="handleInputChange('price', this.value)"
                     placeholder="Enter price (numbers only)"
                   />
                 </div>
@@ -436,7 +436,7 @@
               <div class="mb-6">
                 <label>Project Description</label>
                 <textarea 
-                  onchange="handleInputChange('description', this.value)"
+                  oninput="handleInputChange('description', this.value)"
                   placeholder="Describe the project details..."
                 >${formData.description}</textarea>
               </div>
@@ -445,7 +445,7 @@
                 <label>Timeline</label>
                 <input 
                   value="${formData.timeline}"
-                  onchange="handleInputChange('timeline', this.value)"
+                  oninput="handleInputChange('timeline', this.value)"
                   placeholder="e.g., 4-6 weeks"
                 />
               </div>
@@ -453,7 +453,7 @@
               <div class="mb-6">
                 <label>Additional Notes</label>
                 <textarea 
-                  onchange="handleInputChange('notes', this.value)"
+                  oninput="handleInputChange('notes', this.value)"
                   placeholder="Any additional notes or terms..."
                 >${formData.notes}</textarea>
               </div>
