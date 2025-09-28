@@ -151,25 +151,28 @@
     .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
     .print-hidden { }
 
-    /* Task 14: Brand colors and styling */
+    /* Alexander Wang Style - Minimalist Design System */
     :root { 
-      --midnight: #0B1120;
-      --slate: #1E293B;
-      --slate-light: #334155;
-      --cloud: #F1F5F9;
-      --amber: #F59E0B;
-      --gray-border: #E5E7EB;
-      --gray-caption: #CBD5E1;
-      --gray-muted: #94A3B8;
+      --midnight: #000000;
+      --slate: #1a1a1a;
+      --slate-light: #333333;
+      --cloud: #ffffff;
+      --amber: #000000;
+      --gray-border: #e0e0e0;
+      --gray-caption: #666666;
+      --gray-muted: #999999;
+      --accent: #f5f5f5;
       /* Legacy variables for compatibility */
       --header: var(--slate);
       --footer: var(--midnight);
     }
     body { 
       background: var(--cloud); 
-      color: #111827; 
+      color: var(--midnight); 
       margin: 0; 
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; 
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial", sans-serif; 
+      font-weight: 300;
+      letter-spacing: 0.5px;
     }
     .proposal-page { display:flex; flex-direction:column; min-height:800px; box-sizing:border-box; }
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
@@ -271,17 +274,17 @@
     .mt-6 { margin-top: 1.5rem; }
     .mt-8 { margin-top: 2rem; }
     .bg-white { background-color: #ffffff; }
-    .bg-gray-50 { background-color: #f9fafb; }
-    .bg-gray-500 { background-color: #6b7280; }
-    .bg-gray-600 { background-color: #4b5563; }
-    .bg-blue-500 { background-color: #3b82f6; }
-    .bg-blue-600 { background-color: #2563eb; }
-    .bg-blue-700 { background-color: #1d4ed8; }
-    .bg-green-600 { background-color: #059669; }
+    .bg-gray-50 { background-color: #fafafa; }
+    .bg-gray-500 { background-color: #666666; }
+    .bg-gray-600 { background-color: #4a4a4a; }
+    .bg-blue-500 { background-color: #000000; }
+    .bg-blue-600 { background-color: #1a1a1a; }
+    .bg-blue-700 { background-color: #333333; }
+    .bg-green-600 { background-color: #000000; }
     .text-white { color: #ffffff; }
-    .text-gray-600 { color: #4b5563; }
-    .text-gray-700 { color: #374151; }
-    .text-green-600 { color: #059669; }
+    .text-gray-600 { color: #666666; }
+    .text-gray-700 { color: #4a4a4a; }
+    .text-green-600 { color: #000000; }
     .text-sm { font-size: 0.875rem; }
     .text-lg { font-size: 1.125rem; }
     .text-xl { font-size: 1.25rem; }
@@ -306,50 +309,108 @@
     .cursor-pointer { cursor: pointer; }
     .hidden { display: none; }
     
-    /* Button hover effects */
-    .bg-gray-500:hover { background-color: #4b5563; }
-    .bg-blue-500:hover { background-color: #2563eb; }
-    .bg-blue-600:hover { background-color: #1d4ed8; }
+    /* Alexander Wang Style - Button hover effects */
+    .bg-gray-500:hover { background-color: #4a4a4a; }
+    .bg-blue-500:hover { background-color: #1a1a1a; }
+    .bg-blue-600:hover { background-color: #333333; }
     
-    /* Form inputs */
+    /* Alexander Wang Style - Form Elements */
     input, textarea, select {
-      border: 1px solid #d1d5db;
-      border-radius: 0.25rem;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
-      background-color: #ffffff;
+      border: none;
+      border-bottom: 1px solid var(--gray-border);
+      border-radius: 0;
+      padding: 12px 0;
+      font-size: 14px;
+      font-weight: 300;
+      background-color: transparent;
       width: 100%;
       box-sizing: border-box;
+      transition: border-bottom-color 0.3s ease;
+      font-family: inherit;
+      letter-spacing: 0.3px;
     }
     
     input:focus, textarea:focus, select:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-bottom-color: var(--midnight);
+      background-color: var(--accent);
     }
     
     button {
-      border: none;
-      border-radius: 0.25rem;
-      padding: 0.5rem 1rem;
-      font-weight: 500;
+      border: 1px solid var(--midnight);
+      border-radius: 0;
+      padding: 12px 24px;
+      font-weight: 400;
       cursor: pointer;
-      transition: background-color 0.15s;
+      transition: all 0.3s ease;
+      background-color: transparent;
+      color: var(--midnight);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 11px;
+      font-family: inherit;
+    }
+    
+    button:hover {
+      background-color: var(--midnight);
+      color: var(--cloud);
     }
     
     label {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: #4b5563;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--gray-muted);
       text-transform: uppercase;
-      letter-spacing: 0.025em;
+      letter-spacing: 1.2px;
       display: block;
-      margin-bottom: 0.25rem;
+      margin-bottom: 8px;
     }
     
     textarea {
       min-height: 84px;
       resize: vertical;
+    }
+    
+    /* Alexander Wang Style - Typography & Layout */
+    h1 {
+      font-weight: 100;
+      font-size: 2.5rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 0 0 2rem 0;
+      color: var(--midnight);
+    }
+    
+    h2 {
+      font-weight: 200;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin: 2rem 0 1.5rem 0;
+      color: var(--midnight);
+    }
+    
+    .card {
+      box-shadow: none;
+      border: 1px solid var(--gray-border);
+      background: var(--cloud);
+      padding: 2rem;
+    }
+    
+    .proposal-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    
+    .form-section {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--gray-border);
+    }
+    
+    .form-section:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -777,94 +838,94 @@
     // Render functions
     const renderPreview = () => {
       return `
-        <div class="min-h-screen bg-gray-50">
+        <div class="min-h-screen bg-white">
           <!-- Task 10: Sticky header + page markers -->
-          <div class="print-hidden bg-white/70 backdrop-blur border-b p-4 flex justify-between items-center sticky top-0 z-10">
-            <h1 class="text-xl font-bold">Proposal Preview</h1>
-            <div class="space-x-2">
-              <button onclick="backToEditor()" class="px-4 py-2 bg-gray-500 text-white rounded">
+          <div class="print-hidden bg-white/90 backdrop-blur border-b p-6 flex justify-between items-center sticky top-0 z-10" style="border-color: var(--gray-border);">
+            <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase;">Proposal Preview</h1>
+            <div class="space-x-4">
+              <button onclick="backToEditor()">
                 Back to Editor
               </button>
-              ${features.export ? `<button onclick="exportProposal()" class="px-4 py-2 bg-green-500 text-white rounded">
+              ${features.export ? `<button onclick="exportProposal()">
                 Export HTML
               </button>` : ''}
-              <button onclick="printProposal()" class="px-4 py-2 bg-blue-500 text-white rounded">
+              <button onclick="printProposal()">
                 Print / Export PDF
               </button>
             </div>
           </div>
           
-          <div class="proposal-page bg-white mx-auto p-8">
+          <div class="proposal-page bg-white mx-auto p-8" style="max-width: 1000px;">
             <!-- Header -->
-            <div class="flex justify-between items-start mb-8 pb-4 border-b-2 relative" style="border-color: var(--header)">
+            <div class="flex justify-between items-start mb-12 pb-6" style="border-bottom: 1px solid var(--gray-border);">
               <div>
-                <h1 class="text-3xl font-bold mb-2">${formData.projectName || 'Project Proposal'}</h1>
-                <p class="text-gray-600">For: ${formData.clientName || 'Client Name'}</p>
-                <p class="text-gray-600">Date: ${formData.date}</p>
+                <h1 style="font-weight: 100; font-size: 3rem; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1rem 0;">${formData.projectName || 'Project Proposal'}</h1>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">For: ${formData.clientName || 'Client Name'}</p>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">Date: ${formData.date}</p>
               </div>
               <div class="text-right">
                 <img src="${images.logo}" alt="Company Logo" class="logo-clean mb-2" />
                 <!-- Task 10: Page marker -->
-                <div class="text-sm text-gray-500 mt-2">PROJECT # | PAGE 01</div>
+                <div style="font-size: 10px; color: var(--gray-muted); margin-top: 1rem; letter-spacing: 1px;">PROJECT # | PAGE 01</div>
               </div>
             </div>
 
             <!-- Project Description -->
-            <div class="mb-8">
-              <h2 class="text-xl font-semibold mb-4">Project Description</h2>
-              <p class="text-gray-700 leading-relaxed">
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Project Description</h2>
+              <p style="color: var(--slate); line-height: 1.8; font-weight: 300; letter-spacing: 0.3px;">
                 ${formData.description || 'Project description will appear here...'}
               </p>
             </div>
 
             <!-- Images Grid -->
-            <div class="mb-8">
-              <h2 class="text-xl font-semibold mb-4">Design Options</h2>
-              <div class="grid grid-cols-2 gap-6">
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Design Options</h2>
+              <div class="grid grid-cols-2 gap-8">
                 ${images.shakerRender ? `
                   <div class="imgBox">
-                    <h3 class="font-medium mb-2">Shaker Style Render</h3>
-                    <img src="${images.shakerRender}" alt="Shaker Render" class="w-full img-frame object-cover rounded" />
+                    <h3 style="font-weight: 300; margin-bottom: 1rem; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Shaker Style Render</h3>
+                    <img src="${images.shakerRender}" alt="Shaker Render" class="w-full img-frame object-cover" style="border: 1px solid var(--gray-border);" />
                   </div>
                 ` : ''}
                 ${images.euroRender ? `
                   <div class="imgBox">
-                    <h3 class="font-medium mb-2">Euro Style Render</h3>
-                    <img src="${images.euroRender}" alt="Euro Render" class="w-full img-frame object-cover rounded" />
+                    <h3 style="font-weight: 300; margin-bottom: 1rem; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Euro Style Render</h3>
+                    <img src="${images.euroRender}" alt="Euro Render" class="w-full img-frame object-cover" style="border: 1px solid var(--gray-border);" />
                   </div>
                 ` : ''}
                 ${images.shakerVanity ? `
                   <div class="imgBox">
-                    <h3 class="font-medium mb-2">Shaker Vanity</h3>
-                    <img src="${images.shakerVanity}" alt="Shaker Vanity" class="w-full img-frame-sm object-cover rounded" />
+                    <h3 style="font-weight: 300; margin-bottom: 1rem; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Shaker Vanity</h3>
+                    <img src="${images.shakerVanity}" alt="Shaker Vanity" class="w-full img-frame-sm object-cover" style="border: 1px solid var(--gray-border);" />
                   </div>
                 ` : ''}
                 ${images.euroVanity ? `
                   <div class="imgBox">
-                    <h3 class="font-medium mb-2">Euro Vanity</h3>
-                    <img src="${images.euroVanity}" alt="Euro Vanity" class="w-full img-frame-sm object-cover rounded" />
+                    <h3 style="font-weight: 300; margin-bottom: 1rem; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Euro Vanity</h3>
+                    <img src="${images.euroVanity}" alt="Euro Vanity" class="w-full img-frame-sm object-cover" style="border: 1px solid var(--gray-border);" />
                   </div>
                 ` : ''}
               </div>
               ${images.floorPlan ? `
-                <div class="mt-6">
-                  <h3 class="font-medium mb-2">Floor Plan</h3>
-                  <img src="${images.floorPlan}" alt="Floor Plan" class="w-full img-frame-layout object-contain rounded border" />
+                <div class="mt-8">
+                  <h3 style="font-weight: 300; margin-bottom: 1rem; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Floor Plan</h3>
+                  <img src="${images.floorPlan}" alt="Floor Plan" class="w-full img-frame-layout object-contain" style="border: 1px solid var(--gray-border);" />
                 </div>
               ` : ''}
             </div>
 
             <!-- Pricing & Timeline -->
-            <div class="grid grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-2 gap-12 mb-12">
               <div>
-                <h2 class="text-xl font-semibold mb-4">Investment</h2>
-                <p class="text-2xl font-bold text-green-600">
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Investment</h2>
+                <p style="font-size: 2rem; font-weight: 100; color: var(--midnight); letter-spacing: 1px;">
                   ${formData.price || 'Price TBD'}
                 </p>
               </div>
               <div>
-                <h2 class="text-xl font-semibold mb-4">Timeline</h2>
-                <p class="text-lg">
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Timeline</h2>
+                <p style="font-size: 1.2rem; font-weight: 300; color: var(--slate); letter-spacing: 0.5px;">
                   ${formData.timeline || 'Timeline TBD'}
                 </p>
               </div>
@@ -872,31 +933,34 @@
 
             <!-- Notes -->
             ${formData.notes ? `
-              <div class="mb-8">
-                <h2 class="text-xl font-semibold mb-4">Additional Notes</h2>
-                <p class="text-gray-700 leading-relaxed">${formData.notes}</p>
+              <div class="mb-12">
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Additional Notes</h2>
+                <p style="color: var(--slate); line-height: 1.8; font-weight: 300; letter-spacing: 0.3px;">${formData.notes}</p>
               </div>
             ` : ''}
 
             <!-- Task 11: 3D Model Link with QR Code -->
             ${formData.sketchupLink && features.qr ? `
-              <div class="mb-8 text-center">
-                <h2 class="text-xl font-semibold mb-4">View in 3D</h2>
+              <div class="mb-12 text-center">
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">View in 3D</h2>
                 <a href="${formData.sketchupLink}" target="_blank" rel="noopener noreferrer" 
-                   class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium mb-3">
+                   style="display: inline-block; padding: 12px 24px; border: 1px solid var(--midnight); color: var(--midnight); text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; margin-bottom: 1.5rem; transition: all 0.3s ease;"
+                   onmouseover="this.style.backgroundColor='var(--midnight)'; this.style.color='var(--cloud)';"
+                   onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--midnight)';">
                   View 3D Model
                 </a>
+                <br>
                 <img width="96" height="96" alt="QR to 3D model"
-                     class="mx-auto mt-3"
+                     style="margin: 1.5rem auto 0; border: 1px solid var(--gray-border);"
                      src="https://api.qrserver.com/v1/create-qr-code/?size=192x192&margin=0&data=${encodeURIComponent(formData.sketchupLink)}" />
-                <p class="text-sm text-gray-500 mt-2">Scan QR code to view on mobile</p>
+                <p style="font-size: 10px; color: var(--gray-muted); margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Scan QR code to view on mobile</p>
               </div>
             ` : ''}
 
             <!-- Footer -->
-            <div class="border-t-2 pt-4 mt-8 text-center text-gray-600" style="border-color: var(--footer)">
-              <p>Thank you for choosing Foundry Cabinet Co</p>
-              <p class="text-sm mt-2">Contact us for any questions or modifications</p>
+            <div style="border-top: 1px solid var(--gray-border); padding-top: 2rem; margin-top: 3rem; text-align: center;">
+              <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Thank you for choosing Foundry Cabinet Co</p>
+              <p style="font-size: 10px; color: var(--gray-muted); margin-top: 1rem; letter-spacing: 0.5px;">Contact us for any questions or modifications</p>
             </div>
           </div>
         </div>
@@ -905,19 +969,16 @@
 
     const renderEditor = () => {
       return `
-        <div class="min-h-screen bg-gray-50">
-          <div class="bg-white border-b p-4">
-            <h1 class="text-2xl font-bold">Foundry Cabinet Co - Proposal Builder</h1>
-          </div>
-
-          <div class="max-w-4xl mx-auto p-6">
-            <div class="bg-white rounded-lg shadow p-6">
-              <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold">Project Information</h2>
-                <!-- Task 15: Template selector -->
+        <div class="min-h-screen bg-white">
+          <div class="proposal-container">
+            <h1>Foundry Cabinet Co</h1>
+            
+            <div class="form-section">
+              <div class="flex justify-between items-end mb-8">
+                <h2>Project Information</h2>
                 <div>
-                  <label class="text-xs">Quick Templates</label>
-                  <select onchange="applyTemplate(this.value); this.value=''" class="ml-2 px-3 py-1 border rounded text-sm">
+                  <label>Quick Templates</label>
+                  <select onchange="applyTemplate(this.value); this.value=''" class="ml-4">
                     <option value="">Select Template...</option>
                     <option value="kitchen-basic">Kitchen Basic</option>
                     <option value="kitchen-premium">Kitchen Premium</option>
@@ -926,7 +987,7 @@
                 </div>
               </div>
               
-              <div class="grid grid-cols-2 gap-6 mb-6">
+              <div class="grid grid-cols-2 gap-8 mb-8">
                 <div>
                   <label>Client Name</label>
                   <input 
@@ -962,7 +1023,7 @@
                 </div>
               </div>
 
-              <div class="mb-6">
+              <div class="mb-8">
                 <label>Project Description</label>
                 <textarea 
                   oninput="handleInputChange('description', this.value)"
@@ -970,35 +1031,38 @@
                 >${formData.description || ''}</textarea>
               </div>
 
-              <div class="mb-6">
-                <label>Timeline</label>
-                <input 
-                  value="${formData.timeline || ''}"
-                  oninput="handleInputChange('timeline', this.value)"
-                  placeholder="e.g., 4-6 weeks"
-                />
+              <div class="grid grid-cols-2 gap-8 mb-8">
+                <div>
+                  <label>Timeline</label>
+                  <input 
+                    value="${formData.timeline || ''}"
+                    oninput="handleInputChange('timeline', this.value)"
+                    placeholder="e.g., 4-6 weeks"
+                  />
+                </div>
+                <div>
+                  <label>3D Model Link</label>
+                  <input 
+                    value="${formData.sketchupLink || ''}"
+                    oninput="handleInputChange('sketchupLink', this.value)"
+                    placeholder="https://your-3d-model-link.com"
+                  />
+                </div>
               </div>
 
-              <div class="mb-6">
+              <div class="mb-8">
                 <label>Additional Notes</label>
                 <textarea 
                   oninput="handleInputChange('notes', this.value)"
                   placeholder="Any additional notes or terms..."
                 >${formData.notes || ''}</textarea>
               </div>
+            </div>
 
-              <div class="mb-6">
-                <label>3D Model Link (for QR code)</label>
-                <input 
-                  value="${formData.sketchupLink || ''}"
-                  oninput="handleInputChange('sketchupLink', this.value)"
-                  placeholder="https://your-3d-model-link.com"
-                />
-              </div>
-
-              <h2 class="text-xl font-semibold mb-6">Images</h2>
+            <div class="form-section">
+              <h2>Images</h2>
               
-              <div class="grid grid-cols-2 gap-6 mb-6">
+              <div class="grid grid-cols-2 gap-8 mb-8">
                 <div>
                   <label>Shaker Style Render</label>
                   <input 
@@ -1006,7 +1070,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('shakerRender', event)"
                   />
-                  ${images.shakerRender ? `<img src="${images.shakerRender}" alt="Shaker Render Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.shakerRender ? `<img src="${images.shakerRender}" alt="Shaker Render Preview" loading="lazy" class="mt-4 w-full h-32 object-cover" style="border: 1px solid var(--gray-border);" />` : ''}
                 </div>
                 <div>
                   <label>Euro Style Render</label>
@@ -1015,7 +1079,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('euroRender', event)"
                   />
-                  ${images.euroRender ? `<img src="${images.euroRender}" alt="Euro Render Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.euroRender ? `<img src="${images.euroRender}" alt="Euro Render Preview" loading="lazy" class="mt-4 w-full h-32 object-cover" style="border: 1px solid var(--gray-border);" />` : ''}
                 </div>
                 <div>
                   <label>Shaker Vanity</label>
@@ -1024,7 +1088,7 @@
                     accept="image/*"
                     onchange="handleImageUpload('shakerVanity', event)"
                   />
-                  ${images.shakerVanity ? `<img src="${images.shakerVanity}" alt="Shaker Vanity Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.shakerVanity ? `<img src="${images.shakerVanity}" alt="Shaker Vanity Preview" loading="lazy" class="mt-4 w-full h-32 object-cover" style="border: 1px solid var(--gray-border);" />` : ''}
                 </div>
                 <div>
                   <label>Euro Vanity</label>
@@ -1033,25 +1097,22 @@
                     accept="image/*"
                     onchange="handleImageUpload('euroVanity', event)"
                   />
-                  ${images.euroVanity ? `<img src="${images.euroVanity}" alt="Euro Vanity Preview" loading="lazy" class="mt-2 w-full h-32 object-cover rounded" />` : ''}
+                  ${images.euroVanity ? `<img src="${images.euroVanity}" alt="Euro Vanity Preview" loading="lazy" class="mt-4 w-full h-32 object-cover" style="border: 1px solid var(--gray-border);" />` : ''}
                 </div>
               </div>
 
-              <div class="mb-6">
+              <div class="mb-8">
                 <label>Floor Plan</label>
                 <input 
                   type="file" 
                   accept="image/*"
                   onchange="handleImageUpload('floorPlan', event)"
                 />
-                ${images.floorPlan ? `<img src="${images.floorPlan}" alt="Floor Plan Preview" loading="lazy" class="mt-2 w-full h-48 object-contain rounded border" />` : ''}
+                ${images.floorPlan ? `<img src="${images.floorPlan}" alt="Floor Plan Preview" loading="lazy" class="mt-4 w-full h-48 object-contain" style="border: 1px solid var(--gray-border);" />` : ''}
               </div>
 
               <div class="flex justify-end">
-                <button 
-                  onclick="generateProposal()"
-                  class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium"
-                >
+                <button onclick="generateProposal()">
                   Generate Proposal Preview
                 </button>
               </div>
