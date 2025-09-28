@@ -558,7 +558,9 @@
       price: '',
       timeline: '',
       notes: '',
-      sketchupLink: '' // Task 11: 3D model link for QR code
+      sketchupLink: '', // Task 11: 3D model link for QR code
+      clientSignature: '',
+      signatureDate: ''
     };
 
     let images = {
@@ -898,6 +900,59 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     };
+    
+    // Digital signature functions
+    const addDigitalSignature = () => {
+      const nameInput = document.getElementById('clientSignatureName');
+      const name = nameInput.value.trim();
+      
+      if (!name) {
+        alert('Please enter your full name to add a digital signature.');
+        return;
+      }
+      
+      // Store signature data
+      formData.clientSignature = name;
+      formData.signatureDate = new Date().toLocaleDateString();
+      
+      // Visual feedback
+      nameInput.style.backgroundColor = '#d4edda';
+      nameInput.value = `✓ Signed by: ${name}`;
+      nameInput.disabled = true;
+      
+      // Update button
+      const signButton = document.querySelector('button[onclick="addDigitalSignature()"]');
+      signButton.textContent = 'Signature Added ✓';
+      signButton.style.backgroundColor = '#28a745';
+      signButton.disabled = true;
+      
+      dirty = true;
+      alert('Digital signature added successfully!');
+    };
+    
+    const emailProposal = () => {
+      if (!formData.clientSignature) {
+        alert('Please add your digital signature first.');
+        return;
+      }
+      
+      const subject = encodeURIComponent(`Signed Proposal - ${formData.projectName || 'Project Proposal'} - ${formData.clientName || 'Client'}`);
+      const body = encodeURIComponent(
+        `Hello Foundry Cabinet Co,\n\n` +
+        `I have reviewed and accepted the proposal for "${formData.projectName || 'Project Proposal'}".\n\n` +
+        `Client: ${formData.clientName || 'Not specified'}\n` +
+        `Project: ${formData.projectName || 'Not specified'}\n` +
+        `Investment: ${formData.price || 'TBD'}\n` +
+        `Timeline: ${formData.timeline || 'TBD'}\n\n` +
+        `Digitally signed by: ${formData.clientSignature}\n` +
+        `Date: ${formData.signatureDate}\n\n` +
+        `Please contact me to proceed with the next steps.\n\n` +
+        `Best regards,\n${formData.clientSignature}`
+      );
+      
+      const mailtoLink = `mailto:info@foundrycabinetco.com?subject=${subject}&body=${body}`;
+      window.location.href = mailtoLink;
+    };
 
     // Render functions
     const renderPreview = () => {
@@ -906,17 +961,17 @@
           <!-- Task 10: Sticky header + page markers -->
           <div class="print-hidden backdrop-blur border-b p-6 flex justify-between items-center sticky top-0 z-10" style="background-color: var(--header); border-color: var(--gray-border);">
             <div class="flex items-center space-x-6">
-              <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 80px; object-fit: contain; margin-right: 1.5rem;" />
+              <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 120px; object-fit: contain; margin-right: 1.5rem;" />
               <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">Proposal Preview</h1>
             </div>
             <div class="space-x-4">
-              <button onclick="backToEditor()">
+              <button onclick="backToEditor()" style="color: #ffffff; border-color: #ffffff;">
                 Back to Editor
               </button>
-              ${features.export ? `<button onclick="exportProposal()">
+              ${features.export ? `<button onclick="exportProposal()" style="color: #ffffff; border-color: #ffffff;">
                 Export HTML
               </button>` : ''}
-              <button onclick="printProposal()">
+              <button onclick="printProposal()" style="color: #ffffff; border-color: #ffffff;">
                 Print / Export PDF
               </button>
             </div>
@@ -1024,11 +1079,66 @@
               </div>
             ` : ''}
 
+            <!-- Client Acknowledgment Section -->
+            <div style="border: 2px solid var(--gray-border); border-radius: 8px; padding: 2rem; margin-top: 3rem; background-color: #f8f9fa;">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1.5rem 0; color: var(--midnight);">Client Acknowledgment</h2>
+              
+              <div style="margin-bottom: 1.5rem;">
+                <p style="color: var(--slate); line-height: 1.6; margin-bottom: 1rem;">
+                  By signing below, I acknowledge that I have reviewed this proposal and understand the scope of work, timeline, and investment outlined above.
+                </p>
+                <p style="color: var(--slate); line-height: 1.6; font-size: 14px;">
+                  To proceed with this project, please sign below and return this proposal via email to <strong>info@foundrycabinetco.com</strong>
+                </p>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <div style="border-bottom: 1px solid var(--gray-border); padding-bottom: 0.5rem;">
+                  <p style="font-size: 12px; color: var(--gray-muted); margin-bottom: 2rem;">Client Signature</p>
+                  <div style="height: 40px;"></div>
+                </div>
+                <div style="border-bottom: 1px solid var(--gray-border); padding-bottom: 0.5rem;">
+                  <p style="font-size: 12px; color: var(--gray-muted); margin-bottom: 2rem;">Date</p>
+                  <div style="height: 40px;"></div>
+                </div>
+              </div>
+
+              <!-- Digital signature option for HTML version -->
+              <div class="print-hidden" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-border);">
+                <h3 style="font-size: 16px; margin-bottom: 1rem; color: var(--midnight);">Digital Acknowledgment (HTML Version Only)</h3>
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                  <input type="text" id="clientSignatureName" placeholder="Type your full name" style="flex: 1; padding: 8px; border: 1px solid var(--gray-border); border-radius: 4px;">
+                  <button onclick="addDigitalSignature()" style="background-color: var(--midnight); color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    Add Digital Signature
+                  </button>
+                </div>
+                <button onclick="emailProposal()" style="background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                  Email Signed Proposal to Foundry Cabinet Co
+                </button>
+              </div>
+            </div>
+
             <!-- Footer -->
             <div style="border-top: 1px solid var(--gray-border); margin-top: 3rem; text-align: center; background-color: var(--footer); padding: 2rem; color: #ffffff;">
               <p style="color: #ffffff; font-weight: 300; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Thank you for choosing Foundry Cabinet Co</p>
               <p style="font-size: 12px; color: #cccccc; margin-top: 1rem; letter-spacing: 0.5px;">by District Design Build, LLC</p>
-              <p style="font-size: 10px; color: #cccccc; margin-top: 1rem; letter-spacing: 0.5px;">Contact us for any questions or modifications</p>
+              
+              <!-- Contact Information -->
+              <div style="margin-top: 2rem; border-top: 1px solid #333; padding-top: 1.5rem;">
+                <p style="color: #ffffff; font-weight: 400; font-size: 14px; margin-bottom: 0.5rem;">Ready to move forward? Contact us:</p>
+                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">
+                  <div style="color: #cccccc; font-size: 12px;">
+                    <strong style="color: #ffffff;">Phone:</strong> (555) 123-4567
+                  </div>
+                  <div style="color: #cccccc; font-size: 12px;">
+                    <strong style="color: #ffffff;">Email:</strong> info@foundrycabinetco.com
+                  </div>
+                  <div style="color: #cccccc; font-size: 12px;">
+                    <strong style="color: #ffffff;">Website:</strong> foundrycabinetco.com
+                  </div>
+                </div>
+                <p style="font-size: 10px; color: #cccccc; margin-top: 1rem; letter-spacing: 0.5px;">Licensed & Insured • Free Estimates • Quality Craftsmanship</p>
+              </div>
             </div>
           </div>
         </div>
