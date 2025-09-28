@@ -856,7 +856,10 @@
         <div class="min-h-screen bg-white">
           <!-- Task 10: Sticky header + page markers -->
           <div class="print-hidden backdrop-blur border-b p-6 flex justify-between items-center sticky top-0 z-10" style="background-color: var(--header); border-color: var(--gray-border);">
-            <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">Proposal Preview</h1>
+            <div class="flex items-center space-x-4">
+              <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 40px; object-fit: contain;" />
+              <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">Proposal Preview</h1>
+            </div>
             <div class="space-x-4">
               <button onclick="backToEditor()">
                 Back to Editor
@@ -879,7 +882,6 @@
                 <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">Date: ${formData.date}</p>
               </div>
               <div class="text-right">
-                <img src="${images.logo}" alt="Company Logo" class="logo-clean mb-2" />
                 <!-- Task 10: Page marker -->
                 <div style="font-size: 10px; color: var(--gray-muted); margin-top: 1rem; letter-spacing: 1px;">PROJECT # | PAGE 01</div>
               </div>
@@ -973,7 +975,7 @@
             ` : ''}
 
             <!-- Footer -->
-            <div style="border-top: 1px solid var(--gray-border); padding-top: 2rem; margin-top: 3rem; text-align: center; background-color: var(--footer); padding: 2rem; color: #ffffff;">
+            <div style="border-top: 1px solid var(--gray-border); margin-top: 3rem; text-align: center; background-color: var(--footer); padding: 2rem; color: #ffffff;">
               <p style="color: #ffffff; font-weight: 300; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem;">Thank you for choosing Foundry Cabinet Co</p>
               <p style="font-size: 12px; color: #cccccc; margin-top: 1rem; letter-spacing: 0.5px;">by District Design Build, LLC</p>
               <p style="font-size: 10px; color: #cccccc; margin-top: 1rem; letter-spacing: 0.5px;">Contact us for any questions or modifications</p>
