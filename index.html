@@ -531,6 +531,10 @@
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .proposal-page { width: 8.5in !important; height: 11in !important; margin: 0 !important; page-break-after: always !important; overflow: hidden !important; }
       @page { size: 8.5in 11in; margin: 0.5in; }
+      .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+      .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
+      .imgBox, .layoutImg, .tlItem, .nxItem { break-inside: avoid !important; page-break-inside: avoid !important; }
+      img { break-inside: avoid !important; page-break-inside: avoid !important; }
     }
 
     /* Utility classes */
