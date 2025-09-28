@@ -382,6 +382,18 @@
     // Safe filename sanitizer
     const safe = (s) => (s || "Client").replace(/[^a-z0-9_\-]+/gi, "_").slice(0,120);
     
+    // HTML entity escaping to prevent template issues
+    const escapeHtml = (str) => {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/`/g, '&#x60;');
+    };
+    
     // Task 15: Templates
     const templates = {
       'kitchen-basic': {
@@ -918,7 +930,7 @@
                 <div>
                   <label>Client Name</label>
                   <input 
-                    value="${formData.clientName}"
+                    value="${formData.clientName || ''}"
                     oninput="handleInputChange('clientName', this.value)"
                     placeholder="Enter client name"
                     autofocus
@@ -927,7 +939,7 @@
                 <div>
                   <label>Project Name</label>
                   <input 
-                    value="${formData.projectName}"
+                    value="${formData.projectName || ''}"
                     oninput="handleInputChange('projectName', this.value)"
                     placeholder="Enter project name"
                   />
@@ -936,14 +948,14 @@
                   <label>Date</label>
                   <input 
                     type="date"
-                    value="${formData.date}"
+                    value="${formData.date || ''}"
                     oninput="handleInputChange('date', this.value)"
                   />
                 </div>
                 <div>
                   <label>Price</label>
                   <input 
-                    value="${formData.price}"
+                    value="${formData.price || ''}"
                     oninput="handleInputChange('price', this.value)"
                     placeholder="Enter price (numbers only)"
                   />
@@ -955,13 +967,13 @@
                 <textarea 
                   oninput="handleInputChange('description', this.value)"
                   placeholder="Describe the project details..."
-                >${formData.description}</textarea>
+                >${formData.description || ''}</textarea>
               </div>
 
               <div class="mb-6">
                 <label>Timeline</label>
                 <input 
-                  value="${formData.timeline}"
+                  value="${formData.timeline || ''}"
                   oninput="handleInputChange('timeline', this.value)"
                   placeholder="e.g., 4-6 weeks"
                 />
@@ -972,13 +984,13 @@
                 <textarea 
                   oninput="handleInputChange('notes', this.value)"
                   placeholder="Any additional notes or terms..."
-                >${formData.notes}</textarea>
+                >${formData.notes || ''}</textarea>
               </div>
 
               <div class="mb-6">
                 <label>3D Model Link (for QR code)</label>
                 <input 
-                  value="${formData.sketchupLink}"
+                  value="${formData.sketchupLink || ''}"
                   oninput="handleInputChange('sketchupLink', this.value)"
                   placeholder="https://your-3d-model-link.com"
                 />
