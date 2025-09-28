@@ -178,6 +178,29 @@
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     .logo-clean { display:block; max-height:160px; object-fit:contain; }
 
+    /* Print-specific logo styles */
+    @media print {
+      .logo-clean { 
+        max-height: 1.5in !important; 
+        width: auto !important;
+        object-fit: contain !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Ensure professional header layout in print */
+      .proposal-page .flex.justify-between.items-start {
+        align-items: flex-start !important;
+        margin-bottom: 3rem !important;
+      }
+      
+      /* Better typography for print */
+      h1 {
+        font-size: 2.5rem !important;
+        letter-spacing: 2px !important;
+        margin-bottom: 1.5rem !important;
+      }
+    }
+
     /* Bigger image frames in preview */
     .img-frame { height: 21rem; }
     .img-frame-sm { height: 18rem; }
@@ -194,10 +217,15 @@
         margin: 0 !important; 
         page-break-after: always !important; 
         box-sizing: border-box !important;
-        padding: 0.5in !important;
+        padding: 0.75in !important;
+        background: white !important;
       }
       
-      @page { size: 8.5in 11in; margin: 0; } /* No margin since we handle padding in proposal-page */
+      @page { 
+        size: 8.5in 11in; 
+        margin: 0; 
+        background: white;
+      }
       
       .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
       .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
@@ -249,6 +277,27 @@
       .proposal-page > div:last-child {
         margin-top: 3rem !important;
         page-break-before: avoid !important;
+      }
+      
+      /* Professional letter formatting */
+      .proposal-page h1 {
+        font-size: 2.5rem !important;
+        margin-bottom: 1rem !important;
+        page-break-after: avoid !important;
+      }
+      
+      .proposal-page h2 {
+        font-size: 1.1rem !important;
+        margin-top: 1.5rem !important;
+        margin-bottom: 1rem !important;
+        page-break-after: avoid !important;
+      }
+      
+      /* Better header spacing for print */
+      .proposal-page > div:first-child {
+        margin-bottom: 2rem !important;
+        padding-bottom: 1.5rem !important;
+        page-break-after: avoid !important;
       }
     }
 
@@ -856,8 +905,8 @@
         <div class="min-h-screen bg-white">
           <!-- Task 10: Sticky header + page markers -->
           <div class="print-hidden backdrop-blur border-b p-6 flex justify-between items-center sticky top-0 z-10" style="background-color: var(--header); border-color: var(--gray-border);">
-            <div class="flex items-center space-x-4">
-              <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 40px; object-fit: contain;" />
+            <div class="flex items-center space-x-6">
+              <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 80px; object-fit: contain; margin-right: 1.5rem;" />
               <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">Proposal Preview</h1>
             </div>
             <div class="space-x-4">
@@ -876,14 +925,15 @@
           <div class="proposal-page bg-white mx-auto p-8" style="max-width: 1000px;">
             <!-- Header -->
             <div class="flex justify-between items-start mb-12 pb-6" style="border-bottom: 1px solid var(--gray-border);">
-              <div>
+              <div style="flex: 1;">
+                <img src="${images.logo}" alt="Foundry Cabinet Co Logo" class="logo-clean" style="max-height: 100px; object-fit: contain; margin-bottom: 2rem;" />
                 <h1 style="font-weight: 100; font-size: 3rem; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1rem 0;">${formData.projectName || 'Project Proposal'}</h1>
-                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">For: ${formData.clientName || 'Client Name'}</p>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px; margin-bottom: 0.5rem;">For: ${formData.clientName || 'Client Name'}</p>
                 <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">Date: ${formData.date}</p>
               </div>
-              <div class="text-right">
+              <div class="text-right" style="flex: 0 0 auto;">
                 <!-- Task 10: Page marker -->
-                <div style="font-size: 10px; color: var(--gray-muted); margin-top: 1rem; letter-spacing: 1px;">PROJECT # | PAGE 01</div>
+                <div style="font-size: 10px; color: var(--gray-muted); letter-spacing: 1px; text-transform: uppercase;">PROJECT # | PAGE 01</div>
               </div>
             </div>
 
