@@ -631,11 +631,14 @@
         imageCache.set(src, dataURL);
         return dataURL;
       } catch (e) {
-        return src;
+        return '';  // Return empty string for failed conversions to trigger fallback logic
       }
     };
 
     const embedAllImagesInState = async () => {
+      // Always check logo visibility first, regardless of embedding needs
+      const shouldUseLogo = shouldShowLogoInPrint() || document.body.classList.contains('show-logo');
+      
       // Task 12: Only call embedAllImagesInState when any image is non-data URL
       const needsEmbedding = [
         images.logo,
@@ -646,7 +649,16 @@
         images.floorPlan
       ].some(src => src && !src.startsWith('data:'));
       
-      if (!needsEmbedding) return; // Skip if all images are already embedded
+      if (!needsEmbedding) {
+        // Even if no embedding is needed, still apply logo visibility rules
+        if (!shouldUseLogo) {
+          images.logo = '';
+        } else if (!images.logo) {
+          // If branding is enabled but no logo is set, use fallback
+          images.logo = INLINE_FALLBACK_LOGO;
+        }
+        return;
+      }
       
       // Enhanced asset URL resolution
       const resolveAssetURL = async (src) => {
@@ -672,9 +684,6 @@
         return await toDataURL(src);
       };
       
-      // Determine if branding is enabled for logo fallback
-      const shouldUseLogo = shouldShowLogoInPrint() || document.body.classList.contains('show-logo');
-      
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
         resolveAssetURL(images.logo || (shouldUseLogo ? INLINE_FALLBACK_LOGO : '')),
         resolveAssetURL(images.shakerRender),
@@ -684,8 +693,12 @@
         resolveAssetURL(images.floorPlan),
       ]);
       
-      // Enhanced logo fallback: use INLINE_FALLBACK_LOGO only if branding is enabled
-      images.logo = logo || (shouldUseLogo ? INLINE_FALLBACK_LOGO : '');
+      // Enhanced logo fallback: only set logo if branding is explicitly enabled
+      if (shouldUseLogo) {
+        images.logo = logo || INLINE_FALLBACK_LOGO;
+      } else {
+        images.logo = '';
+      }
       images.shakerRender = sh || images.shakerRender;
       images.euroRender = eu || images.euroRender;
       images.shakerVanity = sv || images.shakerVanity;
@@ -857,6 +870,7 @@
       const afterPrintHandler = () => {
         restore();
         window.removeEventListener('afterprint', afterPrintHandler);
+        clearTimeout(fallbackTimeout);
       };
       window.addEventListener('afterprint', afterPrintHandler);
       
@@ -868,11 +882,9 @@
       
       try {
         window.print();
-      } catch (e) {
-        console.error('Error printing:', e);
-        restore(); // Restore immediately on error
-        clearTimeout(fallbackTimeout);
-        window.removeEventListener('afterprint', afterPrintHandler);
+      } finally {
+        // Guarantee restoration even if print() throws synchronously
+        // The afterprint handler and timeout will handle async cases
       }
     };
 
@@ -885,6 +897,10 @@
     const exportProposal = async () => {
       await embedAllImagesInState();
       const htmlContent = renderClientView();
+      
+      // Determine if logo should be shown in client view
+      const showLogo = shouldShowLogoInPrint() || document.body.classList.contains('show-logo');
+      const clientViewClass = showLogo ? 'client-view show-logo' : 'client-view';
       
       // Create complete HTML with embedded styles
       const fullHtml = `<!DOCTYPE html>
@@ -1028,7 +1044,7 @@
     }
   </style>
 </head>
-<body class="client-view">${htmlContent}</body>
+<body class="${clientViewClass}">${htmlContent}</body>
 </html>`;
       
       const blob = new Blob([fullHtml], {

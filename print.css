@@ -83,6 +83,7 @@
   .print-mode img[alt*="Logo"],
   .print-mode img[src*="logo"] {
     display: none !important;
+    background-image: none !important;
   }
   
   /* Hide empty/broken logo placeholders */
@@ -91,6 +92,11 @@
   .print-mode img.brand-logo[src=""],
   .print-mode img.brand-logo:not([src]) {
     display: none !important;
+  }
+
+  /* Remove any header background images that might inject logos */
+  .print-mode .proposal-header {
+    background-image: none !important;
   }
 
   /* Show logo only when explicitly enabled */
