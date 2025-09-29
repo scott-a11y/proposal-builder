@@ -651,7 +651,8 @@
         resolveAssetURL(images.floorPlan),
       ]);
       
-      images.logo = logo || images.logo;
+      // Enhanced logo fallback: use INLINE_FALLBACK_LOGO if primary logo fails
+      images.logo = logo || INLINE_FALLBACK_LOGO;
       images.shakerRender = sh || images.shakerRender;
       images.euroRender = eu || images.euroRender;
       images.shakerVanity = sv || images.shakerVanity;
@@ -1006,7 +1007,8 @@
             <!-- Header -->
             <div class="flex justify-between items-start mb-12 pb-6" style="border-bottom: 1px solid var(--gray-border);">
               <div style="flex: 1;">
-                ${images.logo && images.logo !== DEFAULT_LOGO_PATH ? `<img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 100px; object-fit: contain; margin-bottom: 2rem;" />` : ''}
+                <!-- Logo - always rendered, visibility controlled by print.css based on print-mode classes -->
+                ${images.logo ? `<img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 100px; object-fit: contain; margin-bottom: 2rem;" />` : ''}
                 <h1 style="font-weight: 100; font-size: 3rem; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1rem 0;">${formData.projectName || 'Project Proposal'}</h1>
                 <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px; margin-bottom: 0.5rem;">For: ${formData.clientName || 'Client Name'}</p>
                 <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">Date: ${formData.date}</p>

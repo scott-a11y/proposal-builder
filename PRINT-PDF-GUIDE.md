@@ -9,12 +9,13 @@ This guide explains the enhanced PDF/print functionality in the proposal-builder
 - **Professional formatting**: Proper margins (0.75in), page breaks, and typography
 - **Clean output**: All UI elements (Share, Admin, form controls) automatically hidden
 - **Multiple page sizes**: Supports both Letter (8.5x11) and A4 formats
+- **Fallback logo system**: Uses inline SVG when image files are missing
 
 ### Logo Control
 
 #### Logo Sources (documented in code)
 1. **DEFAULT_LOGO_PATH**: `./Foundry-Cabinetco-Logo-2-White-Text.png` (main company logo)
-2. **INLINE_FALLBACK_LOGO**: SVG fallback with company text
+2. **INLINE_FALLBACK_LOGO**: SVG fallback with company text (used when PNG fails)
 3. **Admin-uploaded assets**: Via admin-addon.js asset management system
 
 #### Enabling Logo in PDFs
@@ -23,13 +24,13 @@ By default, client PDFs are unbranded. To enable logo:
 **Method 1: Developer console**
 ```javascript
 // Enable logo for next print
-togglePrintLogo(true);
+window.printConfig.showLogoInPrint = true;
 
 // Disable logo 
-togglePrintLogo(false);
+window.printConfig.showLogoInPrint = false;
 
-// Toggle current state
-togglePrintLogo();
+// Check current status
+console.log('Logo enabled:', window.printConfig.showLogoInPrint);
 ```
 
 **Method 2: Configuration (for admin integration)**
