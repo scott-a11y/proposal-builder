@@ -1373,17 +1373,28 @@
   <script>
     (() => {
       'use strict';
+      let isInitialized = false;
+      
       const loadAdminIfAuthorized = () => {
-        // Wait for role/guard systems to be ready
+        // Wait for role/guard systems to be ready and initialized
         if (!window.roleMode || !window.proposalGuard) {
-          setTimeout(loadAdminIfAuthorized, 100);
+          if (!isInitialized) {
+            setTimeout(loadAdminIfAuthorized, 100);
+          }
           return;
         }
+        
+        // Check if admin is already loaded to prevent duplicates
+        if (document.querySelector('script[data-admin-addon="loaded"]')) {
+          return;
+        }
+        
         // Load admin UI only if current role can view admin
         const { viewAdmin } = window.proposalGuard.getCurrentPermissions();
         if (viewAdmin) {
           const s = document.createElement('script');
           s.src = './admin-addon.js';
+          s.setAttribute('data-admin-addon', 'loaded');
           s.onload = () => console.log('Admin UI loaded');
           s.onerror = () => console.warn('Failed to load admin UI');
           document.head.appendChild(s);
@@ -1391,7 +1402,24 @@
           console.log('Admin UI not loaded (insufficient permissions)');
         }
       };
-      loadAdminIfAuthorized();
+
+      // Wait for role system to be fully initialized before first check
+      window.addEventListener('roleModeInitialized', () => {
+        isInitialized = true;
+        loadAdminIfAuthorized();
+      }, { once: true });
+      
+      // Re-check on role/mode/guard events to support runtime role switches
+      window.addEventListener('roleChanged', loadAdminIfAuthorized);
+      window.addEventListener('modeChanged', loadAdminIfAuthorized);
+      window.addEventListener('guardInitialized', loadAdminIfAuthorized);
+      
+      // Fallback: try loading after a delay if events don't fire
+      setTimeout(() => {
+        if (!isInitialized) {
+          loadAdminIfAuthorized();
+        }
+      }, 1000);
     })();
   </script>
 </body>
