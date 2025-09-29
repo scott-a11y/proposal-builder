@@ -1,0 +1,157 @@
+/* Brand.css - Brand consistency and cohesion for Foundry Cabinet Co
+   Provides unified branding elements while maintaining Alexander Wang minimalist design
+*/
+
+:root {
+  /* Brand Colors - Extended palette */
+  --brand-midnight: #0B1120;
+  --brand-slate: #1E293B;
+  --brand-slate-light: #334155;
+  --brand-cloud: #F1F5F9;
+  --brand-amber: #F59E0B;
+  --brand-gray-border: #E5E7EB;
+  --brand-gray-caption: #CBD5E1;
+  --brand-gray-muted: #94A3B8;
+  
+  /* Role-based brand colors */
+  --role-admin: #DC2626;
+  --role-agent: #059669;
+  --role-client: #2563EB;
+  --role-presentation: var(--brand-midnight);
+  
+  /* Typography scale */
+  --brand-font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial", sans-serif;
+  --brand-font-weight-light: 300;
+  --brand-font-weight-normal: 400;
+  --brand-font-weight-medium: 500;
+  --brand-letter-spacing: 0.5px;
+  --brand-letter-spacing-wide: 1px;
+}
+
+/* Brand logo standards */
+.brand-logo {
+  max-height: 120px;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+.brand-logo.small {
+  max-height: 60px;
+}
+
+.brand-logo.presentation {
+  max-height: 80px;
+  filter: brightness(0) invert(1); /* Ensure visibility in presentation mode */
+}
+
+/* Brand typography */
+.brand-heading {
+  font-family: var(--brand-font-family);
+  font-weight: var(--brand-font-weight-light);
+  letter-spacing: var(--brand-letter-spacing-wide);
+  text-transform: uppercase;
+  color: var(--brand-midnight);
+}
+
+.brand-heading.light {
+  color: #ffffff;
+}
+
+.brand-subheading {
+  font-family: var(--brand-font-family);
+  font-weight: var(--brand-font-weight-normal);
+  letter-spacing: var(--brand-letter-spacing);
+  color: var(--brand-slate);
+}
+
+/* Brand buttons */
+.brand-button {
+  font-family: var(--brand-font-family);
+  font-weight: var(--brand-font-weight-normal);
+  font-size: 12px;
+  letter-spacing: var(--brand-letter-spacing-wide);
+  text-transform: uppercase;
+  border: 1px solid var(--brand-midnight);
+  background: #fff;
+  color: var(--brand-midnight);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.brand-button:hover {
+  background: var(--brand-midnight);
+  color: #fff;
+}
+
+.brand-button.primary {
+  background: var(--brand-midnight);
+  color: #fff;
+}
+
+.brand-button.primary:hover {
+  background: var(--brand-slate);
+}
+
+/* Role indicators */
+.role-indicator {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: opacity 0.3s ease;
+}
+
+.role-indicator.admin {
+  background: var(--role-admin);
+  color: white;
+}
+
+.role-indicator.agent {
+  background: var(--role-agent);
+  color: white;
+}
+
+.role-indicator.client {
+  background: var(--role-client);
+  color: white;
+}
+
+.role-indicator.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Brand consistency for existing elements */
+body {
+  font-family: var(--brand-font-family);
+  font-weight: var(--brand-font-weight-light);
+  letter-spacing: var(--brand-letter-spacing);
+}
+
+/* Ensure brand consistency in forms */
+input, textarea, select {
+  font-family: var(--brand-font-family);
+  border: 1px solid var(--brand-gray-border);
+  transition: border-color 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--brand-amber);
+  outline: none;
+}
+
+/* Brand-consistent shadows */
+.brand-shadow {
+  box-shadow: 0 1px 3px 0 rgba(11, 17, 32, 0.1), 0 1px 2px 0 rgba(11, 17, 32, 0.06);
+}
+
+.brand-shadow-lg {
+  box-shadow: 0 10px 30px rgba(11, 17, 32, 0.2);
+}

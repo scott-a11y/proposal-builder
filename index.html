@@ -17,6 +17,10 @@
   <!-- Note: External CDN resources removed to prevent blocking issues -->
   <!-- Application now uses self-contained vanilla JavaScript and inline CSS utilities -->
 
+  <!-- Presentation Mode and Brand Consistency -->
+  <link rel="stylesheet" href="./brand.css">
+  <link rel="stylesheet" href="./presentation.css">
+
   <!-- Content Security Policy - Simplified for self-contained app -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: *; connect-src 'self'; frame-ancestors 'self';">
@@ -1351,6 +1355,48 @@
       }
     });
   </script>
-  <script src="./admin-addon.js"></script>
+  
+  <!-- Role Mode and Presentation System -->
+  <script src="./role-mode.js"></script>
+  <script src="./config-loader.js"></script>
+  <script src="./proposal-guard.js"></script>
+  <script src="./share-link.js"></script>
+  
+  <!-- Guarded Admin Loader - Only loads admin functionality for authorized roles -->
+  <script>
+    (() => {
+      'use strict';
+      
+      const loadAdminIfAuthorized = () => {
+        // Wait for role system to initialize
+        if (!window.roleMode || !window.proposalGuard) {
+          setTimeout(loadAdminIfAuthorized, 100);
+          return;
+        }
+        
+        // Check if user has admin permissions
+        const permissions = window.proposalGuard.getCurrentPermissions();
+        const currentRole = window.roleMode.getCurrentRole();
+        
+        if (permissions.viewAdmin) {
+          // Load admin addon for authorized users
+          const script = document.createElement('script');
+          script.src = './admin-addon.js';
+          script.onload = () => {
+            console.log(`Admin functionality loaded for ${currentRole} role`);
+          };
+          script.onerror = () => {
+            console.warn('Failed to load admin functionality');
+          };
+          document.head.appendChild(script);
+        } else {
+          console.log(`Admin functionality not loaded - ${currentRole} role has insufficient permissions`);
+        }
+      };
+      
+      // Start the guarded loading process
+      loadAdminIfAuthorized();
+    })();
+  </script>
 </body>
 </html>
