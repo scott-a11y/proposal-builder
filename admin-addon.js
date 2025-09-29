@@ -152,6 +152,9 @@
       reader.readAsDataURL(blob);
     });
   };
+  
+  // Expose globally for use by main application
+  window.assetToDataURL = assetToDataURL;
 
   // ----- Hook into app image pipeline (asset: scheme) -----
   const hookAssetScheme = () => {
