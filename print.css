@@ -336,11 +336,11 @@
     visibility: hidden !important;
   }
   
-  /* Specifically hide digital signature sections */
-  *:has(input[type="text"]),
-  *:has(button),
+  /* Specifically hide digital signature sections during print only */
+  .signature-block:has(input[type="text"]),
+  .signature-block:has(button),
   .digital-signature,
-  [class*="signature"],
+  [class*="signature"]:not(.signature-block),
   [id*="signature"] {
     display: none !important;
   }
