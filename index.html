@@ -589,8 +589,8 @@
       }
     };
 
-    // Application state
-    let formData = {
+    // Application state - Make globally accessible for external scripts
+    window.formData = {
       clientName: '',
       projectName: '',
       date: new Date().toISOString().split('T')[0],
@@ -603,7 +603,7 @@
       signatureDate: ''
     };
 
-    let images = {
+    window.images = {
       logo: DEFAULT_LOGO_PATH,
       shakerRender: '',
       euroRender: '',
@@ -611,6 +611,10 @@
       euroVanity: '',
       floorPlan: ''
     };
+    
+    // Keep local references for convenience
+    let formData = window.formData;
+    let images = window.images;
 
     let currentView = 'editor';
     let currentName = '';
@@ -747,8 +751,8 @@
         if (supabase) {
           const { data } = await supabase.from('proposals').select('*').eq('name', name).single();
           if (data) {
-            formData = data.content;
-            images = data.images;
+            formData = window.formData = data.content;
+            images = window.images = data.images;
             currentName = name;
             dirty = false;
             renderApp();
@@ -760,8 +764,8 @@
         const stored = localStorage.getItem(LS_BY_NAME(name));
         if (stored) {
           const payload = JSON.parse(stored);
-          formData = payload.content;
-          images = payload.images;
+          formData = window.formData = payload.content;
+          images = window.images = payload.images;
           currentName = name;
           dirty = false;
           renderApp();
@@ -1345,6 +1349,9 @@
         root.innerHTML = renderEditor();
       }
     };
+
+    // Make renderApp globally accessible for external scripts
+    window.renderApp = renderApp;
 
     // Initialize app when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
