@@ -1,0 +1,2 @@
+# Temporary test files - exclude from commits
+test-client-export*.html

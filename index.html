@@ -371,6 +371,36 @@
 
   <script>
     // Configuration constants
+    
+    /* LOGO SOURCES DOCUMENTATION
+     * The following sources are used for logo display throughout the application:
+     * 
+     * 1. DEFAULT_LOGO_PATH: './Foundry-Cabinetco-Logo-2-White-Text.png' 
+     *    - Primary logo file (currently missing, returns 404)
+     *    - White text version for dark backgrounds
+     *    - File path: /Foundry-Cabinetco-Logo-2-White-Text.png
+     * 
+     * 2. INLINE_FALLBACK_LOGO: SVG data URL (see below)
+     *    - Black background with white text SVG logo
+     *    - Used when DEFAULT_LOGO_PATH fails to load
+     *    - Embedded directly in JavaScript as data URL
+     * 
+     * 3. Admin-uploaded assets (admin-addon.js):
+     *    - window.images.logo can be set to 'asset:<id>' format
+     *    - Managed via admin interface: loadAdminConfig().company?.logoAssetId
+     *    - Allows custom logo uploads for branded client deliverables
+     * 
+     * 4. CSS background-image logos:
+     *    - Any elements with class .proposal-header may have background logos
+     *    - These are removed in client-view and pdf-view modes via CSS rules
+     * 
+     * VISIBILITY CONTROL:
+     * - Default: All logos hidden in client-view and pdf-view modes
+     * - Enable via: body.classList.add('show-logo') 
+     * - PDF control: window.printConfig.showLogoInPrint = true
+     * - Admin control: adminConfig.branding.showLogoInPrint = true
+     */
+    
     const INLINE_FALLBACK_LOGO =
       'data:image/svg+xml;utf8,' +
       encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="220" viewBox="0 0 800 220">
@@ -769,14 +799,14 @@
     };
 
     const printProposal = async () => {
-      // Enhanced print with print-mode class and logo control
+      // Enhanced print with pdf-view and print-mode classes and logo control
       const originalContent = document.body.innerHTML;
       await embedAllImagesInState();
       const clientView = renderClientView();
       
       // Determine if logo should be shown
       const showLogo = shouldShowLogoInPrint();
-      const printModeClass = showLogo ? 'print-mode show-logo' : 'print-mode';
+      const printModeClass = showLogo ? 'print-mode pdf-view show-logo' : 'print-mode pdf-view';
       
       // Create a temporary print-friendly version with enhanced styling
       document.body.innerHTML = `
@@ -927,10 +957,48 @@
     /* Print styles */
     @media print {
       .print-hidden { display: none !important; }
+      .client-view .signature-block { display: none !important; } /* Hide signature in print */
+    }
+    
+    /* Client view mode controls - hide logos by default unless explicitly enabled */
+    .client-view .logo-clean,
+    .client-view img[alt*="Logo"],
+    .client-view img[src*="logo"] {
+      display: none !important;
+      background-image: none !important;
+    }
+    
+    /* Remove any header background images that might inject logos */
+    .client-view .proposal-header {
+      background-image: none !important;
+    }
+    
+    /* Show signature section in client view */
+    .client-view .signature-block {
+      display: block !important;
+    }
+    
+    /* Hide admin/navigation elements in client view */
+    .client-view .print-hidden:not(.signature-block),
+    .client-view .admin-fab,
+    .client-view .share-controls,
+    .client-view .mode-switcher,
+    .client-view .role-indicator {
+      display: none !important;
+    }
+    
+    /* Allow logo when explicitly enabled with .show-logo class */
+    .client-view.show-logo .logo-clean,
+    .client-view.show-logo img[alt*="Logo"] {
+      display: block !important;
+      max-height: 100px !important;
+      width: auto !important;
+      object-fit: contain !important;
+      margin-bottom: 1rem !important;
     }
   </style>
 </head>
-<body>${htmlContent}</body>
+<body class="client-view">${htmlContent}</body>
 </html>`;
       
       const blob = new Blob([fullHtml], {
@@ -1120,6 +1188,20 @@
                   <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Date</p>
                 </div>
               </div>
+
+              <!-- Digital signature option for HTML version -->
+              <div class="print-hidden signature-block" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-border);">
+                <h3 style="font-size: 16px; margin-bottom: 1rem; color: var(--midnight);">Digital Acknowledgment (HTML Version Only)</h3>
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                  <input type="text" id="clientSignatureName" placeholder="Type your full name" style="flex: 1; padding: 8px; border: 1px solid var(--gray-border); border-radius: 4px;">
+                  <button onclick="addDigitalSignature()" style="background-color: var(--midnight); color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    Add Digital Signature
+                  </button>
+                </div>
+                <button onclick="emailProposal()" style="background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                  Email Signed Proposal to Foundry Cabinet Co
+                </button>
+              </div>
             </div>
 
             ${formData.additionalNotes ? `
@@ -1302,7 +1384,7 @@
               </div>
 
               <!-- Digital signature option for HTML version -->
-              <div class="print-hidden" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-border);">
+              <div class="print-hidden signature-block" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-border);">
                 <h3 style="font-size: 16px; margin-bottom: 1rem; color: var(--midnight);">Digital Acknowledgment (HTML Version Only)</h3>
                 <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
                   <input type="text" id="clientSignatureName" placeholder="Type your full name" style="flex: 1; padding: 8px; border: 1px solid var(--gray-border); border-radius: 4px;">

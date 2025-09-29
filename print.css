@@ -96,6 +96,66 @@
     /* Prefer black/dark logos for better print contrast */
     filter: contrast(1.2) brightness(0.8);
   }
+}
+
+/* Client and PDF view mode controls - applies outside of @media print for HTML exports */
+/* Hide logos by default in client-view and pdf-view unless explicitly enabled */
+.client-view .logo-clean,
+.client-view img[alt*="Logo"],
+.client-view img[src*="logo"],
+.pdf-view .logo-clean, 
+.pdf-view img[alt*="Logo"],
+.pdf-view img[src*="logo"] {
+  display: none !important;
+  background-image: none !important;
+}
+
+/* Remove any header background images that might inject logos */
+.client-view .proposal-header,
+.pdf-view .proposal-header {
+  background-image: none !important;
+}
+
+/* Signature section visibility control */
+.client-view .signature-block {
+  display: block !important;
+}
+
+.pdf-view .signature-block {
+  display: none !important;
+}
+
+/* Hide UI elements in both client and PDF views */
+.client-view .print-hidden:not(.signature-block),
+.client-view .admin-fab,
+.client-view .share-controls,
+.client-view .mode-switcher,
+.client-view .role-indicator,
+.client-view button:not(.signature-block button),
+.pdf-view .print-hidden,
+.pdf-view .admin-fab,
+.pdf-view .share-controls,
+.pdf-view .mode-switcher, 
+.pdf-view .role-indicator,
+.pdf-view button,
+.pdf-view input:not(.signature-block input),
+.pdf-view textarea,
+.pdf-view select {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Allow logo when explicitly enabled with .show-logo class */
+.client-view.show-logo .logo-clean,
+.client-view.show-logo img[alt*="Logo"],
+.pdf-view.show-logo .logo-clean,
+.pdf-view.show-logo img[alt*="Logo"] {
+  display: block !important;
+  max-height: 100px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  margin-bottom: 1rem !important;
+}
 
   /* Page break controls */
   .page-break {
