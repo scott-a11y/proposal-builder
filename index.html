@@ -817,9 +817,32 @@
     };
 
     const printProposal = async () => {
+      // Switch to a clean print view temporarily
+      const originalContent = document.body.innerHTML;
+      await embedAllImagesInState();
+      const clientView = renderClientView();
+      
+      // Create a temporary print-friendly version
+      document.body.innerHTML = `
+        <style>
+          @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { margin: 0; padding: 0; }
+            .proposal-page { width: 8.5in !important; margin: 0 !important; padding: 0.5in !important; }
+          }
+        </style>
+        ${clientView}
+      `;
+      
       await waitForImagesToLoad();
       await sleep(500);
       window.print();
+      
+      // Restore original content after print dialog
+      setTimeout(() => {
+        document.body.innerHTML = originalContent;
+        renderApp(); // Re-initialize the app
+      }, 1000);
     };
 
     const backToEditor = () => {
@@ -830,7 +853,7 @@
     // Task 5: Export with safe filename
     const exportProposal = async () => {
       await embedAllImagesInState();
-      const htmlContent = renderPreview();
+      const htmlContent = renderClientView();
       
       // Create complete HTML with embedded styles
       const fullHtml = `<!DOCTYPE html>
@@ -927,6 +950,11 @@
     .object-contain { object-fit: contain; }
     .inline-block { display: inline-block; }
     .relative { position: relative; }
+    
+    /* Print styles */
+    @media print {
+      .print-hidden { display: none !important; }
+    }
   </style>
 </head>
 <body>${htmlContent}</body>
@@ -999,6 +1027,158 @@
     };
 
     // Render functions
+    const renderClientView = () => {
+      return `
+        <div class="min-h-screen bg-white">
+          <div class="proposal-page bg-white mx-auto p-8" style="max-width: 1000px;">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-12 pb-6" style="border-bottom: 1px solid var(--gray-border);">
+              <div style="flex: 1;">
+                ${images.logo && images.logo !== DEFAULT_LOGO_PATH ? `<img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 100px; object-fit: contain; margin-bottom: 2rem;" />` : ''}
+                <h1 style="font-weight: 100; font-size: 3rem; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1rem 0;">${formData.projectName || 'Project Proposal'}</h1>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px; margin-bottom: 0.5rem;">For: ${formData.clientName || 'Client Name'}</p>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">Date: ${formData.date}</p>
+              </div>
+              <div class="text-right" style="flex: 0 0 auto;">
+                <!-- Page marker -->
+                <div style="font-size: 10px; color: var(--gray-muted); letter-spacing: 1px; text-transform: uppercase;">PROJECT # | PAGE 01</div>
+              </div>
+            </div>
+
+            <!-- Project Description -->
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Project Description</h2>
+              <p style="color: var(--slate); line-height: 1.8; font-weight: 300; letter-spacing: 0.3px;">
+                ${formData.description || 'Project description will appear here...'}
+              </p>
+            </div>
+
+            <!-- Images Grid -->
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Design Options</h2>
+              <div class="grid grid-cols-2 gap-8">
+                ${images.shakerRender ? `
+                  <div class="imgBox">
+                    <img src="${images.shakerRender}" alt="Shaker Style Render" class="w-full object-cover img-frame" />
+                    <p style="color: var(--gray-caption); font-size: 10px; margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Shaker Style Option</p>
+                  </div>
+                ` : ''}
+                ${images.euroRender ? `
+                  <div class="imgBox">
+                    <img src="${images.euroRender}" alt="Euro Style Render" class="w-full object-cover img-frame" />
+                    <p style="color: var(--gray-caption); font-size: 10px; margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Euro Style Option</p>
+                  </div>
+                ` : ''}
+                ${images.shakerVanity ? `
+                  <div class="imgBox">
+                    <img src="${images.shakerVanity}" alt="Shaker Vanity" class="w-full object-cover img-frame-sm" />
+                    <p style="color: var(--gray-caption); font-size: 10px; margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Shaker Vanity Design</p>
+                  </div>
+                ` : ''}
+                ${images.euroVanity ? `
+                  <div class="imgBox">
+                    <img src="${images.euroVanity}" alt="Euro Vanity" class="w-full object-cover img-frame-sm" />
+                    <p style="color: var(--gray-caption); font-size: 10px; margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Euro Vanity Design</p>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- Floor Plan -->
+            ${images.floorPlan ? `
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Layout Plan</h2>
+              <div class="imgBox">
+                <img src="${images.floorPlan}" alt="Floor Plan" class="w-full object-contain img-frame-layout" style="border: 1px solid var(--gray-border);" />
+                <p style="color: var(--gray-caption); font-size: 10px; margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Proposed Layout</p>
+              </div>
+            </div>
+            ` : ''}
+
+            <!-- Investment and Timeline -->
+            <div class="grid grid-cols-2 gap-8 mb-12">
+              <div>
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1rem 0;">Investment</h2>
+                <p style="color: var(--slate); font-size: 1.5rem; font-weight: 300;">
+                  ${formData.price ? '$' + formData.price.replace(/[^0-9.]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',') : 'Price TBD'}
+                </p>
+              </div>
+              <div>
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1rem 0;">Timeline</h2>
+                <p style="color: var(--slate); font-size: 1.5rem; font-weight: 300;">
+                  ${formData.timeline || 'Timeline TBD'}
+                </p>
+              </div>
+            </div>
+
+            ${formData.sketchupLink ? `
+              <!-- QR Code Section -->
+              <div class="mb-12">
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">3D Model Preview</h2>
+                <div style="text-align: center; padding: 2rem; background-color: #f8f9fa; border-radius: 8px;">
+                  <div id="qrcode-container" style="display: inline-block; margin-bottom: 1rem;"></div>
+                  <p style="color: var(--gray-muted); font-size: 14px; margin: 0;">Scan to view 3D model</p>
+                  <p style="font-size: 10px; color: var(--gray-muted); margin-top: 1rem; letter-spacing: 0.5px; text-transform: uppercase;">Scan QR code to view on mobile</p>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Client Acknowledgment Section -->
+            <div style="border: 2px solid var(--gray-border); border-radius: 8px; padding: 2rem; margin-top: 3rem; background-color: #f8f9fa;">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1.5rem 0; color: var(--midnight);">Client Acknowledgment</h2>
+              
+              <div style="margin-bottom: 1.5rem;">
+                <p style="color: var(--slate); line-height: 1.6; margin-bottom: 1rem;">
+                  By signing below, I acknowledge that I have reviewed this proposal and understand the scope of work, timeline, and investment outlined above.
+                </p>
+                <p style="color: var(--slate); line-height: 1.6; margin-bottom: 0;">
+                  To proceed with this project, please sign below and return this proposal via email to <strong>info@foundrycabinetco.com</strong>
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-8" style="margin-bottom: 2rem;">
+                <div>
+                  <div style="height: 40px; border-bottom: 1px solid var(--gray-border); margin-bottom: 0.5rem;"></div>
+                  <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Client Signature</p>
+                </div>
+                <div>
+                  <div style="height: 40px; border-bottom: 1px solid var(--gray-border); margin-bottom: 0.5rem;"></div>
+                  <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Date</p>
+                </div>
+              </div>
+            </div>
+
+            ${formData.additionalNotes ? `
+            <!-- Additional Notes -->
+            <div class="mt-8">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1rem 0;">Additional Notes</h2>
+              <p style="color: var(--slate); line-height: 1.6; font-weight: 300; letter-spacing: 0.3px;">
+                ${formData.additionalNotes}
+              </p>
+            </div>
+            ` : ''}
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: var(--footer); color: #ffffff; padding: 3rem 0; margin-top: 4rem;">
+            <div class="max-w-4xl mx-auto p-8 text-center">
+              <p style="font-size: 1.5rem; font-weight: 200; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem;">Thank you for choosing Foundry Cabinet Co</p>
+              <p style="color: #94A3B8; font-weight: 300; letter-spacing: 1px; margin-bottom: 2rem;">by District Design Build, LLC</p>
+              <div style="border-top: 1px solid #334155; padding-top: 2rem; margin-top: 2rem;">
+                <p style="color: #94A3B8; font-weight: 300; margin-bottom: 1rem;">Ready to move forward? Contact us:</p>
+                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                  <div><strong>Phone:</strong> (555) 123-4567</div>
+                  <div><strong>Email:</strong> info@foundrycabinetco.com</div>
+                  <div><strong>Website:</strong> foundrycabinetco.com</div>
+                </div>
+                <p style="color: #64748B; font-size: 0.875rem; margin: 0;">Licensed & Insured • Free Estimates • Quality Craftsmanship</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
     const renderPreview = () => {
       return `
         <div class="min-h-screen bg-white">
