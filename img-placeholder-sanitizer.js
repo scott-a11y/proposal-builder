@@ -1,97 +1,37 @@
 (() => {
-  'use strict';
+  // Resolve any literal ${images.*} placeholders left in markup
+  const INLINE_FALLBACK_LOGO =
+    'data:image/svg+xml;utf8,' + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="220" viewBox="0 0 800 220">
+         <rect fill="#000000" width="800" height="220"/>
+         <g fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial">
+           <text x="50%" y="35%" text-anchor="middle" font-size="48" font-weight="700">FOUNDRY</text>
+           <text x="50%" y="55%" text-anchor="middle" font-size="24" letter-spacing="4">CABINET · CO</text>
+           <text x="50%" y="75%" text-anchor="middle" font-size="14" letter-spacing="2">BY DISTRICT DESIGN BUILD, LLC</text>
+         </g>
+       </svg>`
+    );
 
-  // Image placeholder sanitizer - fixes ${images.*} 404s
-  const sanitizePlaceholders = () => {
-    // Find all elements that might contain image placeholder syntax
-    const elements = document.querySelectorAll('*');
-    
-    elements.forEach(element => {
-      // Check text content for ${images.*} patterns
-      if (element.textContent && element.textContent.includes('${images.')) {
-        const sanitized = element.textContent.replace(/\$\{images\.([^}]+)\}/g, (match, imageName) => {
-          // Check if window.images exists and has the requested image
-          if (window.images && window.images[imageName]) {
-            return window.images[imageName];
-          }
-          // Return empty string or placeholder if image doesn't exist
-          return '';
-        });
-        
-        if (sanitized !== element.textContent) {
-          element.textContent = sanitized;
-        }
+  const resolve = (key) =>
+    (window.images && window.images[key]) || (key === 'logo' ? INLINE_FALLBACK_LOGO : '');
+
+  const fixImgPlaceholders = (root = document) => {
+    root.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src') || '';
+      const m = src.match(/\$\{images\.([a-zA-Z0-9_]+)\}/);
+      if (m) {
+        const val = resolve(m[1]);
+        if (val) img.setAttribute('src', val);
       }
-      
-      // Check innerHTML for ${images.*} patterns in attributes
-      if (element.innerHTML && element.innerHTML.includes('${images.')) {
-        const sanitized = element.innerHTML.replace(/\$\{images\.([^}]+)\}/g, (match, imageName) => {
-          // Check if window.images exists and has the requested image
-          if (window.images && window.images[imageName]) {
-            return window.images[imageName];
-          }
-          // Return empty string or placeholder if image doesn't exist
-          return '';
-        });
-        
-        if (sanitized !== element.innerHTML) {
-          element.innerHTML = sanitized;
-        }
-      }
-      
-      // Check specific attributes that commonly contain image URLs
-      const imageAttributes = ['src', 'href', 'data-src', 'style'];
-      imageAttributes.forEach(attr => {
-        const value = element.getAttribute(attr);
-        if (value && value.includes('${images.')) {
-          const sanitized = value.replace(/\$\{images\.([^}]+)\}/g, (match, imageName) => {
-            // Check if window.images exists and has the requested image
-            if (window.images && window.images[imageName]) {
-              return window.images[imageName];
-            }
-            // Return empty string or placeholder if image doesn't exist
-            return '';
-          });
-          
-          if (sanitized !== value) {
-            element.setAttribute(attr, sanitized);
-          }
-        }
-      });
     });
   };
 
-  // Run sanitization when images object is available
-  const initSanitizer = () => {
-    if (window.images) {
-      sanitizePlaceholders();
-    } else {
-      // Wait for images to be available
-      setTimeout(initSanitizer, 100);
-    }
-  };
-
-  // Initialize when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSanitizer, { once: true });
+    document.addEventListener('DOMContentLoaded', () => fixImgPlaceholders(), { once: true });
   } else {
-    initSanitizer();
+    fixImgPlaceholders();
   }
 
-  // Re-run sanitization when images change
-  window.addEventListener('imagesUpdated', sanitizePlaceholders);
-  
-  // Re-run sanitization on app renders
-  const originalRenderApp = window.renderApp;
-  if (typeof originalRenderApp === 'function') {
-    window.renderApp = function(...args) {
-      const result = originalRenderApp.apply(this, args);
-      // Run sanitization after render
-      setTimeout(sanitizePlaceholders, 10);
-      return result;
-    };
-  }
-
-  // Expose sanitizer for manual use
-  window.sanitizeImagePlaceholders = sanitizePlaceholders;
+  // Re-run after app renders if it dispatches a custom event
+  window.addEventListener('renderComplete', () => fixImgPlaceholders());
 })();
