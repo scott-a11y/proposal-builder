@@ -691,13 +691,37 @@
       
       if (!needsEmbedding) return; // Skip if all images are already embedded
       
+      // Enhanced asset URL resolution
+      const resolveAssetURL = async (src) => {
+        if (!src) return '';
+        if (src.startsWith('data:')) return src;
+        
+        // Handle asset: URLs directly
+        if (src.startsWith('asset:')) {
+          const id = src.slice('asset:'.length);
+          // Try to use the admin addon's assetToDataURL if available
+          if (typeof window.assetToDataURL === 'function') {
+            try {
+              return await window.assetToDataURL(id);
+            } catch (e) {
+              console.warn('Asset resolution failed:', e);
+              return ''; // Return empty string for failed asset resolution
+            }
+          }
+          return ''; // No asset resolver available
+        }
+        
+        // Use regular toDataURL for other URLs
+        return await toDataURL(src);
+      };
+      
       const [logo, sh, eu, sv, ev, fp] = await Promise.all([
-        toDataURL(images.logo || INLINE_FALLBACK_LOGO),
-        toDataURL(images.shakerRender),
-        toDataURL(images.euroRender),
-        toDataURL(images.shakerVanity),
-        toDataURL(images.euroVanity),
-        toDataURL(images.floorPlan),
+        resolveAssetURL(images.logo || INLINE_FALLBACK_LOGO),
+        resolveAssetURL(images.shakerRender),
+        resolveAssetURL(images.euroRender),
+        resolveAssetURL(images.shakerVanity),
+        resolveAssetURL(images.euroVanity),
+        resolveAssetURL(images.floorPlan),
       ]);
       
       images.logo = logo || images.logo;
