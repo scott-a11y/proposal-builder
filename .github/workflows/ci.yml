@@ -1,0 +1,78 @@
+name: Proposal Builder CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+    
+    - name: Start HTTP Server
+      run: |
+        python -m http.server 8080 &
+        sleep 3
+        curl -f http://localhost:8080/ || exit 1
+      
+    - name: Validate HTML structure
+      run: |
+        if ! grep -q "Foundry Cabinet" index.html; then
+          echo "Missing company branding"
+          exit 1
+        fi
+        echo "✓ HTML structure validation passed"
+    
+    - name: Check for critical functions
+      run: |
+        if ! grep -q "exportProposal" index.html; then
+          echo "Missing export functionality"
+          exit 1
+        fi
+        if ! grep -q "generateQRCode" index.html; then
+          echo "Missing QR code generation"
+          exit 1
+        fi
+        if ! grep -q "escapeHtml" index.html; then
+          echo "Missing XSS protection"
+          exit 1
+        fi
+        echo "✓ Critical functions validation passed"
+    
+    - name: Validate test suite exists
+      run: |
+        if [ ! -f "tests.html" ]; then
+          echo "Missing test suite"
+          exit 1
+        fi
+        curl -f http://localhost:8080/tests.html || exit 1
+        echo "✓ Test suite validation passed"
+    
+    - name: Check documentation
+      run: |
+        if [ ! -f "DEPLOYMENT.md" ]; then
+          echo "Missing deployment documentation"
+          exit 1
+        fi
+        if ! grep -q "Production Deployment" README.md; then
+          echo "Missing production deployment guide in README"
+          exit 1
+        fi
+        echo "✓ Documentation validation passed"
+        
+    - name: Validate admin functionality
+      run: |
+        if ! grep -q "Admin Console" admin-addon.js; then
+          echo "Missing admin console"
+          exit 1
+        fi
+        echo "✓ Admin functionality validation passed"
