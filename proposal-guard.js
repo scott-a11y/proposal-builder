@@ -254,6 +254,7 @@
   // Guard function calls and window methods
   const guardFunctionCalls = () => {
     const permissions = getCurrentPermissions();
+    const isPresentation = window.roleMode?.isPresentationMode?.() === true;
     
     // Guard admin functions
     if (!permissions.viewAdmin && window.openAdmin) {
@@ -263,9 +264,9 @@
       };
     }
 
-    // Guard export functions
+    // Guard export functions (keep blocked for low-privilege roles)
     if (!permissions.export) {
-      const exportFunctions = ['exportProposal', 'downloadProposal', 'printProposal'];
+      const exportFunctions = ['exportProposal', 'downloadProposal'];
       exportFunctions.forEach(funcName => {
         if (window[funcName]) {
           window[funcName] = () => {
@@ -274,6 +275,14 @@
           };
         }
       });
+    }
+
+    // Allow printing in presentation mode; otherwise guard like export
+    if (!isPresentation && !permissions.export && window.printProposal) {
+      window.printProposal = () => {
+        console.warn('Print access denied for current role outside presentation mode');
+        showAccessDenied('Print privileges required');
+      };
     }
 
     // Guard edit functions
