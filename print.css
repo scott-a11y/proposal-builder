@@ -112,6 +112,22 @@
     /* Prefer black/dark logos for better print contrast */
     filter: contrast(1.2) brightness(0.8);
   }
+
+  /* Form elements and buttons - hide in print */
+  button,
+  input,
+  textarea,
+  select,
+  .btn,
+  form,
+  .form-control,
+  [type="text"],
+  [type="email"],
+  [type="submit"],
+  [onclick] {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }
 
 /* Client and PDF view mode controls - applies outside of @media print for HTML exports */
@@ -320,22 +336,6 @@
     background: transparent !important;
   }
 
-  /* Form elements and buttons - hide in print */
-  button,
-  input,
-  textarea,
-  select,
-  .btn,
-  form,
-  .form-control,
-  [type="text"],
-  [type="email"],
-  [type="submit"],
-  [onclick] {
-    display: none !important;
-    visibility: hidden !important;
-  }
-  
   /* Specifically hide digital signature sections during print only */
   .signature-block:has(input[type="text"]),
   .signature-block:has(button),
