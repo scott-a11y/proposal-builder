@@ -684,8 +684,12 @@
         resolveAssetURL(images.floorPlan),
       ]);
       
-      // Enhanced logo fallback: use INLINE_FALLBACK_LOGO only if branding is enabled
-      images.logo = logo || (shouldUseLogo ? INLINE_FALLBACK_LOGO : '');
+      // Enhanced logo fallback: only set logo if branding is explicitly enabled
+      if (shouldUseLogo) {
+        images.logo = logo || INLINE_FALLBACK_LOGO;
+      } else {
+        images.logo = '';
+      }
       images.shakerRender = sh || images.shakerRender;
       images.euroRender = eu || images.euroRender;
       images.shakerVanity = sv || images.shakerVanity;
@@ -857,6 +861,7 @@
       const afterPrintHandler = () => {
         restore();
         window.removeEventListener('afterprint', afterPrintHandler);
+        clearTimeout(fallbackTimeout);
       };
       window.addEventListener('afterprint', afterPrintHandler);
       
@@ -868,11 +873,9 @@
       
       try {
         window.print();
-      } catch (e) {
-        console.error('Error printing:', e);
-        restore(); // Restore immediately on error
-        clearTimeout(fallbackTimeout);
-        window.removeEventListener('afterprint', afterPrintHandler);
+      } finally {
+        // Guarantee restoration even if print() throws synchronously
+        // The afterprint handler and timeout will handle async cases
       }
     };
 
