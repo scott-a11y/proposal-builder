@@ -519,8 +519,8 @@
         .replace(/`/g, '&#x60;');
     };
     
-    // Task 15: Templates
-    const templates = {
+    // Task 15: Templates (now integrated with admin system)
+    let templates = {
       'kitchen-basic': {
         description: 'Complete kitchen renovation with quality cabinets, modern hardware, and professional installation. Includes soft-close drawers and doors.',
         notes: 'Price includes delivery and installation. Timeline may vary based on material availability.',
@@ -537,6 +537,42 @@
         timeline: '3-4 weeks'
       }
     };
+
+    // Load admin templates and merge with built-in templates
+    const loadAdminTemplates = () => {
+      try {
+        const adminConfig = localStorage.getItem('foundry-admin-config');
+        if (adminConfig) {
+          const parsed = JSON.parse(adminConfig);
+          if (parsed.templates) {
+            // Merge admin templates with built-in templates
+            templates = { ...templates, ...parsed.templates };
+          }
+        }
+      } catch (e) {
+        console.log('Could not load admin templates:', e);
+      }
+    };
+
+    // Function to refresh templates (called by admin interface)
+    window.refreshTemplates = () => {
+      loadAdminTemplates();
+    };
+
+    // Generate template options HTML
+    const generateTemplateOptions = () => {
+      let options = '<option value="">Select Template...</option>';
+      Object.entries(templates).forEach(([key, template]) => {
+        const title = template.title || key.split('-').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+        options += `<option value="${key}">${escapeHtml(title)}</option>`;
+      });
+      return options;
+    };
+
+    // Load admin templates on startup
+    loadAdminTemplates();
     
     const applyTemplate = (templateKey) => {
       if (templates[templateKey]) {
@@ -1157,10 +1193,7 @@
                 <div>
                   <label>Quick Templates</label>
                   <select onchange="applyTemplate(this.value); this.value=''" class="ml-4">
-                    <option value="">Select Template...</option>
-                    <option value="kitchen-basic">Kitchen Basic</option>
-                    <option value="kitchen-premium">Kitchen Premium</option>
-                    <option value="vanity-euro">Euro Vanity</option>
+                    ${generateTemplateOptions()}
                   </select>
                 </div>
               </div>

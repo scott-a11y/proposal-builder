@@ -205,6 +205,7 @@
   .asset-card { border:1px solid #e5e7eb; padding:10px; }
   .asset-card img { display:block; width:100%; height:140px; object-fit:contain; background:#fafafa; border:1px solid #eee; }
   .asset-meta { font-size:11px; color:#555; margin:6px 0; }
+  .template-form-input { margin-bottom: 8px !important; }
   @media (max-width: 768px) { .admin-row { grid-template-columns: 1fr; } .asset-grid { grid-template-columns: 1fr 1fr; } }
   `;
 
@@ -237,7 +238,7 @@
   const ui = {
     backdrop: null,
     modal: null,
-    tabs: { assets: null, company: null, data: null },
+    tabs: { assets: null, company: null, templates: null, data: null },
     body: null,
     state: { active: 'assets', assets: [] }
   };
@@ -267,6 +268,7 @@
       el('div', { class: 'admin-tabs' }, [
         tabButton('assets', 'Assets'),
         tabButton('company', 'Company'),
+        tabButton('templates', 'Templates'),
         tabButton('data', 'Data')
       ]),
       (ui.body = el('div', { class: 'admin-body' }))
@@ -301,6 +303,7 @@
     ui.body.innerHTML = '';
     if (key === 'assets') renderAssetsTab();
     else if (key === 'company') renderCompanyTab();
+    else if (key === 'templates') renderTemplatesTab();
     else if (key === 'data') renderDataTab();
   };
 
@@ -405,6 +408,236 @@
       el('div', {}, [addrI, webI, currentLogo])
     ]));
     ui.body.appendChild(el('div', { class: 'admin-actions' }, [saveBtn]));
+  };
+
+  // ---- Templates Tab ----
+  const renderTemplatesTab = () => {
+    const cfg = loadAdminConfig();
+    
+    // Create new template form
+    const createTemplateSection = el('div', { class: 'admin-field', style: { marginBottom: '24px' } }, [
+      el('label', {}, ['Create New Template']),
+      el('div', { class: 'admin-row', style: { marginTop: '12px' } }, [
+        el('div', {}, [
+          el('input', { 
+            id: 'newTemplateName', 
+            placeholder: 'Template Name (e.g., bathroom-basic)', 
+            class: 'template-form-input'
+          }),
+          el('input', { 
+            id: 'newTemplateTitle', 
+            placeholder: 'Display Title (e.g., Bathroom Basic)', 
+            class: 'template-form-input'
+          }),
+          el('input', { 
+            id: 'newTemplateTimeline', 
+            placeholder: 'Timeline (e.g., 3-4 weeks)', 
+            class: 'template-form-input'
+          })
+        ]),
+        el('div', {}, [
+          el('textarea', { 
+            id: 'newTemplateDescription', 
+            placeholder: 'Project description...', 
+            style: { height: '80px' },
+            class: 'template-form-input'
+          }),
+          el('textarea', { 
+            id: 'newTemplateNotes', 
+            placeholder: 'Additional notes...', 
+            style: { height: '60px' },
+            class: 'template-form-input'
+          })
+        ])
+      ]),
+      el('div', { class: 'admin-actions', style: { marginTop: '12px' } }, [
+        el('button', {
+          class: 'btn primary',
+          onclick: () => createTemplate()
+        }, ['Create Template'])
+      ])
+    ]);
+
+    // List existing templates
+    const templatesSection = el('div', {}, [
+      el('label', { style: { display: 'block', marginBottom: '12px' } }, ['Existing Templates'])
+    ]);
+
+    const templatesList = el('div', { class: 'admin-field' });
+    
+    // Show both built-in and custom templates
+    const builtInTemplates = {
+      'kitchen-basic': { title: 'Kitchen Basic', builtin: true },
+      'kitchen-premium': { title: 'Kitchen Premium', builtin: true },
+      'vanity-euro': { title: 'Euro Vanity', builtin: true }
+    };
+
+    Object.entries(builtInTemplates).forEach(([key, template]) => {
+      const templateCard = el('div', { 
+        class: 'asset-card', 
+        style: { marginBottom: '12px', backgroundColor: '#f8f9fa' } 
+      }, [
+        el('div', { style: { fontWeight: 'bold', marginBottom: '4px' } }, [template.title]),
+        el('div', { class: 'asset-meta' }, ['Built-in Template']),
+        el('div', { class: 'admin-actions' }, [
+          el('button', { class: 'btn', disabled: true }, ['Built-in'])
+        ])
+      ]);
+      templatesList.appendChild(templateCard);
+    });
+
+    Object.entries(cfg.templates || {}).forEach(([key, template]) => {
+      const templateCard = el('div', { class: 'asset-card', style: { marginBottom: '12px' } }, [
+        el('div', { style: { fontWeight: 'bold', marginBottom: '4px' } }, [template.title || key]),
+        el('div', { class: 'asset-meta' }, [`Timeline: ${template.timeline || 'Not specified'}`]),
+        el('div', { style: { fontSize: '12px', marginBottom: '8px' } }, [
+          (template.description || '').substring(0, 100) + (template.description?.length > 100 ? '...' : '')
+        ]),
+        el('div', { class: 'admin-actions' }, [
+          el('button', {
+            class: 'btn',
+            onclick: () => editTemplate(key, template)
+          }, ['Edit']),
+          el('button', {
+            class: 'btn',
+            onclick: () => deleteTemplate(key),
+            style: { backgroundColor: '#dc3545', color: 'white', borderColor: '#dc3545' }
+          }, ['Delete'])
+        ])
+      ]);
+      templatesList.appendChild(templateCard);
+    });
+
+    if (Object.keys(cfg.templates || {}).length === 0) {
+      templatesList.appendChild(el('div', { class: 'asset-meta', style: { textAlign: 'center', padding: '20px' } }, 
+        ['No custom templates created yet. Use the form above to create your first template.']
+      ));
+    }
+
+    templatesSection.appendChild(templatesList);
+
+    ui.body.appendChild(createTemplateSection);
+    ui.body.appendChild(templatesSection);
+  };
+
+  const createTemplate = () => {
+    const nameInput = ui.body.querySelector('#newTemplateName');
+    const titleInput = ui.body.querySelector('#newTemplateTitle');
+    const timelineInput = ui.body.querySelector('#newTemplateTimeline');
+    const descriptionInput = ui.body.querySelector('#newTemplateDescription');
+    const notesInput = ui.body.querySelector('#newTemplateNotes');
+
+    const name = nameInput?.value?.trim();
+    const title = titleInput?.value?.trim();
+    const timeline = timelineInput?.value?.trim();
+    const description = descriptionInput?.value?.trim();
+    const notes = notesInput?.value?.trim();
+
+    if (!name || !title || !description) {
+      alert('Please fill in Template Name, Display Title, and Description');
+      return;
+    }
+
+    // Validate template name (should be lowercase with hyphens)
+    if (!/^[a-z0-9-]+$/.test(name)) {
+      alert('Template name should only contain lowercase letters, numbers, and hyphens');
+      return;
+    }
+
+    const cfg = loadAdminConfig();
+    if (!cfg.templates) cfg.templates = {};
+
+    // Check if template already exists
+    if (cfg.templates[name]) {
+      if (!confirm(`Template '${name}' already exists. Do you want to overwrite it?`)) {
+        return;
+      }
+    }
+
+    cfg.templates[name] = {
+      title,
+      description,
+      notes: notes || '',
+      timeline: timeline || ''
+    };
+
+    saveAdminConfig(cfg);
+    
+    // Clear form
+    if (nameInput) nameInput.value = '';
+    if (titleInput) titleInput.value = '';
+    if (timelineInput) timelineInput.value = '';
+    if (descriptionInput) descriptionInput.value = '';
+    if (notesInput) notesInput.value = '';
+
+    // Refresh templates tab and update main app
+    renderActiveTab('templates');
+    updateMainAppTemplates();
+    
+    alert(`Template '${title}' created successfully!`);
+  };
+
+  const editTemplate = (key, template) => {
+    const newTitle = prompt('Display Title:', template.title || key);
+    if (newTitle === null) return;
+
+    const newTimeline = prompt('Timeline:', template.timeline || '');
+    if (newTimeline === null) return;
+
+    const newDescription = prompt('Description:', template.description || '');
+    if (newDescription === null) return;
+
+    const newNotes = prompt('Notes:', template.notes || '');
+    if (newNotes === null) return;
+
+    const cfg = loadAdminConfig();
+    cfg.templates[key] = {
+      title: newTitle.trim() || key,
+      description: newDescription.trim(),
+      notes: newNotes.trim(),
+      timeline: newTimeline.trim()
+    };
+
+    saveAdminConfig(cfg);
+    renderActiveTab('templates');
+    updateMainAppTemplates();
+    
+    alert('Template updated successfully!');
+  };
+
+  const deleteTemplate = (key) => {
+    if (!confirm(`Are you sure you want to delete the template '${key}'?`)) {
+      return;
+    }
+
+    const cfg = loadAdminConfig();
+    if (cfg.templates && cfg.templates[key]) {
+      delete cfg.templates[key];
+      saveAdminConfig(cfg);
+      renderActiveTab('templates');
+      updateMainAppTemplates();
+      alert('Template deleted successfully!');
+    }
+  };
+
+  const updateMainAppTemplates = () => {
+    // Notify main app to refresh templates
+    if (typeof window.refreshTemplates === 'function') {
+      try {
+        window.refreshTemplates();
+      } catch (e) {
+        console.log('Could not refresh main app templates:', e);
+      }
+    }
+    
+    // Re-render main app if function exists
+    if (typeof window.renderApp === 'function') {
+      try {
+        window.renderApp();
+      } catch (e) {
+        console.log('Could not re-render main app:', e);
+      }
+    }
   };
 
   const inputField = (labelText, value, onChange) => {
