@@ -1369,39 +1369,28 @@
   <script src="./proposal-guard.js"></script>
   <script src="./share-link.js"></script>
   
-  <!-- Guarded Admin Loader - Only loads admin functionality for authorized roles -->
+  <!-- Guarded Admin Loader - loads admin only for authorized roles -->
   <script>
     (() => {
       'use strict';
-      
       const loadAdminIfAuthorized = () => {
-        // Wait for role system to initialize
+        // Wait for role/guard systems to be ready
         if (!window.roleMode || !window.proposalGuard) {
           setTimeout(loadAdminIfAuthorized, 100);
           return;
         }
-        
-        // Check if user has admin permissions
-        const permissions = window.proposalGuard.getCurrentPermissions();
-        const currentRole = window.roleMode.getCurrentRole();
-        
-        if (permissions.viewAdmin) {
-          // Load admin addon for authorized users
-          const script = document.createElement('script');
-          script.src = './admin-addon.js';
-          script.onload = () => {
-            console.log(`Admin functionality loaded for ${currentRole} role`);
-          };
-          script.onerror = () => {
-            console.warn('Failed to load admin functionality');
-          };
-          document.head.appendChild(script);
+        // Load admin UI only if current role can view admin
+        const { viewAdmin } = window.proposalGuard.getCurrentPermissions();
+        if (viewAdmin) {
+          const s = document.createElement('script');
+          s.src = './admin-addon.js';
+          s.onload = () => console.log('Admin UI loaded');
+          s.onerror = () => console.warn('Failed to load admin UI');
+          document.head.appendChild(s);
         } else {
-          console.log(`Admin functionality not loaded - ${currentRole} role has insufficient permissions`);
+          console.log('Admin UI not loaded (insufficient permissions)');
         }
       };
-      
-      // Start the guarded loading process
       loadAdminIfAuthorized();
     })();
   </script>
