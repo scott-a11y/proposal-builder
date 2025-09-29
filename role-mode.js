@@ -206,7 +206,16 @@
       letter-spacing: 1px;
     `;
     
-    document.body.appendChild(indicator);
+    // Try multiple ways to append role indicator safely
+    if (document.body) {
+      document.body.appendChild(indicator);
+    } else if (document.getElementsByTagName('body')[0]) {
+      document.getElementsByTagName('body')[0].appendChild(indicator);
+    } else if (document.documentElement) {
+      document.documentElement.appendChild(indicator);
+    } else {
+      console.warn('No suitable location found for role indicator');
+    }
   };
 
   // Create mode switcher
@@ -239,7 +248,17 @@
 
     switcher.appendChild(editBtn);
     switcher.appendChild(presentBtn);
-    document.body.appendChild(switcher);
+    
+    // Try multiple ways to append mode switcher safely
+    if (document.body) {
+      document.body.appendChild(switcher);
+    } else if (document.getElementsByTagName('body')[0]) {
+      document.getElementsByTagName('body')[0].appendChild(switcher);
+    } else if (document.documentElement) {
+      document.documentElement.appendChild(switcher);
+    } else {
+      console.warn('No suitable location found for mode switcher');
+    }
   };
 
   // Switch between modes

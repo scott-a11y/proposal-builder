@@ -319,7 +319,13 @@
     `;
     notification.textContent = message;
     
-    document.body.appendChild(notification);
+    // Ensure document.body exists before appending notification
+    if (document.body) {
+      document.body.appendChild(notification);
+    } else {
+      console.warn('Document body not available for notification');
+      return;
+    }
     
     // Remove after 3 seconds
     setTimeout(() => {
@@ -382,10 +388,15 @@
       }
     });
     
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    // Ensure document.body exists before observing
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    } else {
+      console.warn('Document body not available for DOM observation');
+    }
     
     return observer;
   };

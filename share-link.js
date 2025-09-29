@@ -296,11 +296,17 @@
   };
   const showShareError = (message) => {
     const n = createNotification(message, 'error');
-    document.body.appendChild(n); setTimeout(() => { n.remove(); }, 5000);
+    if (document.body) {
+      document.body.appendChild(n); 
+      setTimeout(() => { if (n.parentNode) n.remove(); }, 5000);
+    }
   };
   const showShareNotification = (message) => {
     const n = createNotification(message, 'info');
-    document.body.appendChild(n); setTimeout(() => { n.remove(); }, 3000);
+    if (document.body) {
+      document.body.appendChild(n); 
+      setTimeout(() => { if (n.parentNode) n.remove(); }, 3000);
+    }
   };
 
   // Revoke share link
@@ -442,7 +448,7 @@
     shareButton.style.cssText = 'position: fixed; bottom: 16px; right: 80px; z-index: 9999;';
 
     const shareUI = createShareUI();
-    if (shareUI) {
+    if (shareUI && document.body) {
       document.body.appendChild(shareUI);
       shareButton.onclick = () => {
         const isVisible = shareUI.style.display !== 'none';
@@ -467,12 +473,12 @@
     // 3) Share UI for authorized users (only if not accessing via a local shared link)
     if (!hadSharedLink) {
       const shareButton = createShareButton();
-      if (shareButton) document.body.appendChild(shareButton);
+      if (shareButton && document.body) document.body.appendChild(shareButton);
     }
 
     // 4) Copy Link pill in presentation mode
     const pill = createCopyLinkPill();
-    if (pill) document.body.appendChild(pill);
+    if (pill && document.body) document.body.appendChild(pill);
 
     // Cleanup expired links periodically
     setInterval(cleanupExpiredLinks, 60000); // Every minute

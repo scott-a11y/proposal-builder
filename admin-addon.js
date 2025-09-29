@@ -210,9 +210,19 @@
   `;
 
   const injectStyles = () => {
+    // Try multiple ways to inject styles safely
     const tag = document.createElement('style');
     tag.textContent = css;
-    document.head.appendChild(tag);
+    
+    if (document.head) {
+      document.head.appendChild(tag);
+    } else if (document.getElementsByTagName('head')[0]) {
+      document.getElementsByTagName('head')[0].appendChild(tag);
+    } else if (document.documentElement) {
+      document.documentElement.appendChild(tag);
+    } else {
+      console.warn('No suitable location found for style injection');
+    }
   };
 
   const el = (tag, attrs = {}, children = []) => {
@@ -276,9 +286,24 @@
 
     ui.backdrop = backdrop;
     ui.modal = modal;
-    document.body.appendChild(fab);
-    document.body.appendChild(backdrop);
-    document.body.appendChild(modal);
+    
+    // Try multiple ways to append UI elements safely
+    if (document.body) {
+      document.body.appendChild(fab);
+      document.body.appendChild(backdrop);
+      document.body.appendChild(modal);
+    } else if (document.getElementsByTagName('body')[0]) {
+      const body = document.getElementsByTagName('body')[0];
+      body.appendChild(fab);
+      body.appendChild(backdrop);
+      body.appendChild(modal);
+    } else if (document.documentElement) {
+      document.documentElement.appendChild(fab);
+      document.documentElement.appendChild(backdrop);
+      document.documentElement.appendChild(modal);
+    } else {
+      console.warn('No suitable location found for UI injection');
+    }
   };
 
   const tabButton = (key, label) => {
@@ -725,7 +750,22 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
+    
+    // Try multiple ways to append download link safely
+    if (document.body) {
+      document.body.appendChild(a);
+    } else if (document.getElementsByTagName('body')[0]) {
+      document.getElementsByTagName('body')[0].appendChild(a);
+    } else if (document.documentElement) {
+      document.documentElement.appendChild(a);
+    } else {
+      console.warn('No suitable location found for download operation');
+      URL.revokeObjectURL(url);
+      return;
+    }
+    
+    a.click(); 
+    a.remove();
     URL.revokeObjectURL(url);
   };
 

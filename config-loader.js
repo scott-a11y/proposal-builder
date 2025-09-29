@@ -269,10 +269,12 @@
     }
 
     // Apply feature flags as body classes
-    if (loadedConfigs.features) {
+    if (loadedConfigs.features && document.body) {
       Object.entries(loadedConfigs.features).forEach(([feature, enabled]) => {
         document.body.classList.toggle(`feature-${feature}`, enabled);
       });
+    } else if (loadedConfigs.features && !document.body) {
+      console.warn('Document body not available for feature flag classes');
     }
   };
 
