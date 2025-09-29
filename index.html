@@ -1363,6 +1363,50 @@
     });
   </script>
   
+  <!-- Maintenance utilities: URL-driven one-time actions -->
+  <script>
+  (() => {
+    try {
+      const url = new URL(window.location.href);
+      const reset = url.searchParams.get('reset');
+      const logoOverride = url.searchParams.get('logo'); // absolute or relative
+
+      // 1) Reset role/mode sticky state to fix "admin not showing" in regular mode
+      if (reset === 'state') {
+        localStorage.removeItem('foundry-user-role');
+        localStorage.removeItem('foundry-view-mode');
+        console.log('[Maintenance] Cleared role/mode. Reloading once...');
+        url.searchParams.delete('reset');
+        window.location.replace(url.toString());
+        return;
+      }
+
+      // 2) Reset branding (admin config + assets DB) to fix "random logo"
+      if (reset === 'brand') {
+        try { indexedDB.deleteDatabase('foundry-assets'); } catch {}
+        localStorage.removeItem('foundry-admin-config');
+        console.log('[Maintenance] Cleared branding/admin assets. Reloading once...');
+        url.searchParams.delete('reset');
+        window.location.replace(url.toString());
+        return;
+      }
+
+      // 3) Temporary logo override for quick verification (does not persist)
+      if (logoOverride) {
+        const abs = new URL(logoOverride, window.location.href).toString();
+        if (window.images) window.images.logo = abs;
+        // If your app exposes renderApp(), re-render to apply immediately
+        if (typeof window.renderApp === 'function') {
+          try { window.renderApp(); } catch {}
+        }
+        console.log('[Maintenance] Applied logo override:', abs);
+      }
+    } catch (e) {
+      console.warn('[Maintenance] Utilities failed:', e);
+    }
+  })();
+  </script>
+  
   <!-- Role Mode and Presentation System -->
   <script src="./role-mode.js"></script>
   <script src="./config-loader.js"></script>

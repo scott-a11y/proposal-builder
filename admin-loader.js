@@ -1,38 +1,79 @@
 (() => {
-  // Guarded Admin Loader (simple, robust)
+  'use strict';
+
+  let isInitialized = false;
+
+  const url = new URL(window.location.href);
+  const urlRole = url.searchParams.get('role');
+  const urlMode = url.searchParams.get('mode');
+  const forceAdminParam = url.searchParams.get('forceAdmin') === 'true';
+  const forceAdmin = forceAdminParam || urlRole === 'admin';
+
+  // Normalize role/mode if forcing admin via URL
+  const ensureAdminState = () => {
+    try {
+      if (forceAdmin) {
+        localStorage.setItem('foundry-user-role', 'admin');
+        localStorage.setItem('foundry-view-mode', 'edit');
+        // Best-effort to sync current role/mode APIs if available
+        if (window.roleMode?.switchRole) window.roleMode.switchRole('admin');
+        if (window.roleMode?.switchMode) window.roleMode.switchMode('edit');
+      }
+    } catch {}
+  };
+
   const injectAdmin = () => {
-    if (document.querySelector('script[data-admin-addon]')) return;
+    if (document.querySelector('script[data-admin-addon]') ||
+        document.querySelector('script[src$="admin-addon.js"]')) return;
     const s = document.createElement('script');
     s.src = './admin-addon.js';
-    s.setAttribute('data-admin-addon', 'true');
+    s.setAttribute('data-admin-addon', 'loaded');
     s.onload = () => console.log('Admin UI loaded');
-    s.onerror = () => console.warn('Admin UI failed to load');
+    s.onerror = () => console.warn('Failed to load admin UI');
     document.head.appendChild(s);
   };
 
+  const canViewAdmin = () => {
+    if (forceAdmin) return true;
+    const perms = window.proposalGuard?.getCurrentPermissions?.();
+    return !!perms?.viewAdmin;
+  };
+
   const load = () => {
-    // Wait for role/guard to initialize
-    if (!window.roleMode || !window.proposalGuard || !window.proposalGuard.getCurrentPermissions) {
-      return setTimeout(load, 100);
+    // Delay until role/guard exist (unless forceAdmin)
+    if (!forceAdmin && (!window.roleMode || !window.proposalGuard || !window.proposalGuard.getCurrentPermissions)) {
+      if (!isInitialized) setTimeout(load, 100);
+      return;
     }
-    // Destructure permission per spec
-    const { viewAdmin } = window.proposalGuard.getCurrentPermissions();
-    if (viewAdmin) {
+
+    ensureAdminState();
+
+    if (canViewAdmin()) {
       injectAdmin();
     } else {
       console.log('Admin UI not loaded (insufficient permissions)');
     }
   };
 
-  // Kick once DOM is ready
+  // Initialize after DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', load, { once: true });
   } else {
     load();
   }
 
-  // Re-check on role/mode/guard changes
+  // Re-check on role/mode/guard events
+  window.addEventListener('roleModeInitialized', load);
+  window.addEventListener('guardInitialized', load);
   window.addEventListener('roleChanged', load);
   window.addEventListener('modeChanged', load);
-  window.addEventListener('guardInitialized', load);
+
+  // Fallback retry loop (in case events don't fire due to extensions)
+  let retries = 0;
+  const tryLater = () => {
+    if (retries++ > 40) return; // ~4s max
+    load();
+    setTimeout(tryLater, 100);
+  };
+  tryLater();
 })();
