@@ -126,7 +126,7 @@
 }
 
 /* Hide UI elements in both client and PDF views */
-.client-view .print-hidden,
+.client-view .print-hidden:not(.signature-block),
 .client-view .admin-fab,
 .client-view .share-controls,
 .client-view .mode-switcher,

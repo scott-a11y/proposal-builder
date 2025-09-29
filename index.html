@@ -979,7 +979,7 @@
     }
     
     /* Hide admin/navigation elements in client view */
-    .client-view .print-hidden,
+    .client-view .print-hidden:not(.signature-block),
     .client-view .admin-fab,
     .client-view .share-controls,
     .client-view .mode-switcher,
@@ -1187,6 +1187,20 @@
                   <div style="height: 40px; border-bottom: 1px solid var(--gray-border); margin-bottom: 0.5rem;"></div>
                   <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Date</p>
                 </div>
+              </div>
+
+              <!-- Digital signature option for HTML version -->
+              <div class="print-hidden signature-block" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-border);">
+                <h3 style="font-size: 16px; margin-bottom: 1rem; color: var(--midnight);">Digital Acknowledgment (HTML Version Only)</h3>
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                  <input type="text" id="clientSignatureName" placeholder="Type your full name" style="flex: 1; padding: 8px; border: 1px solid var(--gray-border); border-radius: 4px;">
+                  <button onclick="addDigitalSignature()" style="background-color: var(--midnight); color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    Add Digital Signature
+                  </button>
+                </div>
+                <button onclick="emailProposal()" style="background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                  Email Signed Proposal to Foundry Cabinet Co
+                </button>
               </div>
             </div>
 

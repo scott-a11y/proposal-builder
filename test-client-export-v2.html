@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Kitchen Renovation</title>
+  <style>
+    /* CSS Variables */
+    :root { 
+      --midnight: #0B1120;
+      --slate: #1E293B;
+      --slate-light: #334155;
+      --cloud: #F1F5F9;
+      --amber: #F59E0B;
+      --gray-border: #E5E7EB;
+      --gray-caption: #CBD5E1;
+      --gray-muted: #94A3B8;
+      --header: var(--midnight);
+      --footer: var(--midnight);
+    }
+    
+    /* Base styles */
+    body { 
+      background: var(--cloud); 
+      color: #111827; 
+      margin: 0; 
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; 
+    }
+
+    /* Utility classes */
+    .flex { display: flex; }
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .gap-8 { gap: 2rem; }
+    .justify-between { justify-content: space-between; }
+    .justify-end { justify-content: flex-end; }
+    .items-start { align-items: flex-start; }
+    .items-center { align-items: center; }
+    .space-x-2 > * + * { margin-left: 0.5rem; }
+    .w-full { width: 100%; }
+    .min-h-screen { min-height: 100vh; }
+    .max-w-4xl { max-width: 56rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: 1.5rem; }
+    .p-8 { padding: 2rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .pt-4 { padding-top: 1rem; }
+    .pb-4 { padding-bottom: 1rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mt-8 { margin-top: 2rem; }
+    .bg-white { background-color: #ffffff; }
+    .bg-gray-50 { background-color: #f9fafb; }
+    .bg-blue-600 { background-color: #2563eb; }
+    .text-white { color: #ffffff; }
+    .text-gray-500 { color: #6b7280; }
+    .text-gray-600 { color: #4b5563; }
+    .text-gray-700 { color: #374151; }
+    .text-green-600 { color: #059669; }
+    .text-sm { font-size: 0.875rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-3xl { font-size: 1.875rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .leading-relaxed { line-height: 1.625; }
+    .border { border: 1px solid #d1d5db; }
+    .border-b { border-bottom: 1px solid #d1d5db; }
+    .border-b-2 { border-bottom: 2px solid; }
+    .border-t-2 { border-top: 2px solid; }
+    .rounded { border-radius: 0.25rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+    .object-cover { object-fit: cover; }
+    .object-contain { object-fit: contain; }
+    .inline-block { display: inline-block; }
+    .relative { position: relative; }
+    
+    /* Print styles */
+    @media print {
+      .print-hidden { display: none !important; }
+      .client-view .signature-block { display: none !important; } /* Hide signature in print */
+    }
+    
+    /* Client view mode controls - hide logos by default unless explicitly enabled */
+    .client-view .logo-clean,
+    .client-view img[alt*="Logo"],
+    .client-view img[src*="logo"] {
+      display: none !important;
+      background-image: none !important;
+    }
+    
+    /* Remove any header background images that might inject logos */
+    .client-view .proposal-header {
+      background-image: none !important;
+    }
+    
+    /* Show signature section in client view */
+    .client-view .signature-block {
+      display: block !important;
+    }
+    
+    /* Hide admin/navigation elements in client view */
+    .client-view .print-hidden:not(.signature-block),
+    .client-view .admin-fab,
+    .client-view .share-controls,
+    .client-view .mode-switcher,
+    .client-view .role-indicator {
+      display: none !important;
+    }
+    
+    /* Allow logo when explicitly enabled with .show-logo class */
+    .client-view.show-logo .logo-clean,
+    .client-view.show-logo img[alt*="Logo"] {
+      display: block !important;
+      max-height: 100px !important;
+      width: auto !important;
+      object-fit: contain !important;
+      margin-bottom: 1rem !important;
+    }
+  </style>
+</head>
+<body class="client-view">
+        <div class="min-h-screen bg-white">
+          <div class="proposal-page bg-white mx-auto p-8" style="max-width: 1000px;">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-12 pb-6" style="border-bottom: 1px solid var(--gray-border);">
+              <div style="flex: 1;">
+                <!-- Logo - always rendered, visibility controlled by print.css based on print-mode classes -->
+                <img src="http://localhost:8080/Foundry-Cabinetco-Logo-2-White-Text.png" alt="Company Logo" class="logo-clean" style="max-height: 100px; object-fit: contain; margin-bottom: 2rem;" />
+                <h1 style="font-weight: 100; font-size: 3rem; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1rem 0;">Test Kitchen Renovation</h1>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px; margin-bottom: 0.5rem;">For: Test Client</p>
+                <p style="color: var(--gray-muted); font-weight: 300; letter-spacing: 0.5px;">Date: 2025-09-29</p>
+              </div>
+              <div class="text-right" style="flex: 0 0 auto;">
+                <!-- Page marker -->
+                <div style="font-size: 10px; color: var(--gray-muted); letter-spacing: 1px; text-transform: uppercase;">PROJECT # | PAGE 01</div>
+              </div>
+            </div>
+
+            <!-- Project Description -->
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Project Description</h2>
+              <p style="color: var(--slate); line-height: 1.8; font-weight: 300; letter-spacing: 0.3px;">
+                Complete kitchen renovation with modern cabinets
+              </p>
+            </div>
+
+            <!-- Images Grid -->
+            <div class="mb-12">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Design Options</h2>
+              <div class="grid grid-cols-2 gap-8">
+                
+                
+                
+                
+              </div>
+            </div>
+
+            <!-- Floor Plan -->
+            
+
+            <!-- Investment and Timeline -->
+            <div class="grid grid-cols-2 gap-8 mb-12">
+              <div>
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1rem 0;">Investment</h2>
+                <p style="color: var(--slate); font-size: 1.5rem; font-weight: 300;">
+                  $25,000
+                </p>
+              </div>
+              <div>
+                <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1rem 0;">Timeline</h2>
+                <p style="color: var(--slate); font-size: 1.5rem; font-weight: 300;">
+                  Timeline TBD
+                </p>
+              </div>
+            </div>
+
+            
+
+            <!-- Client Acknowledgment Section -->
+            <div style="border: 2px solid var(--gray-border); border-radius: 8px; padding: 2rem; margin-top: 3rem; background-color: #f8f9fa;">
+              <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1.5rem 0; color: var(--midnight);">Client Acknowledgment</h2>
+              
+              <div style="margin-bottom: 1.5rem;">
+                <p style="color: var(--slate); line-height: 1.6; margin-bottom: 1rem;">
+                  By signing below, I acknowledge that I have reviewed this proposal and understand the scope of work, timeline, and investment outlined above.
+                </p>
+                <p style="color: var(--slate); line-height: 1.6; margin-bottom: 0;">
+                  To proceed with this project, please sign below and return this proposal via email to <strong>info@foundrycabinetco.com</strong>
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-8" style="margin-bottom: 2rem;">
+                <div>
+                  <div style="height: 40px; border-bottom: 1px solid var(--gray-border); margin-bottom: 0.5rem;"></div>
+                  <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Client Signature</p>
+                </div>
+                <div>
+                  <div style="height: 40px; border-bottom: 1px solid var(--gray-border); margin-bottom: 0.5rem;"></div>
+                  <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Date</p>
+                </div>
+              </div>
+            </div>
+
+            
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: var(--footer); color: #ffffff; padding: 3rem 0; margin-top: 4rem;">
+            <div class="max-w-4xl mx-auto p-8 text-center">
+              <p style="font-size: 1.5rem; font-weight: 200; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem;">Thank you for choosing Foundry Cabinet Co</p>
+              <p style="color: #94A3B8; font-weight: 300; letter-spacing: 1px; margin-bottom: 2rem;">by District Design Build, LLC</p>
+              <div style="border-top: 1px solid #334155; padding-top: 2rem; margin-top: 2rem;">
+                <p style="color: #94A3B8; font-weight: 300; margin-bottom: 1rem;">Ready to move forward? Contact us:</p>
+                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                  <div><strong>Phone:</strong> (555) 123-4567</div>
+                  <div><strong>Email:</strong> info@foundrycabinetco.com</div>
+                  <div><strong>Website:</strong> foundrycabinetco.com</div>
+                </div>
+                <p style="color: #64748B; font-size: 0.875rem; margin: 0;">Licensed & Insured • Free Estimates • Quality Craftsmanship</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+</html>
