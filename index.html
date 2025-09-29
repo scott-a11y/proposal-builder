@@ -20,6 +20,9 @@
   <!-- Presentation Mode and Brand Consistency -->
   <link rel="stylesheet" href="./brand.css">
   <link rel="stylesheet" href="./presentation.css">
+  
+  <!-- Enhanced Print Stylesheet for PDF/Print formatting -->
+  <link rel="stylesheet" href="./print.css">
 
   <!-- Content Security Policy - Simplified for self-contained app -->
   <meta http-equiv="Content-Security-Policy"
@@ -182,128 +185,10 @@
     .card { box-shadow: 0 6px 20px rgba(2,6,23,.08); }
     .logo-clean { display:block; max-height:160px; object-fit:contain; }
 
-    /* Print-specific logo styles */
-    @media print {
-      .logo-clean { 
-        max-height: 1.5in !important; 
-        width: auto !important;
-        object-fit: contain !important;
-        break-inside: avoid !important;
-      }
-      
-      /* Ensure professional header layout in print */
-      .proposal-page .flex.justify-between.items-start {
-        align-items: flex-start !important;
-        margin-bottom: 3rem !important;
-      }
-      
-      /* Better typography for print */
-      h1 {
-        font-size: 2.5rem !important;
-        letter-spacing: 2px !important;
-        margin-bottom: 1.5rem !important;
-      }
-    }
-
-    /* Bigger image frames in preview */
+    /* Basic layout styles - print styles moved to print.css */
     .img-frame { height: 21rem; }
     .img-frame-sm { height: 18rem; }
     .img-frame-layout { height: 26rem; }
-
-    @media print {
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      .print-hidden { display: none !important; }
-      
-      /* Remove fixed height and overflow hidden to allow natural content flow */
-      .proposal-page { 
-        width: 8.5in !important; 
-        min-height: 11in !important; 
-        margin: 0 !important; 
-        page-break-after: always !important; 
-        box-sizing: border-box !important;
-        padding: 0.75in !important;
-        background: white !important;
-      }
-      
-      @page { 
-        size: 8.5in 11in; 
-        margin: 0; 
-        background: white;
-      }
-      
-      .two { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-      .cols { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 28px !important; }
-      
-      /* Better image handling for print */
-      .imgBox, .layoutImg, .tlItem, .nxItem { 
-        break-inside: avoid !important; 
-        page-break-inside: avoid !important; 
-        margin-bottom: 1rem !important;
-      }
-      
-      /* Constrain image sizes for print to prevent overflow */
-      img { 
-        break-inside: avoid !important; 
-        page-break-inside: avoid !important; 
-        max-width: 100% !important;
-        height: auto !important;
-        object-fit: contain !important;
-      }
-      
-      /* Specific image frame constraints for print */
-      .img-frame { 
-        max-height: 4in !important; 
-        height: auto !important; 
-      }
-      .img-frame-sm { 
-        max-height: 3in !important; 
-        height: auto !important; 
-      }
-      .img-frame-layout { 
-        max-height: 5in !important; 
-        height: auto !important; 
-        margin-bottom: 2rem !important;
-      }
-      
-      /* Ensure content sections don't break awkwardly */
-      .mb-8, .mb-12 { 
-        page-break-inside: avoid !important; 
-        margin-bottom: 2rem !important;
-      }
-      
-      /* Add spacing around grid sections to prevent overlap */
-      .grid { 
-        margin-bottom: 2rem !important;
-        page-break-inside: avoid !important;
-      }
-      
-      /* Ensure footer gets proper spacing */
-      .proposal-page > div:last-child {
-        margin-top: 3rem !important;
-        page-break-before: avoid !important;
-      }
-      
-      /* Professional letter formatting */
-      .proposal-page h1 {
-        font-size: 2.5rem !important;
-        margin-bottom: 1rem !important;
-        page-break-after: avoid !important;
-      }
-      
-      .proposal-page h2 {
-        font-size: 1.1rem !important;
-        margin-top: 1.5rem !important;
-        margin-bottom: 1rem !important;
-        page-break-after: avoid !important;
-      }
-      
-      /* Better header spacing for print */
-      .proposal-page > div:first-child {
-        margin-bottom: 2rem !important;
-        padding-bottom: 1.5rem !important;
-        page-break-after: avoid !important;
-      }
-    }
 
     /* Basic utility classes */
     .flex { display: flex; }
@@ -612,6 +497,48 @@
       floorPlan: ''
     };
     
+    /* PDF/Print Configuration System
+     * - Controls logo visibility and branding in printed/exported PDFs
+     * - Logo sources documented: DEFAULT_LOGO_PATH (./Foundry-Cabinetco-Logo-2-White-Text.png), 
+     *   INLINE_FALLBACK_LOGO (SVG), admin-uploaded assets via admin-addon.js
+     * - Default: unbranded client PDFs (no logo), can be toggled via showLogoInPrint
+     */
+    window.printConfig = {
+      showLogoInPrint: false, // Default: unbranded client PDFs
+      preferBlackTextLogo: true, // Use uploaded black-text version when available
+      supportedPageSizes: ['letter', 'a4'], // Letter (8.5x11) default, A4 support
+      marginSize: '0.75in' // Default margin for professional appearance
+    };
+    
+    // Helper function to control logo visibility in print
+    const shouldShowLogoInPrint = () => {
+      // Check if explicitly enabled via admin settings or printConfig
+      if (window.printConfig?.showLogoInPrint) return true;
+      
+      // Check admin config if available (from admin-addon.js)
+      if (typeof window.loadAdminConfig === 'function') {
+        try {
+          const adminConfig = window.loadAdminConfig();
+          return adminConfig?.branding?.showLogoInPrint || false;
+        } catch (e) {
+          // Fail silently if admin config not available
+        }
+      }
+      
+      return false; // Default: no logo in print
+    };
+    
+    // Developer utility: Toggle logo in print (for testing)
+    window.togglePrintLogo = (enable = null) => {
+      if (enable === null) {
+        window.printConfig.showLogoInPrint = !window.printConfig.showLogoInPrint;
+      } else {
+        window.printConfig.showLogoInPrint = !!enable;
+      }
+      console.log(`Print logo ${window.printConfig.showLogoInPrint ? 'enabled' : 'disabled'}`);
+      return window.printConfig.showLogoInPrint;
+    };
+    
     // Keep local references for convenience
     let formData = window.formData;
     let images = window.images;
@@ -841,21 +768,42 @@
     };
 
     const printProposal = async () => {
-      // Switch to a clean print view temporarily
+      // Enhanced print with print-mode class and logo control
       const originalContent = document.body.innerHTML;
       await embedAllImagesInState();
       const clientView = renderClientView();
       
-      // Create a temporary print-friendly version
+      // Determine if logo should be shown
+      const showLogo = shouldShowLogoInPrint();
+      const printModeClass = showLogo ? 'print-mode show-logo' : 'print-mode';
+      
+      // Create a temporary print-friendly version with enhanced styling
       document.body.innerHTML = `
         <style>
+          /* Minimal print override - main styles come from print.css */
           @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body { margin: 0; padding: 0; }
-            .proposal-page { width: 8.5in !important; margin: 0 !important; padding: 0.5in !important; }
+            body { margin: 0; padding: 0; background: white !important; }
+            
+            /* Hide UI elements that should never appear in PDF */
+            .print-hidden,
+            .admin-fab,
+            .share-controls,
+            .mode-switcher,
+            .role-indicator,
+            button,
+            input,
+            textarea,
+            select,
+            .btn {
+              display: none !important;
+              visibility: hidden !important;
+            }
           }
         </style>
-        ${clientView}
+        <div class="${printModeClass}">
+          ${clientView}
+        </div>
       `;
       
       await waitForImagesToLoad();

@@ -1,0 +1,285 @@
+/* Print stylesheet for proposal-builder
+ * Provides professional PDF/print formatting with proper pagination
+ * Usage: Link this stylesheet for enhanced print layout
+ */
+
+/* Print-specific variables and base settings */
+@media print {
+  :root {
+    --print-margin: 0.75in;
+    --print-margin-sm: 0.5in;
+  }
+
+  /* Reset and base print styles */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important; /* Remove shadows that create dark boxes */
+    text-shadow: none !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: #000 !important; /* Ensure dark text for legibility */
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Page setup - Letter size with A4 fallback */
+  @page {
+    size: 8.5in 11in; /* Letter size default */
+    margin: 0;
+    background: white;
+  }
+
+  /* A4 support via media query */
+  @page :first {
+    size: A4;
+    margin: 0;
+  }
+
+  /* Main proposal page formatting */
+  .proposal-page {
+    width: 8.5in !important;
+    min-height: 11in !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: var(--print-margin) !important;
+    background: white !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    display: block !important; /* Override flex for print */
+  }
+
+  /* A4 adjustments */
+  @media print and (max-height: 29.7cm) {
+    .proposal-page {
+      width: 210mm !important;
+      min-height: 297mm !important;
+      padding: var(--print-margin-sm) !important;
+    }
+  }
+
+  /* Hide fixed-position UI elements that should never appear in PDF */
+  .print-hidden,
+  .admin-fab,
+  .admin-only,
+  .share-controls,
+  .mode-switcher,
+  .role-indicator,
+  .fixed,
+  .sticky,
+  [style*="position: fixed"],
+  [style*="position: sticky"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Logo control - hidden by default in print mode */
+  .print-mode .logo-clean,
+  .print-mode img[alt*="Logo"],
+  .print-mode img[src*="logo"] {
+    display: none !important;
+  }
+
+  /* Show logo only when explicitly enabled */
+  .print-mode.show-logo .logo-clean,
+  .print-mode.show-logo img[alt*="Logo"] {
+    display: block !important;
+    max-height: 1.5in !important;
+    width: auto !important;
+    object-fit: contain !important;
+    margin-bottom: 1rem !important;
+    page-break-inside: avoid !important;
+    /* Prefer black/dark logos for better print contrast */
+    filter: contrast(1.2) brightness(0.8);
+  }
+
+  /* Page break controls */
+  .page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  .page-break-avoid,
+  .card,
+  .mb-8,
+  .mb-12,
+  h1, h2, h3, h4, h5, h6 {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Heading improvements */
+  h1 {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 1rem !important;
+    margin-top: 0 !important; /* Reduce excessive top whitespace */
+    page-break-after: avoid !important;
+    color: #000 !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.75rem !important;
+    page-break-after: avoid !important;
+    color: #000 !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    page-break-after: avoid !important;
+    color: #000 !important;
+  }
+
+  /* Grid and layout improvements */
+  .grid,
+  .flex {
+    margin-bottom: 1.5rem !important;
+    page-break-inside: avoid !important;
+  }
+
+  .two,
+  .grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .cols {
+    display: grid !important;
+    grid-template-columns: 1.1fr 0.9fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Image handling for print */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .img-frame {
+    max-height: 4in !important;
+    height: auto !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .img-frame-sm {
+    max-height: 3in !important;
+    height: auto !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .img-frame-layout {
+    max-height: 5in !important;
+    height: auto !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Content spacing and flow */
+  .imgBox,
+  .layoutImg,
+  .tlItem,
+  .nxItem {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Footer improvements */
+  .proposal-page > div:last-child {
+    margin-top: 2rem !important;
+    page-break-before: avoid !important;
+  }
+
+  /* Remove unnecessary borders and shadows */
+  .card,
+  .border,
+  .shadow,
+  .shadow-lg,
+  .shadow-md {
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  /* Professional header layout */
+  .proposal-page .flex.justify-between.items-start {
+    align-items: flex-start !important;
+    margin-bottom: 2rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid #ccc !important;
+  }
+
+  /* Ensure proper text contrast */
+  p, span, div, li {
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  /* Form elements and buttons - hide in print */
+  button,
+  input,
+  textarea,
+  select,
+  .btn,
+  form,
+  .form-control,
+  [type="text"],
+  [type="email"],
+  [type="submit"],
+  [onclick] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Specifically hide digital signature sections */
+  *:has(input[type="text"]),
+  *:has(button),
+  .digital-signature,
+  [class*="signature"],
+  [id*="signature"] {
+    display: none !important;
+  }
+
+  /* Table formatting if any */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 0.5rem !important;
+    text-align: left !important;
+  }
+
+  /* QR codes and small elements */
+  .qr-code {
+    max-width: 1in !important;
+    max-height: 1in !important;
+  }
+}
+
+/* Print mode utilities - only applied when .print-mode class is present */
+.print-mode {
+  /* This class is added to body during print to scope print-specific changes */
+}
+
+.print-mode .admin-fab,
+.print-mode .share-controls,
+.print-mode .print-hidden {
+  display: none !important;
+}
