@@ -187,7 +187,7 @@
 
   // ----- Admin UI -----
   const css = `
-  .admin-fab { position: fixed; right: 16px; bottom: 16px; z-index: 9999; background: #000; color: #fff; border: 1px solid #000; border-radius: 999px; padding: 10px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .admin-fab { background: #000; color: #fff; border: 1px solid #000; border-radius: 999px; padding: 10px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
   .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 9998; display: none; }
   .admin-modal { position: fixed; inset: 5% 5% auto 5%; background: #fff; border: 1px solid #ddd; z-index: 9999; display: none; max-width: 960px; margin: 0 auto; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
   .admin-head { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom:1px solid #eee; background:#fafafa; }
@@ -287,11 +287,27 @@
     ui.backdrop = backdrop;
     ui.modal = modal;
     
+    // Use shared floating button container for the admin fab button
+    const getContainer = () => {
+      if (window.shareLink?.getOrCreateFloatingButtonContainer) {
+        return window.shareLink.getOrCreateFloatingButtonContainer();
+      }
+      // Fallback if shareLink isn't available yet
+      return document.body;
+    };
+    
     // Try multiple ways to append UI elements safely
-    if (document.body) {
-      document.body.appendChild(fab);
-      document.body.appendChild(backdrop);
-      document.body.appendChild(modal);
+    const container = getContainer();
+    if (container && container.appendChild) {
+      if (container.id === 'floating-buttons-container') {
+        container.appendChild(fab);
+      } else if (document.body) {
+        document.body.appendChild(fab);
+      }
+      if (document.body) {
+        document.body.appendChild(backdrop);
+        document.body.appendChild(modal);
+      }
     } else if (document.getElementsByTagName('body')[0]) {
       const body = document.getElementsByTagName('body')[0];
       body.appendChild(fab);

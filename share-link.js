@@ -24,6 +24,28 @@
   let sharedLinks = new Map();
   let isInitialized = false;
 
+  // Floating buttons container utility
+  const getOrCreateFloatingButtonContainer = () => {
+    let container = document.getElementById('floating-buttons-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'floating-buttons-container';
+      container.style.cssText = `
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        z-index: 9999;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      `;
+      if (document.body) {
+        document.body.appendChild(container);
+      }
+    }
+    return container;
+  };
+
   // Load existing shared links
   const loadSharedLinks = () => {
     try {
@@ -445,7 +467,7 @@
     const shareButton = document.createElement('button');
     shareButton.textContent = 'Share';
     shareButton.className = 'brand-button';
-    shareButton.style.cssText = 'position: fixed; bottom: 16px; right: 80px; z-index: 9999;';
+    // Remove fixed positioning - will be handled by container
 
     const shareUI = createShareUI();
     if (shareUI && document.body) {
@@ -473,7 +495,10 @@
     // 3) Share UI for authorized users (only if not accessing via a local shared link)
     if (!hadSharedLink) {
       const shareButton = createShareButton();
-      if (shareButton && document.body) document.body.appendChild(shareButton);
+      if (shareButton) {
+        const container = getOrCreateFloatingButtonContainer();
+        container.appendChild(shareButton);
+      }
     }
 
     // 4) Copy Link pill in presentation mode
@@ -507,6 +532,7 @@
     cleanupExpiredLinks,
     handleSharedLink,
     handleSnapshotHash,
+    getOrCreateFloatingButtonContainer,
     // Configuration
     SHARE_CONFIG,
     // State inspection
