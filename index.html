@@ -634,6 +634,9 @@
         return '';  // Return empty string for failed conversions to trigger fallback logic
       }
     };
+    
+    // Expose globally for admin-addon.js asset scheme integration
+    window.toDataURL = toDataURL;
 
     const embedAllImagesInState = async () => {
       // Always check logo visibility first, regardless of embedding needs
