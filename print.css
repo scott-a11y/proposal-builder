@@ -79,13 +79,23 @@
 
   /* Logo control - hidden by default in print mode */
   .print-mode .logo-clean,
+  .print-mode .brand-logo,
   .print-mode img[alt*="Logo"],
   .print-mode img[src*="logo"] {
+    display: none !important;
+  }
+  
+  /* Hide empty/broken logo placeholders */
+  .print-mode img.logo-clean[src=""],
+  .print-mode img.logo-clean:not([src]),
+  .print-mode img.brand-logo[src=""],
+  .print-mode img.brand-logo:not([src]) {
     display: none !important;
   }
 
   /* Show logo only when explicitly enabled */
   .print-mode.show-logo .logo-clean,
+  .print-mode.show-logo .brand-logo,
   .print-mode.show-logo img[alt*="Logo"] {
     display: block !important;
     max-height: 1.5in !important;
@@ -101,13 +111,27 @@
 /* Client and PDF view mode controls - applies outside of @media print for HTML exports */
 /* Hide logos by default in client-view and pdf-view unless explicitly enabled */
 .client-view .logo-clean,
+.client-view .brand-logo,
 .client-view img[alt*="Logo"],
 .client-view img[src*="logo"],
 .pdf-view .logo-clean, 
+.pdf-view .brand-logo,
 .pdf-view img[alt*="Logo"],
 .pdf-view img[src*="logo"] {
   display: none !important;
   background-image: none !important;
+}
+
+/* Hide empty/broken logo placeholders in client and PDF views */
+.client-view img.logo-clean[src=""],
+.client-view img.logo-clean:not([src]),
+.client-view img.brand-logo[src=""],
+.client-view img.brand-logo:not([src]),
+.pdf-view img.logo-clean[src=""],
+.pdf-view img.logo-clean:not([src]),
+.pdf-view img.brand-logo[src=""],
+.pdf-view img.brand-logo:not([src]) {
+  display: none !important;
 }
 
 /* Remove any header background images that might inject logos */
@@ -147,8 +171,10 @@
 
 /* Allow logo when explicitly enabled with .show-logo class */
 .client-view.show-logo .logo-clean,
+.client-view.show-logo .brand-logo,
 .client-view.show-logo img[alt*="Logo"],
 .pdf-view.show-logo .logo-clean,
+.pdf-view.show-logo .brand-logo,
 .pdf-view.show-logo img[alt*="Logo"] {
   display: block !important;
   max-height: 100px !important;
