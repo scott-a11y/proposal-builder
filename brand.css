@@ -1,0 +1,147 @@
+/* Brand token bridge: override the app's variables to match your site.
+   Update colors/fonts below to your exact brand if needed. */
+
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans";
+  --font-serif: "Georgia", "Times New Roman", serif;
+
+  /* Core palette */
+  --midnight: #0B1120;   /* Primary text / key accents */
+  --slate: #1E293B;      /* Secondary text */
+  --slate-light: #334155;/* Section headings */
+  --cloud: #FFFFFF;      /* Page background for proposal */
+  --accent: #111827;     /* Accent (near-black) */
+  --gray-border: #E5E7EB;
+  --gray-caption: #CBD5E1;
+  --gray-muted: #94A3B8;
+
+  /* Back-compat with existing app variables */
+  --header: var(--midnight);
+  --footer: var(--midnight);
+}
+
+/* Global typography + page background alignment */
+html, body {
+  font-family: var(--font-sans);
+  background: var(--cloud);
+  color: var(--midnight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Role gating: never show admin UI for agents/clients */
+html[data-role="agent"] .admin-only,
+html[data-role="client"] .admin-only,
+html[data-role="agent"] [data-admin],
+html[data-role="client"] [data-admin] {
+  display: none !important;
+}
+
+/* Presentation Mode: hide any app chrome, toolbars, buttons */
+html[data-mode="present"] .print-hidden,
+html[data-mode="present"] .sticky,
+html[data-mode="present"] .no-present,
+html[data-mode="present"] .app-toolbar {
+  display: none !important;
+}
+
+/* Professional proposal base */
+.proposal-page {
+  max-width: 8.5in;
+  margin: 0 auto;
+  background: var(--cloud);
+  color: var(--midnight);
+  padding: 1in 0.85in; /* print-friendly margins */
+  box-sizing: border-box;
+}
+
+/* Letterhead */
+.proposal-letterhead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+.proposal-letterhead .logo-clean {
+  max-height: 140px;
+  object-fit: contain;
+}
+.proposal-meta {
+  text-align: right;
+  color: var(--gray-muted);
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+/* Title */
+.proposal-title {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 40px;
+  margin: 10px 0 8px 0;
+}
+.proposal-submeta {
+  color: var(--gray-muted);
+  font-size: 13px;
+  letter-spacing: .02em;
+}
+
+/* Sections */
+.pro-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gray-border);
+}
+.pro-section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.pro-section h2 {
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: var(--slate-light);
+  margin: 0 0 14px 0;
+}
+.pro-section p {
+  line-height: 1.7;
+  margin: 0 0 10px 0;
+  color: var(--slate);
+}
+
+/* Media frames */
+.pro-image {
+  width: 100%;
+  border: 1px solid var(--gray-border);
+  border-radius: 6px;
+  background: #fff;
+  object-fit: cover;
+}
+.pro-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.pro-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* KPI row */
+.kpis { display: grid; grid-template-columns: 1.2fr .8fr; gap: 28px; margin-top: 8px; }
+.kpi { padding: 18px 0 6px 0; }
+.kpi .label { font-size: 11px; letter-spacing: .12em; color: var(--gray-muted); text-transform: uppercase; }
+.kpi .value { margin-top: 8px; font-size: 28px; font-weight: 600; letter-spacing: .02em; }
+
+/* Notes + signature */
+.notes { color: var(--slate); }
+.signature-block { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.sig-line { height: 1px; background: var(--gray-border); margin: 40px 0 8px 0; }
+.sig-label { font-size: 11px; color: var(--gray-muted); letter-spacing: .08em; }
+
+/* On-screen footer (hidden in print) */
+.pro-footer.print-only-off { margin-top: 36px; font-size: 12px; color: var(--gray-muted); }
+
+@media print {
+  :root { --cloud: #FFFFFF; --midnight: #000000; --gray-muted: #333333; }
+  .print-only-off { display: none !important; }
+  .proposal-page { padding: 0.75in 0.7in; }
+}

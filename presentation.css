@@ -1,0 +1,47 @@
+/* Enhancements for the preview DOM produced by index.html */
+
+.proposal-page img.logo-clean { max-height: 140px; }
+
+.proposal-page h1,
+.proposal-page h2 {
+  font-family: var(--font-serif);
+  color: var(--midnight);
+}
+
+.proposal-page h1 {
+  font-weight: 300;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 40px;
+  margin: 8px 0 4px 0;
+}
+
+.proposal-page h2 {
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: var(--slate-light);
+  margin: 26px 0 12px 0;
+}
+
+.proposal-page .border,
+.proposal-page .border-b,
+.proposal-page .border-t-2,
+.proposal-page .border-b-2 { border-color: var(--gray-border) !important; }
+
+.proposal-page .card { border: 1px solid var(--gray-border); background: #fff; }
+
+/* Editorial breathing room */
+.proposal-page .grid { row-gap: 20px; }
+
+/* Readability */
+.proposal-page { line-height: 1.65; color: var(--slate); }
+
+/* Remove any action controls in presentation mode */
+html[data-mode="present"] .proposal-page button,
+html[data-mode="present"] .proposal-page .btn,
+html[data-mode="present"] .proposal-page a[href^="javascript:"],
+html[data-mode="present"] .proposal-page [role="button"] {
+  display: none !important;
+}
