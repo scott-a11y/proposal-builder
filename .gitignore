@@ -1,2 +1,23 @@
 # Temporary test files - exclude from commits
 test-client-export*.html
+
+# Development and debugging files
+*.log
+*.tmp
+debug*.html
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Backup files
+*.backup
+*.bak
