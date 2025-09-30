@@ -564,7 +564,49 @@
               await setDefaultLogoVariant('light', a.id);
               renderActiveTab('assets');
             }
-          }, [isDefaultLight ? 'Light Logo ✓' : 'Set as Light (PDF)'])
+          }, [isDefaultLight ? 'Light Logo ✓' : 'Set as Light (PDF)']),
+          el('button', {
+            class: 'btn',
+            style: { fontSize: '10px', padding: '6px 8px', background: '#dc3545 !important', color: '#fff', borderColor: '#dc3545' },
+            onclick: async () => {
+              if (!confirm(`Delete "${a.name}"? This cannot be undone.`)) return;
+              
+              // Clear logo variants from config if this asset was set as default
+              if (isDefaultDark || isDefaultLight || isDefaultLegacy) {
+                const cfg = loadAdminConfig();
+                if (isDefaultDark) cfg.company.logoAssetIdDark = '';
+                if (isDefaultLight) cfg.company.logoAssetIdLight = '';
+                if (isDefaultLegacy) cfg.company.logoAssetId = '';
+                
+                // Disable logo in print if no variants are left
+                if (!cfg.company.logoAssetIdDark && !cfg.company.logoAssetIdLight) {
+                  cfg.branding.showLogoInPrint = false;
+                }
+                
+                saveAdminConfig(cfg);
+                
+                // Clear from in-memory images
+                if (typeof window.images === 'object') {
+                  if (isDefaultDark) window.images.logoOnDark = '';
+                  if (isDefaultLight) window.images.logoOnLight = '';
+                  if (isDefaultLegacy) window.images.logo = '';
+                  
+                  // Update active logo
+                  if (window.images.logoOnDark) {
+                    window.images.logo = window.images.logoOnDark;
+                  } else if (window.images.logoOnLight) {
+                    window.images.logo = window.images.logoOnLight;
+                  } else {
+                    window.images.logo = '';
+                  }
+                }
+              }
+              
+              await deleteAsset(a.id);
+              await refreshAssets();
+              renderActiveTab('assets');
+            }
+          }, ['Delete'])
         ])
       ]);
       grid.appendChild(card);
