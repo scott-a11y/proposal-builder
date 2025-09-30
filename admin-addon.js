@@ -22,7 +22,12 @@
       phone: '',
       address: '',
       website: '',
-      logoAssetId: '' // if set, images.logo => asset:<id>
+      logoAssetId: '', // legacy: single logo (kept for backward compat)
+      logoAssetIdDark: '', // white-text logo for dark backgrounds (HTML)
+      logoAssetIdLight: '' // black-text logo for light backgrounds (PDF)
+    },
+    branding: {
+      showLogoInPrint: false // true when either variant is set
     },
     templates: {},
     defaults: {
@@ -142,6 +147,15 @@
     });
   };
 
+  const deleteAsset = async (id) => {
+    const { store, db } = await txStore('readwrite');
+    return new Promise((resolve, reject) => {
+      const req = store.delete(id);
+      req.onsuccess = () => { db.close(); resolve(); };
+      req.onerror = () => { db.close(); reject(req.error); };
+    });
+  };
+
   const assetToDataURL = async (id) => {
     console.log('[Asset] Resolving asset ID:', id);
     const rec = await getAsset(id);
@@ -164,6 +178,106 @@
   
   // Expose globally for use by main application
   window.assetToDataURL = assetToDataURL;
+  window.listAssets = listAssets;
+  window.deleteAsset = deleteAsset;
+  window.putAsset = saveAsset;
+
+  // ----- Logo variant helpers -----
+  
+  // Set default logo variant (dark or light) and update in-memory images
+  const setDefaultLogoVariant = async (variant, assetId) => {
+    if (!['dark', 'light'].includes(variant)) {
+      console.error('[Admin] Invalid variant. Must be "dark" or "light"');
+      return;
+    }
+    
+    const cfg = loadAdminConfig();
+    
+    if (variant === 'dark') {
+      cfg.company.logoAssetIdDark = assetId;
+    } else {
+      cfg.company.logoAssetIdLight = assetId;
+    }
+    
+    // Enable logo in print when either variant is set
+    if (assetId && (cfg.company.logoAssetIdDark || cfg.company.logoAssetIdLight)) {
+      cfg.branding.showLogoInPrint = true;
+    }
+    
+    saveAdminConfig(cfg);
+    console.log(`[Admin] Set logo variant '${variant}' to asset:`, assetId);
+    
+    // Update in-memory images immediately
+    if (typeof window.images === 'object') {
+      if (variant === 'dark' && assetId) {
+        window.images.logoOnDark = `asset:${assetId}`;
+        // Resolve to data URL
+        const dataUrl = await assetToDataURL(assetId).catch(() => '');
+        if (dataUrl) window.images.logoOnDark = dataUrl;
+      } else if (variant === 'light' && assetId) {
+        window.images.logoOnLight = `asset:${assetId}`;
+        // Resolve to data URL
+        const dataUrl = await assetToDataURL(assetId).catch(() => '');
+        if (dataUrl) window.images.logoOnLight = dataUrl;
+      }
+    }
+    
+    // Re-render if possible
+    if (typeof window.renderApp === 'function') {
+      try { window.renderApp(); } catch {}
+    }
+  };
+  
+  // Hydrate logo variants from admin config on load
+  const hydrateLogosFromAdminConfig = async () => {
+    try {
+      const cfg = loadAdminConfig();
+      
+      if (!window.images) {
+        window.images = {};
+      }
+      
+      // Load dark variant (white-text logo for dark backgrounds)
+      if (cfg.company?.logoAssetIdDark) {
+        window.images.logoOnDark = `asset:${cfg.company.logoAssetIdDark}`;
+        const dataUrl = await assetToDataURL(cfg.company.logoAssetIdDark).catch(() => '');
+        if (dataUrl) {
+          window.images.logoOnDark = dataUrl;
+          console.log('[Admin] Hydrated logoOnDark from config');
+        }
+      }
+      
+      // Load light variant (black-text logo for light backgrounds)
+      if (cfg.company?.logoAssetIdLight) {
+        window.images.logoOnLight = `asset:${cfg.company.logoAssetIdLight}`;
+        const dataUrl = await assetToDataURL(cfg.company.logoAssetIdLight).catch(() => '');
+        if (dataUrl) {
+          window.images.logoOnLight = dataUrl;
+          console.log('[Admin] Hydrated logoOnLight from config');
+        }
+      }
+      
+      // Set active logo based on context (default to dark for HTML preview)
+      if (window.images.logoOnDark) {
+        window.images.logo = window.images.logoOnDark;
+      } else if (window.images.logoOnLight) {
+        window.images.logo = window.images.logoOnLight;
+      }
+      
+      // Update print config if logo variants are available
+      if (typeof window.printConfig === 'object') {
+        window.printConfig.showLogoInPrint = cfg.branding?.showLogoInPrint || false;
+      }
+      
+    } catch (e) {
+      console.error('[Admin] hydrateLogosFromAdminConfig failed:', e);
+    }
+  };
+  
+  // Expose logo variant helpers globally
+  window.setDefaultLogoVariant = setDefaultLogoVariant;
+  window.hydrateLogosFromAdminConfig = hydrateLogosFromAdminConfig;
+  window.loadAdminConfig = loadAdminConfig;
 
   // ----- Hook into app image pipeline (asset: scheme) -----
   const hookAssetScheme = () => {
@@ -225,6 +339,8 @@
   .admin-fab { background: #000; color: #fff; border: 1px solid #000; border-radius: 999px; padding: 10px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; z-index: 1000; position: relative; }
   /* Backdrop only shows when body.modal-open is set */
   .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 10000; display: none; }
+  body.modal-open .admin-modal-backdrop { display: block; }
+  body.modal-open .admin-modal { display: block; }
   .admin-modal { position: fixed; inset: 5% 5% auto 5%; background: #fff; border: 1px solid #ddd; z-index: 10001; display: none; max-width: 960px; margin: 0 auto; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
   .admin-head { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom:1px solid #eee; background:#fafafa; }
   .admin-tabs { display:flex; gap: 12px; padding: 12px 16px; border-bottom:1px solid #eee; background:#fcfcfc; }
@@ -417,45 +533,30 @@
       const imgEl = el('img', { alt: a.name });
       assetToDataURL(a.id).then((dataURL) => { imgEl.src = dataURL; });
 
-      const isDefault = cfg.company.logoAssetId === a.id;
+      const isDefaultLegacy = cfg.company.logoAssetId === a.id;
+      const isDefaultDark = cfg.company.logoAssetIdDark === a.id;
+      const isDefaultLight = cfg.company.logoAssetIdLight === a.id;
+      
       const card = el('div', { class: 'asset-card' }, [
         imgEl,
         el('div', { class: 'asset-meta' }, [`${a.name} • ${formatBytes(a.size)}`]),
-        el('div', { class: 'admin-actions' }, [
+        el('div', { class: 'admin-actions', style: { display: 'flex', flexDirection: 'column', gap: '4px' } }, [
           el('button', {
-            class: `btn ${isDefault ? '' : 'primary'}`,
+            class: `btn ${isDefaultDark ? '' : 'primary'}`,
+            style: { fontSize: '10px', padding: '6px 8px' },
             onclick: async () => {
-              const c = loadAdminConfig();
-              c.company.logoAssetId = a.id;
-              saveAdminConfig(c);
-              console.log('[Admin] Setting default logo to asset:', a.id);
-              
-              if (typeof window.images === 'object') {
-                window.images.logo = `asset:${a.id}`;
-              }
-              
-              // Auto-enable logo in print when admin logo is set
-              if (typeof window.printConfig === 'object') {
-                window.printConfig.showLogoInPrint = true;
-              }
-              
-              // Add show-logo class to ensure logo appears in preview
-              if (document.body && !document.body.classList.contains('show-logo')) {
-                document.body.classList.add('show-logo');
-              }
-              
-              // Trigger logo resolution to convert asset:<id> to data URL
-              if (typeof window.ensureAdminLogoResolved === 'function') {
-                console.log('[Admin] Triggering logo resolution after setting default');
-                await window.ensureAdminLogoResolved();
-              }
-              
-              if (typeof window.renderApp === 'function') {
-                try { window.renderApp(); } catch {}
-              }
+              await setDefaultLogoVariant('dark', a.id);
               renderActiveTab('assets');
             }
-          }, [isDefault ? 'Default Logo ✓' : 'Use as Default Logo'])
+          }, [isDefaultDark ? 'Dark Logo ✓' : 'Set as Dark (HTML)']),
+          el('button', {
+            class: `btn ${isDefaultLight ? '' : 'primary'}`,
+            style: { fontSize: '10px', padding: '6px 8px' },
+            onclick: async () => {
+              await setDefaultLogoVariant('light', a.id);
+              renderActiveTab('assets');
+            }
+          }, [isDefaultLight ? 'Light Logo ✓' : 'Set as Light (PDF)'])
         ])
       ]);
       grid.appendChild(card);
@@ -859,6 +960,10 @@
   const init = async () => {
     hookAssetScheme();
     buildUI();
+    
+    // Hydrate logo variants from admin config
+    await hydrateLogosFromAdminConfig();
+    
     const ensureImages = () => typeof window.images === 'object';
     if (ensureImages()) {
       await applyDefaultLogoIfPresent();
