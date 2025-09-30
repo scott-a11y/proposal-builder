@@ -1770,6 +1770,10 @@
         startAutosave();
       }
     });
+
+    // Expose export functions to window scope for onclick handlers
+    window.exportProposal = exportProposal;
+    window.printProposal = printProposal;
   </script>
   
   <!-- Maintenance utilities: URL-driven one-time actions -->
