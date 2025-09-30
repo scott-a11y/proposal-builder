@@ -346,24 +346,24 @@
   const css = `
   .admin-fab { background: #000; color: #fff; border: 1px solid #000; border-radius: 999px; padding: 10px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; z-index: 1000; position: relative; }
   /* Backdrop only shows when body.modal-open is set */
-  .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 10000; display: none; }
+  .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35) !important; z-index: 10000; display: none; }
   body.modal-open .admin-modal-backdrop { display: block; }
   body.modal-open .admin-modal { display: block; }
-  .admin-modal { position: fixed; inset: 5% 5% auto 5%; background: #fff; border: 1px solid #ddd; z-index: 10001; display: none; max-width: 960px; margin: 0 auto; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
-  .admin-head { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom:1px solid #eee; background:#fafafa; }
-  .admin-tabs { display:flex; gap: 12px; padding: 12px 16px; border-bottom:1px solid #eee; background:#fcfcfc; }
-  .admin-tab { padding: 8px 12px; border: 1px solid #ddd; background:#fff; cursor:pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-  .admin-tab.active { background:#000; color:#fff; border-color:#000; }
-  .admin-body { padding: 16px; max-height: 70vh; overflow:auto; }
+  .admin-modal { position: fixed; inset: 5% 5% auto 5%; background: #fff !important; border: 1px solid #ddd; z-index: 10001; display: none; max-width: 960px; margin: 0 auto; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  .admin-head { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom:1px solid #eee; background:#fafafa !important; }
+  .admin-tabs { display:flex; gap: 12px; padding: 12px 16px; border-bottom:1px solid #eee; background:#fcfcfc !important; }
+  .admin-tab { padding: 8px 12px; border: 1px solid #ddd; background:#fff !important; cursor:pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .admin-tab.active { background:#000 !important; color:#fff; border-color:#000; }
+  .admin-body { padding: 16px; max-height: 70vh; overflow:auto; background:#fff !important; }
   .admin-row { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .admin-field label { display:block; font-size:11px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
-  .admin-field input, .admin-field textarea { width:100%; border: 1px solid #e5e7eb; padding:10px; font-size:13px; }
+  .admin-field input, .admin-field textarea { width:100%; border: 1px solid #e5e7eb; padding:10px; font-size:13px; background:#fff !important; }
   .admin-actions { display:flex; gap: 8px; margin-top: 12px; }
-  .btn { border:1px solid #000; background:#fff; color:#000; padding:8px 12px; cursor:pointer; text-transform:uppercase; font-size:11px; letter-spacing:1px; }
-  .btn.primary { background:#000; color:#fff; }
+  .btn { border:1px solid #000; background:#fff !important; color:#000; padding:8px 12px; cursor:pointer; text-transform:uppercase; font-size:11px; letter-spacing:1px; }
+  .btn.primary { background:#000 !important; color:#fff; }
   .asset-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
-  .asset-card { border:1px solid #e5e7eb; padding:10px; }
-  .asset-card img { display:block; width:100%; height:140px; object-fit:contain; background:#fafafa; border:1px solid #eee; }
+  .asset-card { border:1px solid #e5e7eb; padding:10px; background:#fff !important; }
+  .asset-card img { display:block; width:100%; height:140px; object-fit:contain; background:#fafafa !important; border:1px solid #eee; }
   .asset-meta { font-size:11px; color:#555; margin:6px 0; }
   .template-form-input { margin-bottom: 8px !important; }
   @media (max-width: 768px) { .admin-row { grid-template-columns: 1fr; } .asset-grid { grid-template-columns: 1fr 1fr; } }
