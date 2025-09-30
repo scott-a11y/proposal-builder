@@ -526,6 +526,48 @@
       euroVanity: '',
       floorPlan: ''
     };
+
+    // Startup helper to resolve asset:<id> -> dataURL and re-render
+    (async function ensureAdminLogoResolved() {
+      try {
+        if (!window.images || !window.images.logo) return;
+        if (typeof window.images.logo === 'string' && window.images.logo.startsWith('asset:')) {
+          console.log('[Asset Resolution] Admin logo detected:', window.images.logo);
+          
+          // Wait briefly for assetToDataURL to be available
+          const waitFor = (name, timeout=3000) => new Promise(resolve => {
+            const t0 = Date.now();
+            (function check() {
+              if (typeof window[name] === 'function') return resolve(true);
+              if (Date.now() - t0 > timeout) return resolve(false);
+              setTimeout(check, 100);
+            })();
+          });
+          
+          if (await waitFor('assetToDataURL')) {
+            console.log('[Asset Resolution] assetToDataURL available, resolving...');
+            const id = window.images.logo.slice('asset:'.length);
+            const url = await window.assetToDataURL(id).catch(e => {
+              console.warn('[Asset Resolution] Failed to resolve asset:', e);
+              return '';
+            });
+            if (url) {
+              console.log('[Asset Resolution] Logo resolved successfully');
+              window.images.logo = url;
+              if (typeof window.renderApp === 'function') {
+                try { window.renderApp(); } catch (e) { console.warn('[Asset Resolution] renderApp failed:', e); }
+              }
+            } else {
+              console.warn('[Asset Resolution] Asset resolution returned empty URL');
+            }
+          } else {
+            console.warn('[Asset Resolution] assetToDataURL not available; admin-addon may not be loaded in this view');
+          }
+        }
+      } catch (e) { 
+        console.error('[Asset Resolution] ensureAdminLogoResolved failed:', e); 
+      }
+    })();
     
     /* PDF/Print Configuration System
      * - Controls logo visibility and branding in printed/exported PDFs
@@ -573,6 +615,14 @@
       }
       console.log(`Print logo ${window.printConfig.showLogoInPrint ? 'enabled' : 'disabled'}`);
       return window.printConfig.showLogoInPrint;
+    };
+
+    // QA toggle for manual testing (from problem statement requirements)
+    window.toggleShowLogo = function(on=true){
+      if (on) document.body.classList.add('show-logo');
+      else document.body.classList.remove('show-logo');
+      console.log(`Show logo ${on ? 'enabled' : 'disabled'}`);
+      if (typeof window.renderApp === 'function') try { window.renderApp(); } catch(e){ console.warn('renderApp failed:', e); };
     };
     
     // Keep local references for convenience
@@ -706,7 +756,11 @@
       if (!needsEmbedding) {
         // Even if no embedding is needed, still apply logo visibility rules
         if (!shouldUseLogo) {
-          images.logo = '';
+          // Only clear logo when explicitly exporting for client (not during normal preview)
+          if (window.__isExportingForClient) {
+            images.logo = '';
+          }
+          // Keep the resolved logo or fallback for preview
         } else if (!images.logo) {
           // If branding is enabled but no logo is set, use fallback
           images.logo = INLINE_FALLBACK_LOGO;
@@ -751,7 +805,11 @@
       if (shouldUseLogo) {
         images.logo = logo || INLINE_FALLBACK_LOGO;
       } else {
-        images.logo = '';
+        // Only clear logo when explicitly exporting for client (not during normal preview)
+        if (window.__isExportingForClient) {
+          images.logo = '';
+        }
+        // Keep either the resolved logo or fallback for preview
       }
       images.shakerRender = sh || images.shakerRender;
       images.euroRender = eu || images.euroRender;
@@ -951,7 +1009,16 @@
     const exportProposal = async () => {
       try {
         showUserMessage('Preparing export...', 'info');
-        await embedAllImagesInState();
+        
+        // Set flag to indicate we're exporting for client (this will clear logos if needed)
+        window.__isExportingForClient = true;
+        try {
+          await embedAllImagesInState();
+        } finally {
+          // Always clear the flag
+          window.__isExportingForClient = false;
+        }
+        
         const htmlContent = renderClientView();
       
       // Determine if logo should be shown in client view
@@ -1345,7 +1412,7 @@
       return `
         <div class="min-h-screen bg-white">
           <!-- Task 10: Sticky header + page markers -->
-          <div class="print-hidden backdrop-blur border-b p-6 flex justify-between items-center sticky top-0 z-10" style="background-color: var(--header); border-color: var(--gray-border);">
+          <div class="print-hidden border-b p-6 flex justify-between items-center sticky top-0 z-10" style="background-color: var(--header); border-color: var(--gray-border);">
             <div class="flex items-center space-x-6">
               <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 120px; object-fit: contain; margin-right: 1.5rem;" />
               <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">Proposal Preview</h1>
