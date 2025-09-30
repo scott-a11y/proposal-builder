@@ -39,10 +39,22 @@ A single-file HTML application for creating professional cabinet proposals with 
 
 ## 🚀 Getting Started
 
+### First Time Setup
 1. Open `index.html` in a web browser or serve via HTTP server
-2. Fill out project information and upload images
-3. Generate preview and export as HTML or PDF
-4. QR codes are automatically generated for 3D model links
+2. **Access Admin Panel**: Look for the "ADMIN" button in the bottom-right corner
+   - If you don't see it, you may be in Client role. See [Admin Access Guide](./ADMIN_ACCESS_GUIDE.md)
+   - Quick fix: Run `window.switchToAdmin()` in browser console or add `?role=admin` to URL
+3. Upload company logo and configure branding (optional)
+4. Fill out project information and upload images
+5. Generate preview and export as HTML or PDF
+
+### Role Indicator
+Check the **top-right corner** for a colored badge showing your current role:
+- 🟢 **Green (Administrator)** = Full access, Admin button visible
+- 🔵 **Blue (Agent)** = Can edit and export, no Admin access  
+- 🟠 **Orange (Client)** = View-only mode, no Admin access
+
+**Tip**: Click the role badge when not in Admin mode for help switching back!
 
 ## 🔧 Configuration
 
@@ -127,6 +139,8 @@ Run the test suite by opening `/tests.html` in your browser. The tests cover:
 - Clear localStorage if the app becomes unresponsive
 
 **Admin panel not accessible:**
-- Ensure all JavaScript files are loaded
-- Check browser console for script errors
-- Admin panel requires no authentication by default
+- **See the [Admin Access Guide](./ADMIN_ACCESS_GUIDE.md) for comprehensive troubleshooting**
+- Quick fix: Run `window.switchToAdmin()` in browser console
+- Or add `?role=admin` to the URL
+- The admin button is hidden when in Client or Agent role
+- Check the role indicator in the top-right corner to see your current role

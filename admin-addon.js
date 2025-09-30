@@ -874,6 +874,23 @@
       tryLater();
     }
   };
+  
+  // Hide admin button when role changes to non-admin
+  const handleRoleChange = () => {
+    const fab = document.querySelector('.admin-fab');
+    if (!fab) return;
+    
+    const hasAdminPermission = window.proposalGuard?.getCurrentPermissions?.()?.viewAdmin;
+    if (hasAdminPermission) {
+      fab.style.display = '';
+    } else {
+      fab.style.display = 'none';
+    }
+  };
+  
+  // Listen for role/permission changes
+  window.addEventListener('roleChanged', handleRoleChange);
+  window.addEventListener('guardInitialized', handleRoleChange);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });

@@ -50,8 +50,10 @@
 
     if (canViewAdmin()) {
       injectAdmin();
+      isInitialized = true;  // Mark as initialized to stop retry loop
     } else {
       console.log('Admin UI not loaded (insufficient permissions)');
+      isInitialized = true;  // Mark as initialized even when not loading admin
     }
   };
 
@@ -71,7 +73,7 @@
   // Fallback retry loop (in case events don't fire due to extensions)
   let retries = 0;
   const tryLater = () => {
-    if (retries++ > 40) return; // ~4s max
+    if (retries++ > 40 || isInitialized) return; // ~4s max or already initialized
     load();
     setTimeout(tryLater, 100);
   };
