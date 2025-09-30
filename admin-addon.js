@@ -220,6 +220,14 @@
         const dataUrl = await assetToDataURL(assetId).catch(() => '');
         if (dataUrl) window.images.logoOnLight = dataUrl;
       }
+      
+      // Update active logo based on context (same logic as hydration)
+      // Default to dark for HTML preview, but use light if dark not available
+      if (window.images.logoOnDark) {
+        window.images.logo = window.images.logoOnDark;
+      } else if (window.images.logoOnLight) {
+        window.images.logo = window.images.logoOnLight;
+      }
     }
     
     // Re-render if possible
