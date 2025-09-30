@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Foundry Cabinet · Co — Proposal Builder</title>
 
+  <!-- Cache-busting version: Update this date when making changes to JS/CSS files -->
+  <!-- Version: 20250930 -->
+
   <!-- Favicon (inline, never 404s) -->
   <link rel="icon"
         href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%230b1120"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="white">F</text></svg>'/>
@@ -18,11 +21,11 @@
   <!-- Application now uses self-contained vanilla JavaScript and inline CSS utilities -->
 
   <!-- Presentation Mode and Brand Consistency -->
-  <link rel="stylesheet" href="./brand.css">
-  <link rel="stylesheet" href="./presentation.css">
+  <link rel="stylesheet" href="./brand.css?v=20250930">
+  <link rel="stylesheet" href="./presentation.css?v=20250930">
   
   <!-- Enhanced Print Stylesheet for PDF/Print formatting -->
-  <link rel="stylesheet" href="./print.css">
+  <link rel="stylesheet" href="./print.css?v=20250930">
 
   <!-- Content Security Policy - Simplified for self-contained app -->
   <meta http-equiv="Content-Security-Policy"
@@ -1923,15 +1926,15 @@
   </script>
   
   <!-- Role Mode and Presentation System -->
-  <script src="./role-mode.js"></script>
-  <script src="./config-loader.js"></script>
-  <script src="./proposal-guard.js"></script>
-  <script src="./share-link.js"></script>
+  <script src="./role-mode.js?v=20250930"></script>
+  <script src="./config-loader.js?v=20250930"></script>
+  <script src="./proposal-guard.js?v=20250930"></script>
+  <script src="./share-link.js?v=20250930"></script>
 
   <!-- Image placeholder sanitizer (fixes ${images.*} 404s) -->
-  <script src="./img-placeholder-sanitizer.js"></script>
+  <script src="./img-placeholder-sanitizer.js?v=20250930"></script>
 
   <!-- Guarded Admin Loader -->
-  <script src="./admin-loader.js"></script>
+  <script src="./admin-loader.js?v=20250930"></script>
 </body>
 </html>

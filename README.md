@@ -92,6 +92,11 @@ Check the **top-right corner** for a colored badge showing your current role:
    - Consider using a CDN for better global performance
    - Monitor localStorage usage for large image uploads
 
+6. **Updating the Application**:
+   - After making changes to JS or CSS files, update the cache-busting version
+   - See [Cache Busting Guide](./CACHE_BUSTING_GUIDE.md) for instructions
+   - Run `./test-cache-busting.sh` to verify all files have version parameters
+
 ## 📋 Features
 
 - ✅ Multi-page proposal generation
@@ -117,6 +122,11 @@ Run the test suite by opening `/tests.html` in your browser. The tests cover:
 ## 🚨 Troubleshooting
 
 ### Common Issues:
+
+**Not seeing latest changes:**
+- The app uses cache-busting to ensure you always get fresh files
+- If you still see old content, hard-refresh: Ctrl+F5 (Windows) or Cmd+Shift+R (Mac)
+- See [Cache Busting Guide](./CACHE_BUSTING_GUIDE.md) for technical details
 
 **Logo not displaying:**
 - The app now uses a fallback SVG logo by default
