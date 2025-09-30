@@ -24,9 +24,9 @@
 
   const injectAdmin = () => {
     if (document.querySelector('script[data-admin-addon]') ||
-        document.querySelector('script[src$="admin-addon.js"]')) return;
+        document.querySelector('script[src*="admin-addon.js"]')) return;
     const s = document.createElement('script');
-    s.src = './admin-addon.js';
+    s.src = './admin-addon.js?v=20250930';
     s.setAttribute('data-admin-addon', 'loaded');
     s.onload = () => console.log('Admin UI loaded');
     s.onerror = () => console.warn('Failed to load admin UI');
