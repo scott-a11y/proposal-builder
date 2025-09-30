@@ -528,7 +528,7 @@
     };
 
     // Startup helper to resolve asset:<id> -> dataURL and re-render
-    (async function ensureAdminLogoResolved() {
+    const ensureAdminLogoResolved = async function() {
       try {
         if (!window.images || !window.images.logo) return;
         if (typeof window.images.logo === 'string' && window.images.logo.startsWith('asset:')) {
@@ -567,7 +567,13 @@
       } catch (e) { 
         console.error('[Asset Resolution] ensureAdminLogoResolved failed:', e); 
       }
-    })();
+    };
+    
+    // Expose for manual invocation
+    window.ensureAdminLogoResolved = ensureAdminLogoResolved;
+    
+    // Auto-invoke on startup
+    ensureAdminLogoResolved();
     
     /* PDF/Print Configuration System
      * - Controls logo visibility and branding in printed/exported PDFs
@@ -1412,7 +1418,7 @@
       return `
         <div class="min-h-screen bg-white">
           <!-- Task 10: Sticky header + page markers -->
-          <div class="print-hidden border-b p-6 flex justify-between items-center sticky top-0 z-10" style="background-color: var(--header); border-color: var(--gray-border);">
+          <div class="print-hidden border-b p-6 flex justify-between items-center sticky top-0" style="background-color: var(--header); border-color: var(--gray-border); z-index: 100; position: sticky;">
             <div class="flex items-center space-x-6">
               <img src="${images.logo}" alt="Company Logo" class="logo-clean" style="max-height: 120px; object-fit: contain; margin-right: 1.5rem;" />
               <h1 style="font-weight: 200; font-size: 1.5rem; letter-spacing: 1px; text-transform: uppercase; color: #ffffff;">Proposal Preview</h1>

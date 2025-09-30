@@ -143,12 +143,21 @@
   };
 
   const assetToDataURL = async (id) => {
+    console.log('[Asset] Resolving asset ID:', id);
     const rec = await getAsset(id);
-    if (!rec) return '';
+    if (!rec) {
+      console.warn('[Asset] Asset not found in IndexedDB:', id);
+      return '';
+    }
     const blob = rec.blob;
+    console.log('[Asset] Found asset, converting to data URL:', rec.name, rec.type, rec.size + ' bytes');
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result || '');
+      reader.onloadend = () => {
+        const result = reader.result || '';
+        console.log('[Asset] Conversion complete, data URL length:', result.length);
+        resolve(result);
+      };
       reader.readAsDataURL(blob);
     });
   };
@@ -165,10 +174,11 @@
       try {
         if (src && typeof src === 'string' && src.startsWith('asset:')) {
           const id = src.slice('asset:'.length);
+          console.log('[Asset Hook] Intercepting asset: URL for resolution:', id);
           return await assetToDataURL(id);
         }
       } catch (e) {
-        console.warn('Asset resolution failed:', e);
+        console.warn('[Asset Hook] Asset resolution failed:', e);
       }
       return originalToDataURL(src);
     };
@@ -194,9 +204,10 @@
 
   // ----- Admin UI -----
   const css = `
-  .admin-fab { background: #000; color: #fff; border: 1px solid #000; border-radius: 999px; padding: 10px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
-  .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 9998; display: none; }
-  .admin-modal { position: fixed; inset: 5% 5% auto 5%; background: #fff; border: 1px solid #ddd; z-index: 9999; display: none; max-width: 960px; margin: 0 auto; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  .admin-fab { background: #000; color: #fff; border: 1px solid #000; border-radius: 999px; padding: 10px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; z-index: 1000; position: relative; }
+  /* Backdrop only shows when body.modal-open is set */
+  .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 10000; display: none; }
+  .admin-modal { position: fixed; inset: 5% 5% auto 5%; background: #fff; border: 1px solid #ddd; z-index: 10001; display: none; max-width: 960px; margin: 0 auto; border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
   .admin-head { display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom:1px solid #eee; background:#fafafa; }
   .admin-tabs { display:flex; gap: 12px; padding: 12px 16px; border-bottom:1px solid #eee; background:#fcfcfc; }
   .admin-tab { padding: 8px 12px; border: 1px solid #ddd; background:#fff; cursor:pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
@@ -265,11 +276,15 @@
     renderActiveTab(ui.state.active);
     ui.backdrop.style.display = 'block';
     ui.modal.style.display = 'block';
+    // Add body class to manage modal state and prevent backdrop from affecting preview
+    document.body.classList.add('modal-open');
   };
 
   const closeAdmin = () => {
     ui.backdrop.style.display = 'none';
     ui.modal.style.display = 'none';
+    // Remove body class to restore normal state
+    document.body.classList.remove('modal-open');
   };
 
   const buildUI = () => {
