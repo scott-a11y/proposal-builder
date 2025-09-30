@@ -637,13 +637,36 @@
     const imageCache = new Map(); // src -> dataURL
     
     // Task 15: Feature flags for conditional rendering
-    const features = {
-      qr: true,
-      stickyHeader: true,
-      templates: true,
-      autosave: true,
-      export: true
+    // Integrate with config-loader if available, otherwise use defaults
+    const getFeatures = () => {
+      const defaults = {
+        qr: true,
+        stickyHeader: true,
+        templates: true,
+        autosave: true,
+        export: true
+      };
+      
+      // Check if config-loader is available and initialized
+      if (window.configLoader && window.configLoader.isInitialized()) {
+        const configFeatures = window.configLoader.get('features');
+        if (configFeatures) {
+          // Map exportControls to export for backward compatibility
+          return {
+            ...defaults,
+            qr: configFeatures.qr !== undefined ? configFeatures.qr : defaults.qr,
+            stickyHeader: configFeatures.stickyHeader !== undefined ? configFeatures.stickyHeader : defaults.stickyHeader,
+            templates: configFeatures.templates !== undefined ? configFeatures.templates : defaults.templates,
+            autosave: configFeatures.autosave !== undefined ? configFeatures.autosave : defaults.autosave,
+            export: configFeatures.exportControls !== undefined ? configFeatures.exportControls : defaults.export
+          };
+        }
+      }
+      
+      return defaults;
     };
+    
+    const features = getFeatures();
 
     // Utility functions
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
