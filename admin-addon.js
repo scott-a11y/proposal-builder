@@ -533,45 +533,30 @@
       const imgEl = el('img', { alt: a.name });
       assetToDataURL(a.id).then((dataURL) => { imgEl.src = dataURL; });
 
-      const isDefault = cfg.company.logoAssetId === a.id;
+      const isDefaultLegacy = cfg.company.logoAssetId === a.id;
+      const isDefaultDark = cfg.company.logoAssetIdDark === a.id;
+      const isDefaultLight = cfg.company.logoAssetIdLight === a.id;
+      
       const card = el('div', { class: 'asset-card' }, [
         imgEl,
         el('div', { class: 'asset-meta' }, [`${a.name} • ${formatBytes(a.size)}`]),
-        el('div', { class: 'admin-actions' }, [
+        el('div', { class: 'admin-actions', style: { display: 'flex', flexDirection: 'column', gap: '4px' } }, [
           el('button', {
-            class: `btn ${isDefault ? '' : 'primary'}`,
+            class: `btn ${isDefaultDark ? '' : 'primary'}`,
+            style: { fontSize: '10px', padding: '6px 8px' },
             onclick: async () => {
-              const c = loadAdminConfig();
-              c.company.logoAssetId = a.id;
-              saveAdminConfig(c);
-              console.log('[Admin] Setting default logo to asset:', a.id);
-              
-              if (typeof window.images === 'object') {
-                window.images.logo = `asset:${a.id}`;
-              }
-              
-              // Auto-enable logo in print when admin logo is set
-              if (typeof window.printConfig === 'object') {
-                window.printConfig.showLogoInPrint = true;
-              }
-              
-              // Add show-logo class to ensure logo appears in preview
-              if (document.body && !document.body.classList.contains('show-logo')) {
-                document.body.classList.add('show-logo');
-              }
-              
-              // Trigger logo resolution to convert asset:<id> to data URL
-              if (typeof window.ensureAdminLogoResolved === 'function') {
-                console.log('[Admin] Triggering logo resolution after setting default');
-                await window.ensureAdminLogoResolved();
-              }
-              
-              if (typeof window.renderApp === 'function') {
-                try { window.renderApp(); } catch {}
-              }
+              await setDefaultLogoVariant('dark', a.id);
               renderActiveTab('assets');
             }
-          }, [isDefault ? 'Default Logo ✓' : 'Use as Default Logo'])
+          }, [isDefaultDark ? 'Dark Logo ✓' : 'Set as Dark (HTML)']),
+          el('button', {
+            class: `btn ${isDefaultLight ? '' : 'primary'}`,
+            style: { fontSize: '10px', padding: '6px 8px' },
+            onclick: async () => {
+              await setDefaultLogoVariant('light', a.id);
+              renderActiveTab('assets');
+            }
+          }, [isDefaultLight ? 'Light Logo ✓' : 'Set as Light (PDF)'])
         ])
       ]);
       grid.appendChild(card);
