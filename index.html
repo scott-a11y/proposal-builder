@@ -549,7 +549,10 @@
       if (typeof window.loadAdminConfig === 'function') {
         try {
           const adminConfig = window.loadAdminConfig();
-          return adminConfig?.branding?.showLogoInPrint || false;
+          // Show logo if explicitly enabled in branding config
+          if (adminConfig?.branding?.showLogoInPrint) return true;
+          // Auto-show logo if admin has configured a default logo
+          if (adminConfig?.company?.logoAssetId) return true;
         } catch (e) {
           // Fail silently if admin config not available
         }
@@ -557,6 +560,9 @@
       
       return false; // Default: no logo in print
     };
+    
+    // Expose function to window scope for testing and external access
+    window.shouldShowLogoInPrint = shouldShowLogoInPrint;
     
     // Developer utility: Toggle logo in print (for testing)
     window.togglePrintLogo = (enable = null) => {
