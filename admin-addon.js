@@ -191,15 +191,33 @@
       const logoId = cfg.company?.logoAssetId;
       if (logoId && typeof window.images === 'object') {
         window.images.logo = `asset:${logoId}`;
+        console.log('[Admin] Setting logo to asset:', logoId);
+        
         // Auto-enable logo in print when admin logo is configured
         if (typeof window.printConfig === 'object') {
           window.printConfig.showLogoInPrint = true;
         }
+        
+        // Add show-logo class to ensure logo appears in preview
+        if (document.body && !document.body.classList.contains('show-logo')) {
+          document.body.classList.add('show-logo');
+        }
+        
+        // Trigger logo resolution to convert asset:<id> to data URL
+        if (typeof window.ensureAdminLogoResolved === 'function') {
+          console.log('[Admin] Triggering logo resolution');
+          await window.ensureAdminLogoResolved();
+        } else {
+          console.warn('[Admin] ensureAdminLogoResolved not available yet');
+        }
+        
         if (typeof window.renderApp === 'function') {
           try { window.renderApp(); } catch {}
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error('[Admin] applyDefaultLogoIfPresent failed:', e);
+    }
   };
 
   // ----- Admin UI -----
@@ -406,17 +424,32 @@
         el('div', { class: 'admin-actions' }, [
           el('button', {
             class: `btn ${isDefault ? '' : 'primary'}`,
-            onclick: () => {
+            onclick: async () => {
               const c = loadAdminConfig();
               c.company.logoAssetId = a.id;
               saveAdminConfig(c);
+              console.log('[Admin] Setting default logo to asset:', a.id);
+              
               if (typeof window.images === 'object') {
                 window.images.logo = `asset:${a.id}`;
               }
+              
               // Auto-enable logo in print when admin logo is set
               if (typeof window.printConfig === 'object') {
                 window.printConfig.showLogoInPrint = true;
               }
+              
+              // Add show-logo class to ensure logo appears in preview
+              if (document.body && !document.body.classList.contains('show-logo')) {
+                document.body.classList.add('show-logo');
+              }
+              
+              // Trigger logo resolution to convert asset:<id> to data URL
+              if (typeof window.ensureAdminLogoResolved === 'function') {
+                console.log('[Admin] Triggering logo resolution after setting default');
+                await window.ensureAdminLogoResolved();
+              }
+              
               if (typeof window.renderApp === 'function') {
                 try { window.renderApp(); } catch {}
               }

@@ -530,7 +530,11 @@
     // Startup helper to resolve asset:<id> -> dataURL and re-render
     const ensureAdminLogoResolved = async function() {
       try {
-        if (!window.images || !window.images.logo) return;
+        if (!window.images || !window.images.logo) {
+          console.log('[Asset Resolution] No logo set');
+          return;
+        }
+        
         if (typeof window.images.logo === 'string' && window.images.logo.startsWith('asset:')) {
           console.log('[Asset Resolution] Admin logo detected:', window.images.logo);
           
@@ -552,10 +556,22 @@
               return '';
             });
             if (url) {
-              console.log('[Asset Resolution] Logo resolved successfully');
+              console.log('[Asset Resolution] Logo resolved successfully, length:', url.length);
               window.images.logo = url;
+              
+              // Ensure show-logo class is present when admin logo is resolved
+              if (document.body && !document.body.classList.contains('show-logo')) {
+                document.body.classList.add('show-logo');
+                console.log('[Asset Resolution] Added show-logo class to body');
+              }
+              
               if (typeof window.renderApp === 'function') {
-                try { window.renderApp(); } catch (e) { console.warn('[Asset Resolution] renderApp failed:', e); }
+                try { 
+                  window.renderApp(); 
+                  console.log('[Asset Resolution] Re-rendered app with resolved logo');
+                } catch (e) { 
+                  console.warn('[Asset Resolution] renderApp failed:', e); 
+                }
               }
             } else {
               console.warn('[Asset Resolution] Asset resolution returned empty URL');
