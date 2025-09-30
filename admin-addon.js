@@ -181,6 +181,10 @@
       const logoId = cfg.company?.logoAssetId;
       if (logoId && typeof window.images === 'object') {
         window.images.logo = `asset:${logoId}`;
+        // Auto-enable logo in print when admin logo is configured
+        if (typeof window.printConfig === 'object') {
+          window.printConfig.showLogoInPrint = true;
+        }
         if (typeof window.renderApp === 'function') {
           try { window.renderApp(); } catch {}
         }
@@ -393,6 +397,10 @@
               saveAdminConfig(c);
               if (typeof window.images === 'object') {
                 window.images.logo = `asset:${a.id}`;
+              }
+              // Auto-enable logo in print when admin logo is set
+              if (typeof window.printConfig === 'object') {
+                window.printConfig.showLogoInPrint = true;
               }
               if (typeof window.renderApp === 'function') {
                 try { window.renderApp(); } catch {}
