@@ -165,10 +165,8 @@
 
   // Create presentation mode elements
   const createPresentationElements = () => {
-    // Create role indicator (hidden for clients)
-    if (currentRole !== ROLES.CLIENT) {
-      createRoleIndicator();
-    }
+    // Always create role indicator so users know what mode they're in
+    createRoleIndicator();
 
     // Create mode switcher for authorized roles
     if (roleConfig[currentRole].canSwitchMode) {
@@ -193,17 +191,37 @@
     const indicator = document.createElement('div');
     indicator.className = `role-indicator ${currentRole}`;
     indicator.textContent = `${roleConfig[currentRole].label} Mode`;
+    
+    // Add click handler for non-admin roles to show help
+    if (currentRole !== ROLES.ADMIN) {
+      indicator.style.cursor = 'pointer';
+      indicator.title = 'Click for help accessing Admin mode';
+      indicator.onclick = () => {
+        const msg = 'To access Admin mode:\n\n' +
+                   '1. Run: window.switchToAdmin()\n' +
+                   '2. Or reload with: ?role=admin\n' +
+                   '3. Or press OK to switch now';
+        if (confirm(msg)) {
+          window.switchToAdmin();
+        }
+      };
+    }
+    
     indicator.style.cssText = `
       position: fixed;
       top: 16px;
       right: 16px;
-      z-index: 10000;
+      z-index: 10001;
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 10px;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 1px;
+      ${currentRole !== ROLES.ADMIN ? 'cursor: pointer;' : ''}
+      ${currentRole === ROLES.ADMIN ? 'background: #10b981; color: white;' : ''}
+      ${currentRole === ROLES.AGENT ? 'background: #3b82f6; color: white;' : ''}
+      ${currentRole === ROLES.CLIENT ? 'background: #f59e0b; color: white;' : ''}
     `;
     
     // Try multiple ways to append role indicator safely
@@ -304,6 +322,16 @@
     }));
   };
 
+  // Helper function to switch to admin (bypasses permission checks)
+  const forceAdminMode = () => {
+    currentRole = ROLES.ADMIN;
+    currentMode = MODES.EDIT;
+    localStorage.setItem(STORAGE_KEYS.USER_ROLE, ROLES.ADMIN);
+    localStorage.setItem(STORAGE_KEYS.VIEW_MODE, MODES.EDIT);
+    console.log('%c✅ Switched to Admin mode. Reloading...', 'color: #10b981; font-weight: bold;');
+    window.location.reload();
+  };
+
   // Public API
   window.roleMode = {
     // Getters
@@ -338,6 +366,9 @@
       loadRoleConfig();
     }
   };
+  
+  // Global helper for easy admin access (especially for troubleshooting)
+  window.switchToAdmin = forceAdminMode;
 
   // Initialize when DOM is ready
   const init = () => {
@@ -345,6 +376,17 @@
     detectRole();
     applyRoleRestrictions();
     applyPresentationMode();
+    
+    // Log current role/mode and help info
+    console.log(`%c🔐 Role: ${currentRole} | Mode: ${currentMode}`, 'font-weight: bold; color: #0066cc;');
+    
+    // Show helpful message if not in admin role
+    if (currentRole !== ROLES.ADMIN) {
+      console.log('%c💡 To access Admin panel, use: %cwindow.switchToAdmin()', 
+        'color: #f59e0b;', 'color: #10b981; font-weight: bold;');
+      console.log('%c   Or reload with: %c?role=admin', 
+        'color: #f59e0b;', 'color: #10b981; font-weight: bold;');
+    }
     
     // Trigger initialization event
     window.dispatchEvent(new CustomEvent('roleModeInitialized', { 
