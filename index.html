@@ -188,7 +188,11 @@
     /* Theme classes for HTML preview and PDF export */
     body.theme-html-dark {
       background: var(--midnight);
-      color: #ffffff;
+      color: #ffffff !important;
+    }
+    
+    body.theme-html-dark .min-h-screen {
+      background: var(--midnight) !important;
     }
     
     body.theme-html-dark .proposal-page {
@@ -199,9 +203,34 @@
     body.theme-html-dark h1,
     body.theme-html-dark h2,
     body.theme-html-dark h3,
+    body.theme-html-dark h4,
+    body.theme-html-dark h5,
+    body.theme-html-dark h6,
     body.theme-html-dark p,
-    body.theme-html-dark div {
-      color: #ffffff;
+    body.theme-html-dark div,
+    body.theme-html-dark span,
+    body.theme-html-dark label,
+    body.theme-html-dark li,
+    body.theme-html-dark td,
+    body.theme-html-dark th {
+      color: #ffffff !important;
+    }
+    
+    body.theme-html-dark .bg-white {
+      background-color: var(--midnight) !important;
+    }
+    
+    body.theme-html-dark .border,
+    body.theme-html-dark .border-b,
+    body.theme-html-dark .border-t-2,
+    body.theme-html-dark .border-b-2 {
+      border-color: #ffffff !important;
+    }
+    
+    body.theme-html-dark .text-gray-500,
+    body.theme-html-dark .text-gray-600,
+    body.theme-html-dark .text-gray-700 {
+      color: #cbd5e1 !important;
     }
     
     body.theme-pdf-light {
