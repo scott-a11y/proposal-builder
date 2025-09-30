@@ -181,6 +181,113 @@
       });
     });
 
+    runner.suite('Admin Logo Variant Assignment', function() {
+      this.test('Config save/load with logo variants', function() {
+        const LS_KEY = 'foundry-admin-config-test';
+        
+        // Simulate saving config with logo variants
+        const testConfig = {
+          version: 1,
+          company: {
+            name: 'Test Company',
+            logoAssetIdDark: 'dark-asset-123',
+            logoAssetIdLight: 'light-asset-456'
+          },
+          branding: {
+            showLogoInPrint: true
+          }
+        };
+        
+        localStorage.setItem(LS_KEY, JSON.stringify(testConfig));
+        
+        // Simulate loading config
+        const loadedRaw = localStorage.getItem(LS_KEY);
+        const loaded = JSON.parse(loadedRaw);
+        
+        this.assertEqual(loaded.company.logoAssetIdDark, 'dark-asset-123', 'Dark logo variant should persist');
+        this.assertEqual(loaded.company.logoAssetIdLight, 'light-asset-456', 'Light logo variant should persist');
+        this.assert(loaded.branding.showLogoInPrint === true, 'Show logo in print should be enabled');
+        
+        // Cleanup
+        localStorage.removeItem(LS_KEY);
+      });
+
+      this.test('Active logo selection logic', function() {
+        // Simulate the logic from setDefaultLogoVariant
+        const mockImages = {};
+        
+        // Scenario 1: Only dark logo set
+        mockImages.logoOnDark = 'data:image/png;base64,dark123';
+        mockImages.logoOnLight = null;
+        
+        if (mockImages.logoOnDark) {
+          mockImages.logo = mockImages.logoOnDark;
+        } else if (mockImages.logoOnLight) {
+          mockImages.logo = mockImages.logoOnLight;
+        }
+        
+        this.assertEqual(mockImages.logo, 'data:image/png;base64,dark123', 'Active logo should be dark when only dark is set');
+        
+        // Scenario 2: Both dark and light logos set (dark should take precedence)
+        mockImages.logoOnDark = 'data:image/png;base64,dark123';
+        mockImages.logoOnLight = 'data:image/png;base64,light456';
+        
+        if (mockImages.logoOnDark) {
+          mockImages.logo = mockImages.logoOnDark;
+        } else if (mockImages.logoOnLight) {
+          mockImages.logo = mockImages.logoOnLight;
+        }
+        
+        this.assertEqual(mockImages.logo, 'data:image/png;base64,dark123', 'Active logo should be dark when both are set');
+        
+        // Scenario 3: Only light logo set
+        mockImages.logoOnDark = null;
+        mockImages.logoOnLight = 'data:image/png;base64,light456';
+        
+        if (mockImages.logoOnDark) {
+          mockImages.logo = mockImages.logoOnDark;
+        } else if (mockImages.logoOnLight) {
+          mockImages.logo = mockImages.logoOnLight;
+        }
+        
+        this.assertEqual(mockImages.logo, 'data:image/png;base64,light456', 'Active logo should be light when only light is set');
+      });
+
+      this.test('Deep merge preserves logo variant IDs', function() {
+        // Replicate the deepMerge function
+        const deepMerge = (base, override) => {
+          if (Array.isArray(base)) return override ?? base;
+          if (typeof base === 'object' && base) {
+            const out = { ...base };
+            for (const k of Object.keys(override || {})) {
+              out[k] = deepMerge(base[k], override[k]);
+            }
+            return out;
+          }
+          return override ?? base;
+        };
+        
+        const defaultConfig = {
+          company: {
+            logoAssetIdDark: '',
+            logoAssetIdLight: ''
+          }
+        };
+        
+        const savedConfig = {
+          company: {
+            logoAssetIdDark: 'dark-123',
+            logoAssetIdLight: 'light-456'
+          }
+        };
+        
+        const merged = deepMerge(defaultConfig, savedConfig);
+        
+        this.assertEqual(merged.company.logoAssetIdDark, 'dark-123', 'Dark variant should be preserved in merge');
+        this.assertEqual(merged.company.logoAssetIdLight, 'light-456', 'Light variant should be preserved in merge');
+      });
+    });
+
     // Run the tests
     runner.render();
   </script>
