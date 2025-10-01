@@ -1,5 +1,13 @@
 # Deployment Verification Guide
 
+## 🚨 Quick Navigation
+
+**Most people should read:** [CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md) - Complete troubleshooting guide
+
+**This guide is for:** Advanced verification and debugging of deployment issues
+
+---
+
 ## 🚨 Problem: "Changes Not Showing Up"
 
 If you've updated the code multiple times but still see old content, you're likely checking the wrong deployment location or your CDN/hosting provider has aggressive caching.
