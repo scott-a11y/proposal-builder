@@ -11,14 +11,12 @@ A single-file HTML application for creating professional cabinet proposals with 
 
 Then follow the instructions based on what it says.
 
+**Full documentation index:** [DEPLOYMENT_GUIDE_INDEX.md](./DEPLOYMENT_GUIDE_INDEX.md) - All guides in one place
+
 **Most common issues:**
 1. Your hosting hasn't deployed your changes yet (wait 10 minutes)
-2. You're looking at the wrong deployment URL
+2. You're looking at the wrong deployment URL ([WHERE_IS_MY_SITE.md](./WHERE_IS_MY_SITE.md))
 3. Your browser cache needs clearing (Ctrl + F5)
-
-**Full guides:**
-- 🔍 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Step-by-step debugging
-- 🚀 [DEPLOYMENT_VERIFICATION.md](./DEPLOYMENT_VERIFICATION.md) - Find where your site is deployed
 
 ---
 
