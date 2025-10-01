@@ -6,21 +6,25 @@
 
 This repository is under a **CRITICAL STABILITY FREEZE** with an active rebuild plan.
 
-- **Status**: FREEZE ACTIVE - Rebuild Phase 0 (Planning)
+- **Status**: FREEZE ACTIVE - Rebuild Phase 1 (In Progress)
 - **Reason**: 70+ incremental changes with persistent critical issues
 - **Action**: Only rebuild-aligned PRs accepted (see below)
+- **Progress**: See [REBUILD_STATUS.md](./REBUILD_STATUS.md) for live tracking
 - **Details**: See [FREEZE.md](./FREEZE.md) and [REBUILD_PROCESS.md](./REBUILD_PROCESS.md)
 
 ### 📋 For Contributors:
+- **LIVE STATUS**: [REBUILD_STATUS.md](./REBUILD_STATUS.md) - Current phase and progress
 - **READ FIRST**: [REBUILD_GUIDE.md](./REBUILD_GUIDE.md) - How to contribute during rebuild
 - **Rebuild Plan**: [REBUILD_PROCESS.md](./REBUILD_PROCESS.md) - 6-week phased plan
 - **Policy**: [CONTRIBUTING.md](./CONTRIBUTING.md) - Updated contribution guidelines
 - **CODEOWNERS**: All PRs require @scott-a11y approval
 
 ### 🔧 For Maintainers:
+- **Live Tracking**: [REBUILD_STATUS.md](./REBUILD_STATUS.md) - Phase progress and deliverables
 - **Audit**: [AUDIT_REPORT.md](./AUDIT_REPORT.md) - Current state analysis
 - **Rollback**: [ROLLBACK_PROCEDURE.md](./ROLLBACK_PROCEDURE.md) - Emergency procedures
 - **Instructions**: [REBUILD_GUIDE.md](./REBUILD_GUIDE.md) - How to manage rebuild PRs
+- **Legacy Code**: [legacy/v1/](./legacy/v1/) - Preserved original version
 
 **Only PRs that follow the rebuild plan will be reviewed. No exceptions.**
 

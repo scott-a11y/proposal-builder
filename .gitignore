@@ -44,3 +44,6 @@ STATUS_*.md
 *_DIAGNOSTICS.md
 *_COMPARISON.md
 START_HERE.md
+
+# But allow these specific rebuild docs
+!REBUILD_STATUS.md
