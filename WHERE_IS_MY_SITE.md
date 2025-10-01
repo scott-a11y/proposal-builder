@@ -1,5 +1,15 @@
 # Where Is My Site?
 
+## 🚨 Quick Answer
+
+### → **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** ← Read this for step-by-step instructions
+
+**This document explains concepts. The other guide gives you actions.**
+
+If you just want to fix your problem, go to [CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md) instead.
+
+---
+
 ## Understanding the Difference Between "Code" and "Site"
 
 ### Your CODE is here:

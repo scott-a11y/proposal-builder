@@ -1,33 +1,22 @@
 # Deployment Configuration for Proposal Builder
 
-## 🚨 NOT SEEING YOUR CHANGES? READ THIS FIRST! 🚨
+## 🚨 NOT SEEING YOUR CHANGES?
 
-If you've updated the code multiple times but still see old content on your live site:
+### → **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** ← READ THIS FIRST
 
-**🔍 STEP 1: Find out WHERE your site is actually deployed**
+**That guide has everything you need.** Come back here only if you need server configuration details.
 
-Your code might be in GitHub, but your LIVE SITE could be on:
-- GitHub Pages: `https://scott-a11y.github.io/proposal-builder/`
-- Netlify: `https://[your-site].netlify.app/`
-- Vercel: `https://[your-site].vercel.app/`
-- Custom domain: Your own server or domain
+---
 
-**Run this to check:**
+## Quick Check
+
 ```bash
 ./check-deployed-version.sh
 ```
 
-This will tell you if your deployed site matches your code or not.
+Then follow [CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md) for next steps.
 
-**🔍 STEP 2: Make sure you're updating the RIGHT branch**
-
-Different hosting services deploy from different branches:
-- **GitHub Pages**: Usually deploys from `main` OR `gh-pages`
-- **Netlify/Vercel**: Check your dashboard for the deploy branch
-
-**Check which branch is deployed:**
-1. Go to: https://github.com/scott-a11y/proposal-builder/settings/pages
-2. Look at "Source" to see which branch is deployed
+---
 
 **🔍 STEP 3: Wait for deployment (5-10 minutes)**
 
