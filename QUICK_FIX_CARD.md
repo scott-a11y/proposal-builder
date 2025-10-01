@@ -1,5 +1,13 @@
 # 🔧 Quick Fix Card
 
+## 🚨 Need More Help?
+
+**This card is for browser cache issues only.** For complete troubleshooting:
+
+### → **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** ← Read this for all scenarios
+
+---
+
 ## Your Issue: "Nothing changes...same results"
 
 **Root Cause**: Your browser is showing cached (old) files instead of the latest version.
@@ -37,6 +45,21 @@ Hold Shift + Click Refresh Button
 
 ---
 
+## Still Not Working?
+
+If hard refresh doesn't work, the issue is NOT browser cache. Read:
+
+### → **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** ← Complete troubleshooting guide
+
+That guide covers:
+- Site not deployed yet (most common!)
+- Deployment configuration issues
+- Multiple deployment locations
+- GitHub Actions problems
+- And more...
+
+---
+
 ## 🔍 Why This Happened
 
 The application uses a **cache-busting system** to ensure users always get fresh files:
@@ -67,6 +90,7 @@ This updates all version parameters automatically.
 
 ## 📚 More Information
 
+- **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** - Complete troubleshooting (⭐ START HERE)
 - `CACHE_UPDATE_INSTRUCTIONS.md` - Detailed user guide
 - `FIX_SUMMARY_CACHE_UPDATE.md` - Technical documentation
 - `CACHE_BUSTING_GUIDE.md` - How the system works

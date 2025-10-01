@@ -2,6 +2,16 @@
 
 ## 🚨 "I Updated the Code But Nothing Changed!"
 
+### → **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** ← START HERE FIRST
+
+**That guide covers 95% of cases in simple steps.** This document is for advanced troubleshooting only.
+
+If you've already read [CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md) and still need help, continue below.
+
+---
+
+## Advanced Troubleshooting
+
 This is the **#1 most common issue**. Here's why it happens and how to fix it.
 
 ### The Problem

@@ -1,23 +1,31 @@
 # Deployment Guide Index
 
-## 🚨 EMERGENCY: Changes Not Showing? → [START HERE](./START_HERE_IF_CHANGES_NOT_SHOWING.md)
+## 🚨 EMERGENCY: Changes Not Showing?
+
+### → **[CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md)** ← ONE GUIDE FOR EVERYTHING
+
+**Stop here.** That guide covers 95% of issues. Read it first before looking at anything else.
 
 ---
 
 ## 📚 Complete Documentation Guide
 
+**Note:** Most people only need [CHANGES_NOT_SHOWING.md](./CHANGES_NOT_SHOWING.md). The guides below are for advanced scenarios.
+
 Choose the guide that matches your situation:
 
 ### 🔥 **I Need Help RIGHT NOW**
-- **[START HERE IF CHANGES NOT SHOWING](./START_HERE_IF_CHANGES_NOT_SHOWING.md)** - Quick emergency guide
-- **[QUICK FIX CARD](./QUICK_FIX_CARD.md)** - Browser cache issues
+- **[CHANGES NOT SHOWING](./CHANGES_NOT_SHOWING.md)** - ⭐ **START HERE** - One guide for everything
+- **[START HERE IF CHANGES NOT SHOWING](./START_HERE_IF_CHANGES_NOT_SHOWING.md)** - Quick link to main guide
+- **[QUICK FIX CARD](./QUICK_FIX_CARD.md)** - Browser cache issues only
 
 ### 🔍 **I Need to Troubleshoot**
-- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Complete step-by-step debugging guide
-- **[DEPLOYMENT VERIFICATION](./DEPLOYMENT_VERIFICATION.md)** - How to verify deployment
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Complete step-by-step debugging guide (advanced)
+- **[DEPLOYMENT VERIFICATION](./DEPLOYMENT_VERIFICATION.md)** - How to verify deployment (advanced)
 
 ### 🌍 **I Don't Know Where My Site Is**
-- **[WHERE IS MY SITE](./WHERE_IS_MY_SITE.md)** - Understanding code vs live site
+- **[CHANGES NOT SHOWING](./CHANGES_NOT_SHOWING.md)** - Has a section on this (read this first!)
+- **[WHERE IS MY SITE](./WHERE_IS_MY_SITE.md)** - Understanding code vs live site (backup reference)
 
 ### 🚀 **I'm Setting Up Deployment**
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment configuration guide
