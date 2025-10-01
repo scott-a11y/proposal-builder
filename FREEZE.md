@@ -11,7 +11,17 @@
 
 This repository is currently under a **FREEZE** due to extended instability and unresolved critical issues. 
 
-**NO merges, deployments, or automated changes are permitted until this freeze is lifted.**
+**NO merges, deployments, or automated changes are permitted except those aligned with the official rebuild plan.**
+
+### Rebuild Plan Active
+
+Instead of incremental fixes, a systematic rebuild is underway. See [REBUILD_PROCESS.md](./REBUILD_PROCESS.md) for:
+- Phased rebuild approach (6-week plan)
+- Acceptance criteria for each phase
+- PR requirements and review process
+- Architecture decisions and timeline
+
+**Only PRs that follow the rebuild plan will be considered for merge.**
 
 ---
 
@@ -151,10 +161,12 @@ The freeze will be lifted ONLY when:
 
 ## Additional Resources
 
+- [REBUILD_PROCESS.md](./REBUILD_PROCESS.md) - **START HERE: Official rebuild plan and phases**
 - [AUDIT_REPORT.md](./AUDIT_REPORT.md) - Detailed current state analysis
 - [ROLLBACK_PROCEDURE.md](./ROLLBACK_PROCEDURE.md) - Emergency restoration steps
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Known issues and solutions
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deployment documentation
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - Updated with rebuild-only policy
 
 ---
 

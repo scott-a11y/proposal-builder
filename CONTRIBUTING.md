@@ -4,6 +4,39 @@ Thank you for your interest in contributing to the Foundry Cabinet Co Proposal B
 
 > **Note**: If you're using GitHub Copilot or an AI coding assistant, please refer to [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for comprehensive technical guidance.
 
+---
+
+## ⚠️ IMPORTANT: Current Repository Policy
+
+**STATUS: REBUILD IN PROGRESS**
+
+This repository is currently undergoing a systematic rebuild to address stability issues. During this period:
+
+### ❌ NOT ACCEPTED:
+- Incremental fixes to existing issues
+- Patch-based changes to the current codebase
+- Feature additions to the current architecture
+- Minor bug fixes that don't address root causes
+
+### ✅ ONLY ACCEPTED:
+- Changes related to the official rebuild plan (see `REBUILD_PROCESS.md`)
+- Critical security fixes (with explicit maintainer approval)
+- Documentation improvements related to the rebuild
+
+### Why This Policy?
+After 70+ incremental changes, critical issues persist. A clean rebuild following a structured plan is necessary to restore stability. See [FREEZE.md](./FREEZE.md) for details.
+
+### How to Contribute:
+1. Review the rebuild plan in `REBUILD_PROCESS.md`
+2. Check existing PRs to avoid duplicate work
+3. Coordinate with maintainer (@scott-a11y) before starting work
+4. Follow the phased approach outlined in the rebuild plan
+5. All PRs must reference the rebuild plan and include comprehensive testing
+
+**This policy will remain in effect until the rebuild is complete and stability is verified.**
+
+---
+
 ## Table of Contents
 
 - [Getting Started](#getting-started)
