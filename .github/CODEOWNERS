@@ -1,0 +1,22 @@
+# CODEOWNERS - Require maintainer review for all changes
+# 
+# This file enforces human review during the rebuild phase.
+# All changes require approval from the repository owner.
+#
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Require owner review for all changes
+* @scott-a11y
+
+# Critical files require explicit owner approval
+/index.html @scott-a11y
+/admin-addon.js @scott-a11y
+/role-mode.js @scott-a11y
+/*.css @scott-a11y
+/*.js @scott-a11y
+
+# Workflow changes require owner approval
+/.github/workflows/ @scott-a11y
+
+# Documentation can be reviewed by owner
+/*.md @scott-a11y
