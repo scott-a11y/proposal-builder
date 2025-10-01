@@ -7,7 +7,7 @@ echo "==================================="
 echo ""
 
 # Set expected version
-EXPECTED_VERSION="202510010425"
+EXPECTED_VERSION="202510010442"
 PASSED=0
 FAILED=0
 
