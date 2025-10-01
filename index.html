@@ -6,7 +6,7 @@
   <title>Foundry Cabinet · Co — Proposal Builder</title>
 
   <!-- Cache-busting version: Update this date when making changes to JS/CSS files -->
-  <!-- Version: 202510010442 -->
+  <!-- Version: 202510011254 -->
 
   <!-- Favicon (inline, never 404s) -->
   <link rel="icon"
@@ -21,11 +21,11 @@
   <!-- Application now uses self-contained vanilla JavaScript and inline CSS utilities -->
 
   <!-- Presentation Mode and Brand Consistency -->
-  <link rel="stylesheet" href="./brand.css?v=202510010442">
-  <link rel="stylesheet" href="./presentation.css?v=202510010442">
+  <link rel="stylesheet" href="./brand.css?v=202510011254">
+  <link rel="stylesheet" href="./presentation.css?v=202510011254">
   
   <!-- Enhanced Print Stylesheet for PDF/Print formatting -->
-  <link rel="stylesheet" href="./print.css?v=202510010442">
+  <link rel="stylesheet" href="./print.css?v=202510011254">
 
   <!-- Content Security Policy - Simplified for self-contained app -->
   <meta http-equiv="Content-Security-Policy"
@@ -1018,8 +1018,9 @@
     };
 
     const printProposal = async () => {
-      // Save original state
-      const originalContent = document.body.innerHTML;
+      // Save original state - only save the root content, not entire body
+      const root = document.getElementById('root');
+      const originalRootContent = root.innerHTML;
       const originalLogo = images.logo;
       const originalBodyClass = document.body.className;
       
@@ -1035,9 +1036,11 @@
       const showLogo = shouldShowLogoInPrint();
       const printModeClass = showLogo ? 'print-mode pdf-view show-logo theme-pdf-light' : 'print-mode pdf-view theme-pdf-light';
       
-      // Create a temporary print-friendly version with enhanced styling
+      // Apply theme class to body
       document.body.className = printModeClass;
-      document.body.innerHTML = `
+      
+      // Replace only the root content for print, keeping admin button and other body elements intact
+      root.innerHTML = `
         <style>
           /* Minimal print override - main styles come from print.css */
           @media print {
@@ -1072,7 +1075,7 @@
       const restore = () => {
         try {
           document.body.className = originalBodyClass;
-          document.body.innerHTML = originalContent;
+          root.innerHTML = originalRootContent;
           images.logo = originalLogo; // Restore original logo
           renderApp(); // Re-initialize the app
         } catch (e) {
@@ -1114,10 +1117,10 @@
       try {
         showUserMessage('Preparing export...', 'info');
         
-        // Save original logo and switch to light variant for HTML export (white background)
+        // Save original logo and use dark variant for HTML export (dark theme)
         const originalLogo = images.logo;
-        if (window.images?.logoOnLight) {
-          images.logo = window.images.logoOnLight;
+        if (window.images?.logoOnDark) {
+          images.logo = window.images.logoOnDark;
         }
         
         // Set flag to indicate we're exporting for client (this will clear logos if needed)
@@ -1133,9 +1136,9 @@
         
         const htmlContent = renderClientView();
       
-      // Determine if logo should be shown in client view and use light theme for readability
+      // Determine if logo should be shown in client view and use dark theme for HTML export
       const showLogo = shouldShowLogoInPrint() || document.body.classList.contains('show-logo');
-      const clientViewClass = showLogo ? 'client-view show-logo theme-pdf-light' : 'client-view theme-pdf-light';
+      const clientViewClass = showLogo ? 'client-view show-logo theme-html-dark' : 'client-view theme-html-dark';
       
       // Create complete HTML with embedded styles
       const fullHtml = `<!DOCTYPE html>
@@ -1523,7 +1526,7 @@
             ` : ''}
 
             <!-- Client Acknowledgment Section -->
-            <div style="border: 2px solid var(--gray-border); border-radius: 8px; padding: 2rem; margin-top: 3rem; background-color: #f8f9fa;">
+            <div class="client-acknowledgment no-break" style="border: 2px solid var(--gray-border); border-radius: 8px; padding: 2rem; margin-top: 3rem; background-color: #f8f9fa;">
               <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 1.5rem 0; color: var(--midnight);">Client Acknowledgment</h2>
               
               <div style="margin-bottom: 1.5rem;">
@@ -1535,7 +1538,7 @@
                 </p>
               </div>
 
-              <div class="grid grid-cols-2 gap-8" style="margin-bottom: 2rem;">
+              <div class="grid grid-cols-2 gap-8 signature-lines" style="margin-bottom: 2rem;">
                 <div>
                   <div style="height: 40px; border-bottom: 1px solid var(--gray-border); margin-bottom: 0.5rem;"></div>
                   <p style="color: var(--gray-muted); font-size: 12px; margin: 0;">Client Signature</p>
@@ -1593,8 +1596,8 @@
     };
 
     const renderPreview = () => {
-      // Use light variant logo for HTML preview (white background), fall back to regular logo
-      const previewLogo = window.images?.logoOnLight || images.logo;
+      // Use dark variant logo for HTML preview (dark background with white text), fall back to regular logo
+      const previewLogo = window.images?.logoOnDark || images.logo;
       
       return `
         <div class="min-h-screen bg-white">
@@ -2023,15 +2026,15 @@
   </script>
   
   <!-- Role Mode and Presentation System -->
-  <script src="./role-mode.js?v=202510010442"></script>
-  <script src="./config-loader.js?v=202510010442"></script>
-  <script src="./proposal-guard.js?v=202510010442"></script>
-  <script src="./share-link.js?v=202510010442"></script>
+  <script src="./role-mode.js?v=202510011254"></script>
+  <script src="./config-loader.js?v=202510011254"></script>
+  <script src="./proposal-guard.js?v=202510011254"></script>
+  <script src="./share-link.js?v=202510011254"></script>
 
   <!-- Image placeholder sanitizer (fixes ${images.*} 404s) -->
-  <script src="./img-placeholder-sanitizer.js?v=202510010442"></script>
+  <script src="./img-placeholder-sanitizer.js?v=202510011254"></script>
 
   <!-- Guarded Admin Loader -->
-  <script src="./admin-loader.js?v=202510010442"></script>
+  <script src="./admin-loader.js?v=202510011254"></script>
 </body>
 </html>
