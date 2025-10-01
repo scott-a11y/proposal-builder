@@ -1,0 +1,287 @@
+/* Presentation.css - Clean presentation mode for client-facing views
+   Hides editing controls and provides a polished, professional interface
+*/
+
+/* Presentation mode container */
+.presentation-mode {
+  --presentation-bg: var(--brand-cloud);
+  --presentation-text: var(--brand-midnight);
+  --presentation-accent: var(--brand-amber);
+}
+
+/* Presentation mode overrides */
+body.presentation-mode {
+  background: var(--presentation-bg);
+  overflow-x: hidden;
+}
+
+/* Hide all edit controls in presentation mode */
+.presentation-mode .admin-fab,
+.presentation-mode .print-hidden,
+.presentation-mode .edit-controls,
+.presentation-mode input:not([readonly]),
+.presentation-mode textarea:not([readonly]),
+.presentation-mode select:not([disabled]),
+.presentation-mode button[onclick*="edit"],
+.presentation-mode button[onclick*="generate"],
+.presentation-mode .template-selector {
+  display: none !important;
+}
+
+/* Make form elements read-only in presentation mode */
+.presentation-mode input,
+.presentation-mode textarea,
+.presentation-mode select {
+  pointer-events: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Clean presentation header */
+.presentation-header {
+  background: var(--brand-midnight);
+  color: white;
+  padding: 24px 32px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.presentation-header .brand-logo {
+  max-height: 80px;
+  margin: 0 auto 16px;
+  display: block;
+}
+
+.presentation-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 200;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.presentation-header .subtitle {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+
+/* Clean proposal content */
+.presentation-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 32px;
+  background: white;
+  min-height: calc(100vh - 200px);
+  box-shadow: 0 0 30px rgba(0,0,0,0.1);
+}
+
+/* Presentation sections */
+.presentation-section {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--brand-gray-border);
+}
+
+.presentation-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.presentation-section h2 {
+  font-size: 1.4rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--brand-midnight);
+  margin: 0 0 24px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--brand-amber);
+}
+
+/* Presentation field styling */
+.presentation-field {
+  margin-bottom: 24px;
+}
+
+.presentation-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--brand-gray-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.presentation-field .value {
+  font-size: 1.1rem;
+  color: var(--brand-midnight);
+  line-height: 1.6;
+  min-height: 1.6em;
+}
+
+.presentation-field .value.large {
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+
+.presentation-field .value.currency {
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--brand-amber);
+}
+
+/* Presentation grid layout */
+.presentation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.presentation-grid.single {
+  grid-template-columns: 1fr;
+}
+
+/* Presentation images */
+.presentation-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.presentation-image {
+  text-align: center;
+}
+
+.presentation-image img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  border: 1px solid var(--brand-gray-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.presentation-image .caption {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--brand-gray-muted);
+  letter-spacing: 0.5px;
+}
+
+/* QR Code styling in presentation mode */
+.presentation-qr {
+  text-align: center;
+  padding: 24px;
+  background: var(--brand-cloud);
+  border-radius: 8px;
+  margin-top: 32px;
+}
+
+.presentation-qr canvas {
+  margin: 0 auto 16px;
+  border: 2px solid white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.presentation-qr .qr-label {
+  font-size: 0.9rem;
+  color: var(--brand-slate);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Presentation footer */
+.presentation-footer {
+  background: var(--brand-midnight);
+  color: white;
+  padding: 32px;
+  text-align: center;
+  margin-top: 48px;
+}
+
+.presentation-footer .company-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.presentation-footer .contact-item {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.presentation-footer .contact-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+/* Presentation mode transitions */
+.presentation-transition {
+  transition: all 0.5s ease-in-out;
+}
+
+.presentation-mode * {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Print optimizations for presentation mode */
+@media print {
+  .presentation-mode .presentation-header {
+    position: static;
+    background: white !important;
+    color: var(--brand-midnight) !important;
+    box-shadow: none;
+  }
+  
+  .presentation-mode .presentation-content {
+    box-shadow: none;
+    padding: 24px 16px;
+  }
+  
+  .presentation-mode .presentation-footer {
+    background: white !important;
+    color: var(--brand-midnight) !important;
+    border-top: 2px solid var(--brand-midnight);
+  }
+}
+
+/* Responsive design for presentation mode */
+@media (max-width: 768px) {
+  .presentation-content {
+    padding: 24px 16px;
+  }
+  
+  .presentation-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .presentation-header {
+    padding: 16px;
+  }
+  
+  .presentation-header h1 {
+    font-size: 1.4rem;
+  }
+  
+  .presentation-images {
+    grid-template-columns: 1fr;
+  }
+}

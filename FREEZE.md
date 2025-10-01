@@ -1,8 +1,8 @@
-# 🚨 REPOSITORY FREEZE - ACTIVE 🚨
+# 🚨 REPOSITORY FREEZE - REBUILD IN PROGRESS 🚨
 
-**Status**: FREEZE IN EFFECT  
+**Status**: FREEZE IN EFFECT - REBUILD PHASE 1 ACTIVE  
 **Date**: October 1, 2025  
-**Issue**: #[Issue Number]  
+**Phase**: Phase 1 - Foundation & Core Editor  
 **Severity**: CRITICAL  
 
 ---
@@ -11,17 +11,18 @@
 
 This repository is currently under a **FREEZE** due to extended instability and unresolved critical issues. 
 
+**The systematic rebuild is now IN PROGRESS - Phase 1 has started.**
+
 **NO merges, deployments, or automated changes are permitted except those aligned with the official rebuild plan.**
 
-### Rebuild Plan Active
+### Rebuild Status
 
-Instead of incremental fixes, a systematic rebuild is underway. See [REBUILD_PROCESS.md](./REBUILD_PROCESS.md) for:
-- Phased rebuild approach (6-week plan)
-- Acceptance criteria for each phase
-- PR requirements and review process
-- Architecture decisions and timeline
+The rebuild has officially started as of October 1, 2025. See:
+- [REBUILD_STATUS.md](./REBUILD_STATUS.md) - Live progress tracker (updated regularly)
+- [REBUILD_PROCESS.md](./REBUILD_PROCESS.md) - Full phased approach and acceptance criteria
+- [legacy/v1/](./legacy/v1/) - Preserved original version for reference
 
-**Only PRs that follow the rebuild plan will be considered for merge.**
+**Only PRs that follow the rebuild plan and target the correct phase will be considered for merge.**
 
 ---
 
@@ -43,6 +44,7 @@ Instead of incremental fixes, a systematic rebuild is underway. See [REBUILD_PRO
 - Documenting current issues
 - Planning fixes (but NOT implementing them)
 - Emergency rollback if needed
+- **PRs that implement Phase 1 deliverables from REBUILD_PROCESS.md**
 
 ---
 
@@ -171,4 +173,5 @@ The freeze will be lifted ONLY when:
 ---
 
 **Last Updated**: October 1, 2025  
-**Status**: FREEZE ACTIVE - DO NOT MERGE OR DEPLOY
+**Status**: FREEZE ACTIVE - REBUILD PHASE 1 IN PROGRESS  
+**See**: [REBUILD_STATUS.md](./REBUILD_STATUS.md) for live progress tracking

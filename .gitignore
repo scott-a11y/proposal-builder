@@ -30,6 +30,7 @@ Thumbs.db
 # Allow specific important deployment documentation
 !SOLUTION_SUMMARY.md
 !START_HERE_IF_CHANGES_NOT_SHOWING.md
+!REBUILD_KICKOFF_SUMMARY.md
 
 # Exclude other temporary docs
 *_SUMMARY.md
@@ -44,3 +45,6 @@ STATUS_*.md
 *_DIAGNOSTICS.md
 *_COMPARISON.md
 START_HERE.md
+
+# But allow these specific rebuild docs
+!REBUILD_STATUS.md

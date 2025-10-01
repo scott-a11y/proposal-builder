@@ -71,6 +71,8 @@ cp *.js *.css legacy/v1/
 # Option B: Modular with build tool
 ```
 
+**Status**: ✅ Migration completed - Legacy v1 preserved in `/legacy/v1/`
+
 ---
 
 ### Phase 2: Preview & Print/PDF (Week 3)
@@ -385,6 +387,6 @@ See [ROLLBACK_PROCEDURE.md](./ROLLBACK_PROCEDURE.md) for detailed steps.
 
 ---
 
-**Last Updated**: October 2025  
-**Status**: Active Rebuild - Phase 0 (Planning)  
-**Next Milestone**: Phase 1 Kickoff
+**Last Updated**: October 1, 2025  
+**Status**: Active Rebuild - Phase 1 (In Progress)  
+**Next Milestone**: Phase 1 Completion (Week 1-2)
