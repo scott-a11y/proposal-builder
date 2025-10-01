@@ -19,6 +19,20 @@ This is **Foundry Cabinet Co - Proposal Builder**, a single-file HTML applicatio
 - **CSS**: Custom CSS files with Tailwind-inspired utility classes
 - **Storage**: localStorage for proposals, IndexedDB for assets (via admin-addon.js)
 
+### Dependencies
+
+**Runtime Dependencies**: NONE (runs in browser, no npm/node required)
+- All code is vanilla JavaScript ES6+
+- No build process or compilation step
+- No package.json or node_modules
+- Optional CDN links for React/Tailwind (commented out)
+
+**Development Dependencies**: NONE (optional for convenience)
+- Python 3 HTTP server for local testing (optional)
+- Any modern web browser for testing
+- No linting tools required (follow existing code style)
+- No testing framework (tests.html uses custom test runner)
+
 ### File Structure
 ```
 index.html              # Main application (single-file app)
@@ -44,6 +58,39 @@ tests.html              # Test suite (client-side testing)
 - **Safe filenames**: Sanitization via `safe()` function for exports
 
 ## Development Workflow
+
+### Issue & PR Workflow
+
+1. **Issue Analysis**
+   - Read the entire issue including all comments
+   - Check for related issues or PRs
+   - Understand the "why" not just the "what"
+   - Ask clarifying questions if needed
+
+2. **Planning Phase**
+   - Create a checklist of tasks
+   - Identify files that need changes
+   - Estimate impact and risk
+   - Use `report_progress` to share plan early
+
+3. **Implementation Phase**
+   - Make small, incremental changes
+   - Test after each change
+   - Commit frequently with `report_progress`
+   - Keep commits focused (one logical change per commit)
+
+4. **Verification Phase**
+   - Run tests in browser (`tests.html`)
+   - Test in all three roles (admin/agent/client)
+   - Test exports (HTML and PDF)
+   - Check console for errors
+   - Verify cache-busting updated if needed
+
+5. **Documentation Phase**
+   - Update relevant .md files if behavior changed
+   - Add comments for complex logic
+   - Update PR description with final status
+   - Include screenshots for UI changes
 
 ### Making Changes
 
@@ -174,6 +221,36 @@ Referrer-Policy: strict-origin-when-cross-origin
 5. **Browser compatibility**: Test in Chrome, Firefox, Safari, Edge
 6. **Print/PDF issues**: Test export functionality after UI changes
 
+## Repository-Specific Patterns
+
+### Design Patterns Used
+
+1. **IIFE (Immediately Invoked Function Expressions)**: All JS modules wrap code in `(() => { 'use strict'; ... })()`
+2. **Event Delegation**: Use event listeners on parent elements, not individual elements
+3. **Data Attributes**: Use `data-*` attributes for JavaScript hooks, not classes
+4. **Template Literals**: Use backticks for HTML generation, always escape with `escapeHtml()`
+5. **LocalStorage as Database**: Read once, modify in memory, write back
+
+### Anti-Patterns to Avoid
+
+❌ **Don't**: Add jQuery or other libraries (app is vanilla JS)
+❌ **Don't**: Use `innerHTML` directly with user input (XSS risk)
+❌ **Don't**: Add external dependencies without explicit approval
+❌ **Don't**: Break the single-page architecture with multiple HTML files
+❌ **Don't**: Add build steps (webpack, babel, etc.) - keep it simple
+❌ **Don't**: Use `eval()` or `Function()` constructors
+❌ **Don't**: Store sensitive data in localStorage (it's not encrypted)
+❌ **Don't**: Assume localStorage is infinite (handle quota errors)
+
+### Preferred Solutions
+
+✅ **Image Storage**: Use IndexedDB (via admin-addon.js), not localStorage
+✅ **HTML Generation**: Use template literals with `escapeHtml()`
+✅ **Event Handling**: Use event delegation on container elements
+✅ **State Management**: Single source of truth in `formData` object
+✅ **File Names**: Always sanitize with `safe()` function
+✅ **Error Handling**: Try/catch with user-friendly messages, log to console
+
 ## Testing Checklist
 
 Before considering a change complete:
@@ -239,3 +316,89 @@ JSON.parse(localStorage.getItem('foundry-last-proposal'))
 - When suggesting code changes, include cache-busting update instructions
 - Respect the single-file architecture - avoid introducing build complexity
 - Security is critical - always validate and sanitize user input
+
+### Making Changes as an AI Agent
+
+When working on issues or PRs:
+
+1. **Understand First**: Read the issue completely, check related files, and understand the context before making changes
+2. **Plan & Report**: Use `report_progress` early to outline your plan as a checklist
+3. **Minimal Changes**: Make the smallest possible changes to achieve the goal
+4. **Test Continuously**: Run tests after each change, not just at the end
+5. **Document Progress**: Use `report_progress` frequently to commit changes and update status
+
+### Commit Message Guidelines
+
+- **Format**: Single line, descriptive, action-oriented
+- **Good examples**: 
+  - `Fix logo display in PDF export`
+  - `Add template validation for admin panel`
+  - `Update cache-busting version to 202410011200`
+- **Bad examples**: 
+  - `Fixed bug` (too vague)
+  - `Updated files` (not descriptive)
+  - `WIP changes` (not suitable for commits)
+
+### PR Description Best Practices
+
+- Use markdown checklists to track progress: `- [x]` for done, `- [ ]` for pending
+- Keep the checklist structure consistent between updates
+- Include what was changed, why, and how to verify
+- Don't use headers in PR descriptions (just checklists)
+- Update the checklist with each `report_progress` call
+
+### Examples of Good Changes
+
+✅ **DO**:
+- Change only the specific function that has the bug
+- Add targeted validation where input is received
+- Update only the CSS properties that need fixing
+- Add tests for the specific functionality you changed
+
+❌ **DON'T**:
+- Refactor unrelated code while fixing a bug
+- Change formatting across the entire file
+- Update dependencies unless specifically needed
+- Add features that weren't requested
+
+### Handling Common Scenarios
+
+**Scenario: Logo not displaying**
+- Check if logo asset exists in IndexedDB (admin panel)
+- Verify `logoAssetIdDark` and `logoAssetIdLight` are set
+- Test in both HTML preview (dark) and PDF export (light)
+- Don't modify logo fallback SVG unless necessary
+
+**Scenario: Export functionality broken**
+- Check console for errors
+- Verify image encoding functions work
+- Test with different image sizes
+- Check if localStorage quota is exceeded
+- Don't rewrite the entire export function
+
+**Scenario: Admin panel not accessible**
+- Check `localStorage.getItem('foundry-user-role')`
+- Use `window.switchToAdmin()` in console
+- Verify role-mode.js is loaded correctly
+- Don't modify role system unless issue specifically requires it
+
+### File Change Impact Assessment
+
+Before modifying a file, understand its impact:
+
+- **index.html**: Core application, affects all users immediately
+- **admin-addon.js**: Admin panel only, affects configuration
+- **role-mode.js**: Role system, affects access control
+- ***.css**: Visual changes, requires cache-busting update
+- ***.js**: Functionality changes, requires cache-busting update
+- **Documentation**: No cache-busting needed, test for accuracy
+
+### When to Ask for Help
+
+Stop and ask the user if:
+- The issue requires architectural changes
+- You need to modify multiple interconnected systems
+- The fix might break backward compatibility
+- You're not confident in your understanding of the issue
+- Tests are consistently failing and you're not sure why
+- The requested change conflicts with security best practices
