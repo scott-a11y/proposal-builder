@@ -26,6 +26,12 @@ Thumbs.db
 # Core docs to keep: README.md, CONTRIBUTING.md, ADMIN_ACCESS_GUIDE.md,
 # CACHE_BUSTING_GUIDE.md, DEPLOYMENT.md, LOGO_VARIANT_GUIDE.md,
 # PRINT-PDF-GUIDE.md, LOGO-BRANDING-GUIDE.md, COPILOT_SETUP_SUMMARY.md
+
+# Allow specific important deployment documentation
+!SOLUTION_SUMMARY.md
+!START_HERE_IF_CHANGES_NOT_SHOWING.md
+
+# Exclude other temporary docs
 *_SUMMARY.md
 *_FIX*.md
 *_INSTRUCTIONS.md
