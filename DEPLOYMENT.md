@@ -111,7 +111,7 @@ SUPABASE_ANON_KEY=your-anon-key
    - Commits and pushes the update
 
 ### For More Details
-See [CACHE_BUSTING_AUTOMATION.md](./CACHE_BUSTING_AUTOMATION.md) for complete documentation on the automated system.
+See [CACHE_BUSTING_GUIDE.md](./CACHE_BUSTING_GUIDE.md) for complete documentation on the cache-busting system and automation.
 
 ### Manual Override (if needed)
 ```bash
