@@ -221,7 +221,7 @@ All features are standard web APIs with broad browser support.
 
 For issues or questions:
 1. Check console for errors: `F12` → Console tab
-2. Run diagnostics (see VERIFICATION_DIAGNOSTICS.md)
+2. Use browser console commands to inspect logo state (see Developer Console Commands section above)
 3. Contact: scott-a11y
 
 ---

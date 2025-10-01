@@ -21,3 +21,20 @@ Thumbs.db
 # Backup files
 *.backup
 *.bak
+
+# Temporary documentation (should be cleaned up or merged into core docs)
+# Core docs to keep: README.md, CONTRIBUTING.md, ADMIN_ACCESS_GUIDE.md,
+# CACHE_BUSTING_GUIDE.md, DEPLOYMENT.md, LOGO_VARIANT_GUIDE.md,
+# PRINT-PDF-GUIDE.md, LOGO-BRANDING-GUIDE.md, COPILOT_SETUP_SUMMARY.md
+*_SUMMARY.md
+*_FIX*.md
+*_INSTRUCTIONS.md
+*_STATUS.md
+STATUS_*.md
+*_LOG.md
+*_COMMENT.md
+*_TESTING*.md
+*_SCENARIOS.md
+*_DIAGNOSTICS.md
+*_COMPARISON.md
+START_HERE.md

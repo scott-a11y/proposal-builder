@@ -133,6 +133,68 @@ Run it:
 ./update-version.sh
 ```
 
+## GitHub Actions Automation
+
+**✅ Fully Automated - No Manual Intervention Required!**
+
+The cache-busting version is automatically updated on every push to `main` via GitHub Actions. You don't need to remember to run `update-version.sh` manually.
+
+### How It Works
+
+1. **Push your code** to the `main` branch
+2. **GitHub Actions automatically**:
+   - Detects if JavaScript or CSS files were modified
+   - Runs `./update-version.sh` to update the version
+   - Runs verification tests (`./test-cache-busting.sh`)
+   - Commits and pushes the version update
+
+### Workflow File
+
+The automation is configured in `.github/workflows/auto-version-update.yml`:
+
+```yaml
+name: Auto-Update Cache-Busting Version
+on:
+  push:
+    branches: [main]
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - Checkout code
+      - Detect JS/CSS changes
+      - Run update-version.sh
+      - Run tests
+      - Commit and push
+```
+
+### Benefits
+
+- ✅ **Zero manual intervention** - impossible to forget
+- ✅ **Guaranteed fresh versions** on every deployment
+- ✅ **Automatic testing** ensures version is correct
+- ✅ **Works for all contributors** without local setup
+
+### Manual Override
+
+The script is still available if you need it for local testing:
+
+```bash
+# Only needed for troubleshooting or local testing
+./update-version.sh
+```
+
+### Git Pre-Push Hook (Optional Backup)
+
+For additional safety, you can install a git pre-push hook that checks the version before pushing:
+
+```bash
+# One-time setup
+./setup-git-hooks.sh
+```
+
+This adds a local check that prevents pushing outdated versions.
+
 ## Why This Approach?
 
 ### Advantages:
