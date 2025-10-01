@@ -12,7 +12,7 @@ This repository is under a **CRITICAL STABILITY FREEZE** with an active rebuild 
 - **Details**: See [FREEZE.md](./FREEZE.md) and [REBUILD_PROCESS.md](./REBUILD_PROCESS.md)
 
 ### 📋 For Contributors:
-- **READ FIRST**: [REBUILD_INSTRUCTIONS.md](./REBUILD_INSTRUCTIONS.md) - How to contribute during rebuild
+- **READ FIRST**: [REBUILD_GUIDE.md](./REBUILD_GUIDE.md) - How to contribute during rebuild
 - **Rebuild Plan**: [REBUILD_PROCESS.md](./REBUILD_PROCESS.md) - 6-week phased plan
 - **Policy**: [CONTRIBUTING.md](./CONTRIBUTING.md) - Updated contribution guidelines
 - **CODEOWNERS**: All PRs require @scott-a11y approval
@@ -20,7 +20,7 @@ This repository is under a **CRITICAL STABILITY FREEZE** with an active rebuild 
 ### 🔧 For Maintainers:
 - **Audit**: [AUDIT_REPORT.md](./AUDIT_REPORT.md) - Current state analysis
 - **Rollback**: [ROLLBACK_PROCEDURE.md](./ROLLBACK_PROCEDURE.md) - Emergency procedures
-- **Instructions**: [REBUILD_INSTRUCTIONS.md](./REBUILD_INSTRUCTIONS.md) - How to manage rebuild PRs
+- **Instructions**: [REBUILD_GUIDE.md](./REBUILD_GUIDE.md) - How to manage rebuild PRs
 
 **Only PRs that follow the rebuild plan will be reviewed. No exceptions.**
 
