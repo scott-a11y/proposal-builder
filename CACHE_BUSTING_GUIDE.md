@@ -29,18 +29,20 @@ Update the version number whenever you make changes to any of these files:
 ## How to Update the Version
 
 ### Step 1: Choose a Version Number
-Use today's date in `YYYYMMDD` format:
-- Example: `20250930` for September 30, 2025
+**Recommended: Use a timestamp in `YYYYMMDDHHmm` format for uniqueness:**
+- Example: `202509301533` for September 30, 2025 at 15:33
+- Run: `date +%Y%m%d%H%M` to get current timestamp
 
-Or use a simple incrementing number:
-- Example: `v1`, `v2`, `v3`, etc.
+Alternative options:
+- Date only in `YYYYMMDD` format: `20250930` (may cause issues with multiple deployments in one day)
+- Simple incrementing number: `v1`, `v2`, `v3`, etc.
 
 ### Step 2: Update in Two Places
 
 **1. In `index.html` (near the top):**
 ```html
 <!-- Cache-busting version: Update this date when making changes to JS/CSS files -->
-<!-- Version: 20250930 -->  <!-- UPDATE THIS -->
+<!-- Version: 202509301533 -->  <!-- UPDATE THIS -->
 ```
 
 **2. Find and replace all version parameters in `index.html`:**
@@ -79,8 +81,8 @@ s.src = './admin-addon.js?v=20250930';  // UPDATE THIS
 To make this easier, you can use this bash command to update all versions at once:
 
 ```bash
-# Set your new version
-NEW_VERSION="20251001"
+# Generate timestamp-based version (recommended for uniqueness)
+NEW_VERSION=$(date +%Y%m%d%H%M)
 
 # Update index.html
 sed -i "s/<!-- Version: [0-9]* -->/<!-- Version: $NEW_VERSION -->/g" index.html
@@ -92,20 +94,38 @@ sed -i "s/\?v=[0-9]*/?v=$NEW_VERSION/g" admin-loader.js
 echo "✅ Version updated to $NEW_VERSION"
 ```
 
-Or create a simple script file `update-version.sh`:
+**✨ Quick Method: Use the provided script**
+
+A ready-to-use `update-version.sh` script is included in the repository:
+
+```bash
+# Simply run:
+./update-version.sh
+```
+
+This will automatically:
+- Generate a timestamp-based version
+- Update all version parameters in `index.html`
+- Update the version in `admin-loader.js`
+- Update the test expected version
+- Display verification instructions
+
+Make it executable first (only needed once):
+```bash
+chmod +x update-version.sh
+```
+
+Or create your own script file `update-version.sh`:
 
 ```bash
 #!/bin/bash
-NEW_VERSION=$(date +%Y%m%d)
+# Auto-generate timestamp-based version
+NEW_VERSION=$(date +%Y%m%d%H%M)
 sed -i "s/<!-- Version: [0-9]* -->/<!-- Version: $NEW_VERSION -->/g" index.html
 sed -i "s/\?v=[0-9]*/?v=$NEW_VERSION/g" index.html
 sed -i "s/\?v=[0-9]*/?v=$NEW_VERSION/g" admin-loader.js
+sed -i "s/EXPECTED_VERSION=\"[0-9]*\"/EXPECTED_VERSION=\"$NEW_VERSION\"/g" test-cache-busting.sh
 echo "✅ Version updated to $NEW_VERSION"
-```
-
-Make it executable:
-```bash
-chmod +x update-version.sh
 ```
 
 Run it:
