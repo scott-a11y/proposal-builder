@@ -36,12 +36,20 @@ Your site could be deployed to **multiple locations**. Check all of these:
 Different hosting services deploy from different branches:
 
 ### Check GitHub Pages Settings
+
+**IMPORTANT**: GitHub Pages must be enabled first!
+
 1. Go to repository: https://github.com/scott-a11y/proposal-builder
 2. Click **Settings** → **Pages**
-3. Look for "Source" - it shows which branch is deployed
-   - `main` branch
-   - `gh-pages` branch
-   - Custom branch
+3. Under "Build and deployment":
+   - **Source**: Should be "GitHub Actions" (recommended)
+   - OR "Deploy from a branch" with branch selected (e.g., `main`)
+4. If you see "GitHub Pages is currently disabled":
+   - Select "GitHub Actions" as the source
+   - Save the settings
+   - The site will deploy within 5 minutes
+
+**Your GitHub Pages URL will be**: `https://scott-a11y.github.io/proposal-builder/`
 
 ### Check Your Hosting Provider
 - **Netlify**: Dashboard → Site Settings → Build & Deploy → Deploy contexts
