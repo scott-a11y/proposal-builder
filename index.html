@@ -6,7 +6,7 @@
   <title>Foundry Cabinet · Co — Proposal Builder</title>
 
   <!-- Cache-busting version: Update this date when making changes to JS/CSS files -->
-  <!-- Version: 202510011254 -->
+  <!-- Version: 202510011350 -->
 
   <!-- Favicon (inline, never 404s) -->
   <link rel="icon"
@@ -21,11 +21,11 @@
   <!-- Application now uses self-contained vanilla JavaScript and inline CSS utilities -->
 
   <!-- Presentation Mode and Brand Consistency -->
-  <link rel="stylesheet" href="./brand.css?v=202510011254">
-  <link rel="stylesheet" href="./presentation.css?v=202510011254">
+  <link rel="stylesheet" href="./brand.css?v=202510011350">
+  <link rel="stylesheet" href="./presentation.css?v=202510011350">
   
   <!-- Enhanced Print Stylesheet for PDF/Print formatting -->
-  <link rel="stylesheet" href="./print.css?v=202510011254">
+  <link rel="stylesheet" href="./print.css?v=202510011350">
 
   <!-- Content Security Policy - Simplified for self-contained app -->
   <meta http-equiv="Content-Security-Policy"
@@ -1695,7 +1695,7 @@
               <div>
                 <h2 style="font-weight: 200; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 2rem 0;">Investment</h2>
                 <p style="font-size: 2rem; font-weight: 100; color: var(--midnight); letter-spacing: 1px;">
-                  ${formData.price || 'Price TBD'}
+                  ${formData.price ? '$' + formData.price.replace(/[^0-9.]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',') : 'Price TBD'}
                 </p>
               </div>
               <div>
@@ -2026,15 +2026,15 @@
   </script>
   
   <!-- Role Mode and Presentation System -->
-  <script src="./role-mode.js?v=202510011254"></script>
-  <script src="./config-loader.js?v=202510011254"></script>
-  <script src="./proposal-guard.js?v=202510011254"></script>
-  <script src="./share-link.js?v=202510011254"></script>
+  <script src="./role-mode.js?v=202510011350"></script>
+  <script src="./config-loader.js?v=202510011350"></script>
+  <script src="./proposal-guard.js?v=202510011350"></script>
+  <script src="./share-link.js?v=202510011350"></script>
 
   <!-- Image placeholder sanitizer (fixes ${images.*} 404s) -->
-  <script src="./img-placeholder-sanitizer.js?v=202510011254"></script>
+  <script src="./img-placeholder-sanitizer.js?v=202510011350"></script>
 
   <!-- Guarded Admin Loader -->
-  <script src="./admin-loader.js?v=202510011254"></script>
+  <script src="./admin-loader.js?v=202510011350"></script>
 </body>
 </html>
