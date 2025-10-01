@@ -1,0 +1,55 @@
+name: Auto Update Cache-Busting Version
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.js'
+      - '**.css'
+      - 'index.html'
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Check if version needs updating
+      id: check
+      run: |
+        CURRENT_VERSION=$(grep -oP '<!-- Version: \K[0-9]+' index.html)
+        NEW_VERSION=$(date +%Y%m%d%H%M)
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        
+        if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
+          echo "needs_update=true" >> $GITHUB_OUTPUT
+          echo "Version needs update: $CURRENT_VERSION -> $NEW_VERSION"
+        else
+          echo "needs_update=false" >> $GITHUB_OUTPUT
+          echo "Version is already up to date: $CURRENT_VERSION"
+        fi
+    
+    - name: Update cache-busting version
+      if: steps.check.outputs.needs_update == 'true'
+      run: |
+        chmod +x update-version.sh
+        ./update-version.sh
+    
+    - name: Run cache-busting tests
+      if: steps.check.outputs.needs_update == 'true'
+      run: |
+        chmod +x test-cache-busting.sh
+        ./test-cache-busting.sh
+    
+    - name: Commit and push version update
+      if: steps.check.outputs.needs_update == 'true'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add index.html admin-loader.js test-cache-busting.sh
+        git commit -m "chore: auto-update cache-busting version to ${{ steps.check.outputs.new_version }}"
+        git push
