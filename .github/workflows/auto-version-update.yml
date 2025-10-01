@@ -1,12 +1,17 @@
 name: Auto Update Cache-Busting Version
 
+# 🚨 TEMPORARILY DISABLED DUE TO REPOSITORY FREEZE 🚨
+# See FREEZE.md for details
+# To re-enable: remove the "workflow_dispatch" line below and uncomment the "push" trigger
+
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - '**.js'
-      - '**.css'
-      - 'index.html'
+  workflow_dispatch:  # Manual trigger only during freeze
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - '**.js'
+  #     - '**.css'
+  #     - 'index.html'
 
 jobs:
   update-version:

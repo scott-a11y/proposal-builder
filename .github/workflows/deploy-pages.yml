@@ -1,12 +1,13 @@
 # GitHub Pages Deployment Workflow
-# Deploys the site to GitHub Pages whenever there's a push to main
+# 🚨 MODIFIED FOR REPOSITORY FREEZE 🚨
+# Manual deployment only during freeze - see FREEZE.md
 
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:  # Allow manual deployment
+  # push:  # DISABLED during freeze
+  #   branches: [ main ]
+  workflow_dispatch:  # Manual deployment only during freeze
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:

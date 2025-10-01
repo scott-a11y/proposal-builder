@@ -1,5 +1,22 @@
 # Foundry Cabinet Co - Proposal Builder
 
+## 🚨🚨🚨 REPOSITORY FREEZE IN EFFECT 🚨🚨🚨
+
+**⛔ NO MERGES • NO DEPLOYMENTS • NO AUTOMATED CHANGES ⛔**
+
+This repository is under a **CRITICAL STABILITY FREEZE** due to extended issues with the live site.
+
+- **Status**: FREEZE ACTIVE
+- **Reason**: 70+ change requests with persistent critical issues
+- **Action**: All changes PROHIBITED until stability restored
+- **Details**: See [FREEZE.md](./FREEZE.md) for full information
+
+**For Maintainers**: See [AUDIT_REPORT.md](./AUDIT_REPORT.md) and [ROLLBACK_PROCEDURE.md](./ROLLBACK_PROCEDURE.md)
+
+---
+
+# Foundry Cabinet Co - Proposal Builder
+
 A single-file HTML application for creating professional cabinet proposals with modern features and performance optimizations.
 
 ## 🚨 NOT SEEING YOUR CHANGES? → [START HERE](./START_HERE_IF_CHANGES_NOT_SHOWING.md) 🚨
