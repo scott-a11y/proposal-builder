@@ -5,6 +5,7 @@ A single-file HTML application for creating professional cabinet proposals with 
 ## ✨ Recent Improvements (v2.0)
 
 ### 🚀 Performance & Reliability
+- **Automated Cache-Busting**: GitHub Actions automatically updates version on every deployment - zero manual intervention! 🎉
 - **Debounced Autosave**: Smart 20-second intervals that only save when content changes
 - **Image Caching**: Session-based cache prevents re-encoding images on repeated exports  
 - **Memory Leak Prevention**: Proper cleanup of image load handlers

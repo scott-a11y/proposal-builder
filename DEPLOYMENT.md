@@ -98,7 +98,30 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 ```
 
+## Cache-Busting Version (Automated)
+
+**✅ No manual action required!** The cache-busting version is now automatically updated via GitHub Actions on every push to `main`.
+
+### How It Works
+1. Push your code changes to `main`
+2. GitHub Actions workflow automatically:
+   - Detects JS/CSS file changes
+   - Updates cache-busting version to current timestamp
+   - Runs verification tests
+   - Commits and pushes the update
+
+### For More Details
+See [CACHE_BUSTING_AUTOMATION.md](./CACHE_BUSTING_AUTOMATION.md) for complete documentation on the automated system.
+
+### Manual Override (if needed)
+```bash
+# Only needed for troubleshooting or local testing
+./update-version.sh
+```
+
 ## Pre-deployment Checklist
+- [ ] Push changes to `main` (cache-busting auto-updates)
+- [ ] Wait for GitHub Actions to complete version update
 - [ ] Test all functionality locally
 - [ ] Run tests via `/tests.html`
 - [ ] Verify logo fallback system works
