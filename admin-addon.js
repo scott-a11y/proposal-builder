@@ -191,12 +191,15 @@
       return;
     }
     
+    console.log(`[Admin] Setting logo variant '${variant}' to asset: ${assetId}`);
     const cfg = loadAdminConfig();
     
     if (variant === 'dark') {
       cfg.company.logoAssetIdDark = assetId;
+      console.log('[Admin] Updated logoAssetIdDark:', cfg.company.logoAssetIdDark);
     } else {
       cfg.company.logoAssetIdLight = assetId;
+      console.log('[Admin] Updated logoAssetIdLight:', cfg.company.logoAssetIdLight);
     }
     
     // Enable logo in print when either variant is set
@@ -205,7 +208,15 @@
     }
     
     saveAdminConfig(cfg);
-    console.log(`[Admin] Set logo variant '${variant}' to asset:`, assetId);
+    console.log('[Admin] Config saved. Verifying...');
+    
+    // Verify the config was saved correctly
+    const verifyConfig = loadAdminConfig();
+    console.log('[Admin] Verified config:', {
+      logoAssetIdDark: verifyConfig.company.logoAssetIdDark,
+      logoAssetIdLight: verifyConfig.company.logoAssetIdLight,
+      showLogoInPrint: verifyConfig.branding.showLogoInPrint
+    });
     
     // Update in-memory images immediately
     if (typeof window.images === 'object') {
@@ -213,12 +224,18 @@
         window.images.logoOnDark = `asset:${assetId}`;
         // Resolve to data URL
         const dataUrl = await assetToDataURL(assetId).catch(() => '');
-        if (dataUrl) window.images.logoOnDark = dataUrl;
+        if (dataUrl) {
+          window.images.logoOnDark = dataUrl;
+          console.log('[Admin] Updated logoOnDark in memory');
+        }
       } else if (variant === 'light' && assetId) {
         window.images.logoOnLight = `asset:${assetId}`;
         // Resolve to data URL
         const dataUrl = await assetToDataURL(assetId).catch(() => '');
-        if (dataUrl) window.images.logoOnLight = dataUrl;
+        if (dataUrl) {
+          window.images.logoOnLight = dataUrl;
+          console.log('[Admin] Updated logoOnLight in memory');
+        }
       }
       
       // Update active logo based on context (same logic as hydration)
@@ -232,7 +249,12 @@
     
     // Re-render if possible
     if (typeof window.renderApp === 'function') {
-      try { window.renderApp(); } catch {}
+      try { 
+        window.renderApp();
+        console.log('[Admin] Re-rendered main app');
+      } catch (e) {
+        console.error('[Admin] Failed to re-render main app:', e);
+      }
     }
   };
   
