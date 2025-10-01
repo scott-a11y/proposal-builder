@@ -2,6 +2,24 @@
 
 A single-file HTML application for creating professional cabinet proposals with modern features and performance optimizations.
 
+## 🚨 NOT SEEING YOUR CHANGES? → [START HERE](./START_HERE_IF_CHANGES_NOT_SHOWING.md) 🚨
+
+**Quick check:**
+```bash
+./check-deployed-version.sh
+```
+
+Then follow the instructions based on what it says.
+
+**Full documentation index:** [DEPLOYMENT_GUIDE_INDEX.md](./DEPLOYMENT_GUIDE_INDEX.md) - All guides in one place
+
+**Most common issues:**
+1. Your hosting hasn't deployed your changes yet (wait 10 minutes)
+2. You're looking at the wrong deployment URL ([WHERE_IS_MY_SITE.md](./WHERE_IS_MY_SITE.md))
+3. Your browser cache needs clearing (Ctrl + F5)
+
+---
+
 ## ✨ Recent Improvements (v2.0)
 
 ### 🚀 Performance & Reliability
@@ -40,7 +58,35 @@ A single-file HTML application for creating professional cabinet proposals with 
 
 ## 🚀 Getting Started
 
-### First Time Setup
+### Quick Start (Local Testing)
+1. Clone the repository: `git clone https://github.com/scott-a11y/proposal-builder.git`
+2. Open `index.html` in a web browser, or serve via HTTP server:
+   ```bash
+   python3 -m http.server 8080
+   # Then open http://localhost:8080/
+   ```
+
+### Deploy to GitHub Pages (Recommended)
+
+**Your site will be live at**: `https://scott-a11y.github.io/proposal-builder/`
+
+**Setup (one-time only):**
+1. Go to repository Settings → Pages
+2. Under "Build and deployment", select **Source**: "GitHub Actions"
+3. Save the settings
+
+**That's it!** The site will automatically deploy whenever you push to `main`.
+
+**Verify deployment:**
+```bash
+./check-deployed-version.sh
+```
+
+**Not seeing changes?** → [START HERE](./START_HERE_IF_CHANGES_NOT_SHOWING.md)
+
+---
+
+### First Time Setup (After Deployment)
 1. Open `index.html` in a web browser or serve via HTTP server
 2. **Access Admin Panel**: Look for the "ADMIN" button in the bottom-right corner
    - If you don't see it, you may be in Client role. See [Admin Access Guide](./ADMIN_ACCESS_GUIDE.md)
