@@ -113,6 +113,30 @@
     filter: contrast(1.2) brightness(0.8);
   }
 
+  /* Professional header styling for print */
+  .proposal-page > div:first-child {
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    padding: 1.5rem !important;
+    margin-bottom: 2rem !important;
+    background: white !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ensure accent lines print correctly */
+  .proposal-page > div:first-child > div[style*="border-top"] {
+    border-top: 2px solid #000 !important;
+    padding-top: 1rem !important;
+  }
+  
+  /* Grid layout for client/date info */
+  .proposal-page > div:first-child [style*="grid-template-columns"] {
+    display: grid !important;
+    grid-template-columns: auto auto !important;
+    gap: 0.5rem !important;
+  }
+
   /* Form elements and buttons - hide in print */
   button,
   input,
