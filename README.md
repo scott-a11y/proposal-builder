@@ -2,6 +2,19 @@
 
 A single-file HTML application for creating professional cabinet proposals with modern features and performance optimizations.
 
+## 🚨 NOT SEEING YOUR CHANGES?
+
+If you've updated the code but don't see changes on the live site:
+
+1. **Run the version checker**: `./check-deployed-version.sh`
+2. **Read the guide**: [DEPLOYMENT_VERIFICATION.md](./DEPLOYMENT_VERIFICATION.md)
+3. **Wait 5-10 minutes** after pushing for deployment to complete
+4. **Hard refresh your browser**: Ctrl + F5 (Windows) or Cmd + Shift + R (Mac)
+
+**The #1 reason changes don't show:** You're viewing a different deployment than the one you updated. See the guide above.
+
+---
+
 ## ✨ Recent Improvements (v2.0)
 
 ### 🚀 Performance & Reliability

@@ -1,5 +1,55 @@
 # Deployment Configuration for Proposal Builder
 
+## 🚨 NOT SEEING YOUR CHANGES? READ THIS FIRST! 🚨
+
+If you've updated the code multiple times but still see old content on your live site:
+
+**🔍 STEP 1: Find out WHERE your site is actually deployed**
+
+Your code might be in GitHub, but your LIVE SITE could be on:
+- GitHub Pages: `https://scott-a11y.github.io/proposal-builder/`
+- Netlify: `https://[your-site].netlify.app/`
+- Vercel: `https://[your-site].vercel.app/`
+- Custom domain: Your own server or domain
+
+**Run this to check:**
+```bash
+./check-deployed-version.sh
+```
+
+This will tell you if your deployed site matches your code or not.
+
+**🔍 STEP 2: Make sure you're updating the RIGHT branch**
+
+Different hosting services deploy from different branches:
+- **GitHub Pages**: Usually deploys from `main` OR `gh-pages`
+- **Netlify/Vercel**: Check your dashboard for the deploy branch
+
+**Check which branch is deployed:**
+1. Go to: https://github.com/scott-a11y/proposal-builder/settings/pages
+2. Look at "Source" to see which branch is deployed
+
+**🔍 STEP 3: Wait for deployment (5-10 minutes)**
+
+After pushing to GitHub:
+1. GitHub Actions runs (updates cache-busting version)
+2. Your hosting provider detects the change
+3. Your hosting provider builds and deploys
+4. CDN caches clear
+
+**This takes 5-10 minutes!** Don't panic if it's not instant.
+
+**🔍 STEP 4: Clear your browser cache**
+
+Even if the site is updated, your browser might show old content:
+- **Hard refresh**: Ctrl + F5 (Windows) or Cmd + Shift + R (Mac)
+- **Incognito mode**: Try viewing in a private/incognito window
+- **Different browser**: Try Chrome, Firefox, or Safari
+
+**📚 Still stuck? Read:** [DEPLOYMENT_VERIFICATION.md](./DEPLOYMENT_VERIFICATION.md)
+
+---
+
 ## Server Requirements
 - Static file server (Apache, Nginx, GitHub Pages, Netlify, etc.)
 - HTTPS support (recommended)
